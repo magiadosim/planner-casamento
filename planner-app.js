@@ -6,7 +6,7 @@ const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey
 const app=document.getElementById('app');
 const SITE_URL='https://magiadosim.github.io/planner-casamento/';
 
-const state={loading:true,session:null,profile:null,wedding:null,mode:'signup'};
+const state={loading:true,session:null,profile:null,wedding:null,access:null,adminClients:[],mode:'signup'};
 
 function esc(v=''){
   return String(v??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -17,6 +17,13 @@ function daysUntil(date){
   const today=new Date(); today.setHours(0,0,0,0);
   const target=new Date(date+'T00:00:00');
   return Math.ceil((target-today)/86400000);
+}
+function dateBR(date){
+  if(!date)return '—';
+  return new Date(date+'T00:00:00').toLocaleDateString('pt-BR');
+}
+function accessLabel(status){
+  return ({active:'Ativo',paused:'Pausado',expired:'Expirado'})[status]||status||'Ativo';
 }
 function setMessage(text,type=''){
   const el=document.getElementById('auth-message');
@@ -107,7 +114,7 @@ function dashboardView(){
         <div class="metric"><span>Orçamento estimado</span><strong>${brl(w.budget)}</strong></div>
         <div class="metric"><span>Convidados previstos</span><strong>${Number(w.guests||0)}</strong></div>
         <div class="metric"><span>Data do casamento</span><strong>${w.wedding_date?new Date(w.wedding_date+'T00:00:00').toLocaleDateString('pt-BR'):'A definir'}</strong></div>
-        <div class="metric"><span>Status</span><strong>Planejando</strong></div>
+        <div class="metric"><span>Plano</span><strong>${esc(state.access?.plan_name||'Completo')}</strong></div>
       </section>
       <section class="modules">
         <article class="module"><h3>Checklist</h3><p>Organize todas as etapas por prioridade e prazo.</p><span class="pill">Próxima etapa</span></article>
@@ -120,21 +127,165 @@ function dashboardView(){
     </main>
   </div>`;
 }
+
+function accessBlockedView(){
+  const status=state.access?.access_status||'paused';
+  return `<div class="dashboard">
+    <header class="topbar">
+      <div class="brand">A Magia do Sim · Planner</div>
+      <div class="top-actions"><button class="secondary" id="logout">Sair</button></div>
+    </header>
+    <main class="page">
+      <section class="access-blocked">
+        <div class="eyebrow">Acesso ao Planner</div>
+        <h1>Acesso ${status==='expired'?'expirado':'temporariamente pausado'}</h1>
+        <p>Entre em contato com a equipe A Magia do Sim para verificar seu plano e liberar novamente o acesso ao Planner.</p>
+      </section>
+    </main>
+  </div>`;
+}
+
+function adminView(){
+  const clients=state.adminClients||[];
+  const active=clients.filter(c=>c.access_status==='active').length;
+  const restricted=clients.length-active;
+  const withDate=clients.filter(c=>c.wedding_date).length;
+  return `<div class="dashboard admin-dashboard">
+    <header class="topbar">
+      <div>
+        <div class="brand">A Magia do Sim · Administração</div>
+        <div class="admin-subtitle">Central de clientes do Planner</div>
+      </div>
+      <div class="top-actions"><button class="secondary" id="logout">Sair</button></div>
+    </header>
+    <main class="page">
+      <section class="welcome">
+        <div>
+          <div class="eyebrow">Painel administrativo</div>
+          <h1>Clientes do Planner</h1>
+          <p>Gerencie plano, acesso, vencimento e observações internas de cada cliente.</p>
+        </div>
+      </section>
+      <section class="grid admin-metrics">
+        <div class="metric"><span>Clientes cadastrados</span><strong>${clients.length}</strong></div>
+        <div class="metric"><span>Acessos ativos</span><strong>${active}</strong></div>
+        <div class="metric"><span>Pausados / expirados</span><strong>${restricted}</strong></div>
+        <div class="metric"><span>Casamentos com data</span><strong>${withDate}</strong></div>
+      </section>
+      <section class="admin-client-list">
+        ${clients.length?clients.map(c=>`<article class="admin-client-card" data-client-card="${c.id}">
+          <div class="admin-client-head">
+            <div>
+              <span class="status-chip ${c.access_status==='active'?'ok':'warn'}">${accessLabel(c.access_status)}</span>
+              <h3>${esc(c.couple_name||c.full_name||'Cliente')}</h3>
+              <p>${esc(c.email||'')} ${c.wedding_date?'· '+dateBR(c.wedding_date):''}</p>
+            </div>
+            <div class="admin-client-meta">
+              <span>${c.guests||0} convidados</span>
+              <span>${brl(c.budget||0)}</span>
+            </div>
+          </div>
+          <div class="admin-fields">
+            <label>Plano
+              <input class="input" name="plan_name" value="${esc(c.plan_name||'Completo')}" placeholder="Ex.: Completo">
+            </label>
+            <label>Status do acesso
+              <select class="input" name="access_status">
+                <option value="active" ${c.access_status==='active'?'selected':''}>Ativo</option>
+                <option value="paused" ${c.access_status==='paused'?'selected':''}>Pausado</option>
+                <option value="expired" ${c.access_status==='expired'?'selected':''}>Expirado</option>
+              </select>
+            </label>
+            <label>Validade
+              <input class="input" name="access_expires_at" type="date" value="${esc(c.access_expires_at||'')}">
+            </label>
+            <label class="notes-field">Observações internas
+              <textarea class="input admin-notes" name="notes" rows="3" placeholder="Observações que só a administração verá...">${esc(c.admin_notes||'')}</textarea>
+            </label>
+          </div>
+          <div class="admin-card-actions">
+            <span class="save-status" aria-live="polite"></span>
+            <button class="primary admin-save-client" type="button" data-client-id="${c.id}">Salvar alterações</button>
+          </div>
+        </article>`).join(''):'<div class="empty-admin">Nenhum cliente cadastrado ainda.</div>'}
+      </section>
+    </main>
+  </div>`;
+}
+
 async function loadData(){
   if(!state.session)return;
   const userId=state.session.user.id;
-  const [{data:profile,error:pErr},{data:wedding,error:wErr}]=await Promise.all([
-    sb.from('profiles').select('*').eq('id',userId).maybeSingle(),
-    sb.from('weddings').select('*').eq('client_user_id',userId).maybeSingle()
-  ]);
+  const {data:profile,error:pErr}=await sb.from('profiles').select('*').eq('id',userId).maybeSingle();
   if(pErr)console.error(pErr);
+  state.profile=profile||{full_name:state.session.user.email?.split('@')[0]||'Cliente',role:'client'};
+
+  if(state.profile.role==='admin'){
+    const [{data:profiles,error:profilesErr},{data:weddings,error:weddingsErr},{data:access,error:accessErr},{data:notes,error:notesErr}]=await Promise.all([
+      sb.from('profiles').select('id,full_name,email,role').eq('role','client').order('created_at',{ascending:false}),
+      sb.from('weddings').select('*'),
+      sb.from('customer_access').select('*'),
+      sb.from('admin_customer_notes').select('*')
+    ]);
+    if(profilesErr)console.error(profilesErr);
+    if(weddingsErr)console.error(weddingsErr);
+    if(accessErr)console.error(accessErr);
+    if(notesErr)console.error(notesErr);
+
+    const weddingsMap=new Map((weddings||[]).map(w=>[w.client_user_id,w]));
+    const accessMap=new Map((access||[]).map(a=>[a.client_user_id,a]));
+    const notesMap=new Map((notes||[]).map(n=>[n.client_user_id,n]));
+
+    state.adminClients=(profiles||[]).map(p=>{
+      const w=weddingsMap.get(p.id)||{};
+      const a=accessMap.get(p.id)||{};
+      const n=notesMap.get(p.id)||{};
+      return {
+        id:p.id,
+        full_name:p.full_name,
+        email:p.email,
+        couple_name:w.couple_name,
+        wedding_date:w.wedding_date,
+        venue:w.venue,
+        guests:w.guests,
+        budget:w.budget,
+        plan_name:a.plan_name||'Completo',
+        access_status:a.access_status||'active',
+        access_expires_at:a.access_expires_at||'',
+        admin_notes:n.notes||''
+      };
+    });
+    state.wedding=null;
+    state.access=null;
+    return;
+  }
+
+  const [{data:wedding,error:wErr},{data:access,error:aErr}]=await Promise.all([
+    sb.from('weddings').select('*').eq('client_user_id',userId).maybeSingle(),
+    sb.from('customer_access').select('*').eq('client_user_id',userId).maybeSingle()
+  ]);
   if(wErr)console.error(wErr);
-  state.profile=profile||{full_name:state.session.user.email?.split('@')[0]||'Cliente'};
+  if(aErr)console.error(aErr);
   state.wedding=wedding||null;
+  state.access=access||{plan_name:'Completo',access_status:'active',access_expires_at:null};
+
+  if(state.access.access_expires_at && state.access.access_status==='active'){
+    const today=new Date(); today.setHours(0,0,0,0);
+    const expires=new Date(state.access.access_expires_at+'T00:00:00');
+    if(expires<today) state.access.access_status='expired';
+  }
 }
 function render(){
   if(state.loading){app.innerHTML='<div class="loading">Preparando seu Planner…</div>';return;}
-  app.innerHTML=state.session?dashboardView():authView();
+  if(!state.session){
+    app.innerHTML=authView();
+  }else if(state.profile?.role==='admin'){
+    app.innerHTML=adminView();
+  }else if(state.access?.access_status && state.access.access_status!=='active'){
+    app.innerHTML=accessBlockedView();
+  }else{
+    app.innerHTML=dashboardView();
+  }
   bind();
 }
 function bind(){
@@ -217,8 +368,59 @@ function bind(){
     setMessage(error?'Não foi possível enviar o e-mail agora.':'Enviamos o link de recuperação para seu e-mail.',error?'error':'success');
   };
 
+  document.querySelectorAll('.admin-save-client').forEach(btn=>btn.onclick=async()=>{
+    const id=btn.dataset.clientId;
+    const card=document.querySelector(`[data-client-card="${id}"]`);
+    if(!card)return;
+    const status=card.querySelector('.save-status');
+    const plan_name=card.querySelector('[name=plan_name]').value.trim()||'Completo';
+    const access_status=card.querySelector('[name=access_status]').value;
+    const access_expires_at=card.querySelector('[name=access_expires_at]').value||null;
+    const notes=card.querySelector('[name=notes]').value.trim();
+
+    btn.disabled=true;
+    btn.textContent='Salvando…';
+    if(status)status.textContent='';
+
+    const [{error:aErr},{error:nErr}]=await Promise.all([
+      sb.from('customer_access').upsert({
+        client_user_id:id,
+        plan_name,
+        access_status,
+        access_expires_at
+      },{onConflict:'client_user_id'}),
+      sb.from('admin_customer_notes').upsert({
+        client_user_id:id,
+        notes
+      },{onConflict:'client_user_id'})
+    ]);
+
+    if(aErr||nErr){
+      console.error(aErr||nErr);
+      if(status)status.textContent='Não foi possível salvar.';
+      btn.disabled=false;
+      btn.textContent='Salvar alterações';
+      return;
+    }
+
+    if(status)status.textContent='Salvo ✓';
+    const row=state.adminClients.find(c=>c.id===id);
+    if(row)Object.assign(row,{plan_name,access_status,access_expires_at:access_expires_at||'',admin_notes:notes});
+    btn.disabled=false;
+    btn.textContent='Salvar alterações';
+  });
+
   const logout=document.getElementById('logout');
-  if(logout)logout.onclick=async()=>{await sb.auth.signOut();state.session=null;state.profile=null;state.wedding=null;state.mode='login';render();};
+  if(logout)logout.onclick=async()=>{
+    await sb.auth.signOut();
+    state.session=null;
+    state.profile=null;
+    state.wedding=null;
+    state.access=null;
+    state.adminClients=[];
+    state.mode='login';
+    render();
+  };
 }
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(event==='PASSWORD_RECOVERY'&&session){
