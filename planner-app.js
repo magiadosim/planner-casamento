@@ -858,7 +858,7 @@ function bind(){
   if(lo1)lo1.onclick=logout;
 }
 
-window.addEventListener('hashchange',()=>{if(state.session)render();});
+window.addEventListener('hashchange',()=>{if(state.session){window.scrollTo({top:0,left:0,behavior:'auto'});render();}});
 
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(event==='PASSWORD_RECOVERY'&&session){
