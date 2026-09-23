@@ -9,6 +9,7 @@ state.ceremonyItems=state.ceremonyItems||[];
 state.homeItems=state.homeItems||[];
 state.ceremonyFilter=state.ceremonyFilter||'Todos';
 state.homeFilter=state.homeFilter||'Todos';
+state.moduleFinance=state.moduleFinance||[];
 
 if(!clientNav.some(([key])=>key==='suporte')){
   clientNav.push(['suporte','Suporte / Chamados','meeting',null]);
@@ -725,6 +726,10 @@ loadClientModules=async function(){
   state.homeItems=hasFeature('organizacao-casa')
     ?await safeQuery(sb.from('home_organization_items').select('*').eq('wedding_id',id).order('room',{ascending:true}).order('item_name',{ascending:true}))
     :[];
+
+  state.moduleFinance=(hasFeature('cerimonial')||hasFeature('organizacao-casa')||hasFeature('lua-de-mel'))
+    ?await safeQuery(sb.from('module_financial_entries').select('*').eq('wedding_id',id).order('due_date',{ascending:true}).order('created_at',{ascending:true}))
+    :[];
 };
 
 // PERFIL: edição do nome + foto do casal, como no sistema original.
@@ -873,6 +878,96 @@ shellView=function(r,content){
   return html;
 };
 
+// FINANCEIRO SEPARADO POR MÓDULO
+function moduleFinanceRows(slug){
+  return (state.moduleFinance||[]).filter(x=>x.module_slug===slug);
+}
+function moduleFinanceSummary(slug){
+  const rows=moduleFinanceRows(slug);
+  const total=rows.reduce((s,x)=>s+Number(x.amount||0),0);
+  const paid=rows.reduce((s,x)=>s+Math.min(Number(x.paid_amount||0),Number(x.amount||0)),0);
+  return {rows,total,paid,pending:Math.max(0,total-paid)};
+}
+function moduleFinanceTitle(slug){
+  return ({
+    cerimonial:'Cerimonial',
+    'organizacao-casa':'Organização da casa',
+    'lua-de-mel':'Lua de mel'
+  })[slug]||'Módulo';
+}
+function openModuleFinanceEditor(slug,entry){
+  if(!requireWedding())return;
+  const body=
+    plannerField('Descrição','description',entry?.description||'','text','required')+
+    plannerField('Categoria','category',entry?.category||'')+
+    plannerField('Valor total','amount',entry?.amount||0,'number','min="0" step="0.01" required')+
+    plannerField('Valor pago','paid_amount',entry?.paid_amount||0,'number','min="0" step="0.01"')+
+    plannerField('Vencimento','due_date',entry?.due_date||'','date')+
+    plannerSelect('Status','status',['Pendente','Parcial','Pago'],entry?.status||'Pendente')+
+    plannerTextarea('Observações','notes',entry?.notes||'');
+
+  plannerModal(entry?'Editar lançamento':'Novo lançamento financeiro',body,entry?'Salvar':'Adicionar',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const description=String(f.description||'').trim();
+    const amount=Number(f.amount||0);
+    const paidAmount=Number(f.paid_amount||0);
+    if(!description||amount<0){toast('Informe descrição e valor válido.');return false;}
+    let status=f.status||'Pendente';
+    if(amount>0&&paidAmount>=amount)status='Pago';
+    else if(paidAmount>0)status='Parcial';
+    const payload={
+      wedding_id:state.wedding.id,
+      module_slug:slug,
+      description,
+      category:String(f.category||'').trim()||null,
+      amount,
+      paid_amount:paidAmount,
+      due_date:f.due_date||null,
+      status,
+      notes:String(f.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+    const res=entry
+      ?await sb.from('module_financial_entries').update(payload).eq('id',entry.id)
+      :await sb.from('module_financial_entries').insert(payload);
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o financeiro deste módulo.');return false;}
+    await reloadPlannerClient();
+    toast('Financeiro atualizado.');
+    return true;
+  });
+}
+async function deleteModuleFinanceEntry(id){
+  const entry=state.moduleFinance.find(x=>x.id===id);
+  if(!entry||!confirm(`Excluir o lançamento “${entry.description}”?`))return;
+  const {error}=await sb.from('module_financial_entries').delete().eq('id',id);
+  if(error){console.error(error);toast('Não foi possível excluir o lançamento.');return;}
+  await reloadPlannerClient();
+  toast('Lançamento excluído.');
+}
+function moduleFinanceView(slug){
+  const s=moduleFinanceSummary(slug);
+  return `<section class="planner-module-finance">
+    <div class="card-title planner-module-finance-head">
+      <div><h2>Financeiro — ${esc(moduleFinanceTitle(slug))}</h2><span class="sub">Este financeiro é independente dos demais módulos.</span></div>
+      <button class="btn-primary" data-new-module-finance="${slug}">+ Lançamento</button>
+    </div>
+    <div class="finance-totals planner-module-finance-kpis">
+      <div class="card money-card"><span>Total previsto</span><strong>${brl(s.total)}</strong></div>
+      <div class="card money-card"><span>Pago</span><strong>${brl(s.paid)}</strong></div>
+      <div class="card money-card"><span>Pendente</span><strong>${brl(s.pending)}</strong></div>
+    </div>
+    <div class="card list-card">
+      ${s.rows.length?s.rows.map(row=>`<div class="list-row planner-module-finance-row">
+        <div class="vendor-name"><strong>${esc(row.description)}</strong><span>${esc(row.category||'Sem categoria')}${row.due_date?' • vence '+dateBR(row.due_date):''}</span></div>
+        <div class="small">${brl(row.amount)}</div>
+        <div class="small muted">${brl(row.paid_amount)}</div>
+        <span class="badge ${row.status==='Pago'?'success':row.status==='Parcial'?'info':'warning'}">${esc(row.status)}</span>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-module-finance="${row.id}">Editar</button><button class="btn-danger" data-delete-module-finance="${row.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Nenhum lançamento financeiro','Cadastre os custos deste módulo sem misturar com os demais.')}
+    </div>
+  </section>`;
+}
+
 // PREMIUM — CERIMONIAL
 const ceremonySections=[
   'Roteiro',
@@ -972,6 +1067,7 @@ function ceremonyView(){
         <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${item.id}">Editar</button><button class="btn-danger" data-delete-ceremony="${item.id}">Excluir</button></div>
       </div>`).join(''):emptyState('Cerimonial ainda vazio','Adicione os momentos do grande dia para montar seu roteiro.')}
     </div>
+    ${moduleFinanceView('cerimonial')}
   </div>`;
 }
 
@@ -1067,8 +1163,16 @@ function homeOrganizationView(){
         <div class="planner-row-actions"><button class="btn-secondary" data-edit-home-item="${item.id}">Editar</button><button class="btn-danger" data-delete-home-item="${item.id}">Excluir</button></div>
       </div>`).join(''):emptyState('Sua lista da casa está vazia','Adicione itens por ambiente para acompanhar o que falta.')}
     </div>
+    ${moduleFinanceView('organizacao-casa')}
   </div>`;
 }
+
+const premiumBasePurchasesView=purchasesView;
+purchasesView=function(group){
+  const html=premiumBasePurchasesView(group);
+  if(group!=='honeymoon'||!hasFeature('lua-de-mel'))return html;
+  return html.replace('</div>',`${moduleFinanceView('lua-de-mel')}</div>`);
+};
 
 const PREMIUM_PREVIEWS={
   cerimonial:{
@@ -1303,6 +1407,13 @@ bind=function(){
   document.querySelectorAll('[data-home-filter]').forEach(b=>b.onclick=()=>{state.homeFilter=b.dataset.homeFilter;render();});
   document.querySelectorAll('[data-edit-home-item]').forEach(b=>b.onclick=()=>openHomeItemEditor(state.homeItems.find(x=>x.id===b.dataset.editHomeItem)));
   document.querySelectorAll('[data-delete-home-item]').forEach(b=>b.onclick=()=>deleteHomeItem(b.dataset.deleteHomeItem));
+
+  document.querySelectorAll('[data-new-module-finance]').forEach(b=>b.onclick=()=>openModuleFinanceEditor(b.dataset.newModuleFinance,null));
+  document.querySelectorAll('[data-edit-module-finance]').forEach(b=>b.onclick=()=>{
+    const entry=state.moduleFinance.find(x=>x.id===b.dataset.editModuleFinance);
+    if(entry)openModuleFinanceEditor(entry.module_slug,entry);
+  });
+  document.querySelectorAll('[data-delete-module-finance]').forEach(b=>b.onclick=()=>deleteModuleFinanceEntry(b.dataset.deleteModuleFinance));
 
   const newTicket=document.getElementById('new-support-ticket');
   if(newTicket)newTicket.onclick=openSupportTicket;
