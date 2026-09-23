@@ -12,6 +12,8 @@ state.ceremonyTab=state.ceremonyTab||'agenda';
 state.moduleFinance=state.moduleFinance||[];
 state.ceremonyShare=state.ceremonyShare||null;
 state.homeFilter=state.homeFilter||'Todos';
+state.homeTab=state.homeTab||'dashboard';
+state.homePayments=state.homePayments||[];
 
 if(!clientNav.some(([key])=>key==='suporte')){
   clientNav.push(['suporte','Suporte / Chamados','meeting',null]);
@@ -550,7 +552,8 @@ function backupSnapshot(){
     meetings:state.meetings,
     documents:state.docs,
     cerimonial:state.ceremonyItems,
-    organizacao_da_casa:state.homeItems
+    organizacao_da_casa:state.homeItems,
+    pagamentos_da_casa:state.homePayments
   };
 }
 function downloadPlannerJson(){
@@ -572,7 +575,8 @@ function downloadPlannerXlsx(){
     ['Reuniões',state.meetings],
     ['Documentos',state.docs],
     ['Cerimonial',state.ceremonyItems],
-    ['Organização da Casa',state.homeItems]
+    ['Organização da Casa',state.homeItems],
+    ['Pagamentos da Casa',state.homePayments]
   ];
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
@@ -727,6 +731,10 @@ loadClientModules=async function(){
 
   state.homeItems=hasFeature('organizacao-casa')
     ?await safeQuery(sb.from('home_organization_items').select('*').eq('wedding_id',id).order('room',{ascending:true}).order('item_name',{ascending:true}))
+    :[];
+
+  state.homePayments=hasFeature('organizacao-casa')
+    ?await safeQuery(sb.from('home_item_payments').select('*').eq('wedding_id',id).order('payment_date',{ascending:false}).order('created_at',{ascending:false}))
     :[];
 
   state.moduleFinance=(hasFeature('cerimonial')||hasFeature('organizacao-casa')||hasFeature('lua-de-mel'))
@@ -1305,42 +1313,139 @@ function ceremonyView(){
   </div>`;
 }
 
-// PREMIUM — ORGANIZAÇÃO DA CASA
+// PREMIUM — ORGANIZAÇÃO DA CASA / LISTA DE ENXOVAL
 const homeRooms=[
   'Cozinha',
   'Sala',
   'Quarto',
   'Banheiro',
   'Lavanderia',
-  'Eletrodomésticos',
   'Cama, mesa e banho',
+  'Eletrodomésticos',
   'Decoração',
   'Organização',
   'Presentes e compras'
 ];
 
+const homeTabs=[
+  ['dashboard','Dashboard'],
+  ['lista','Lista de enxoval'],
+  ['financeiro','Financeiro']
+];
+
+const enxovalSuggestions={
+  'Cozinha':[
+    'Jogo de panelas','Frigideira','Panela de pressão','Assadeiras','Jogo de facas',
+    'Tábua de corte','Jogo de pratos','Jogo de talheres','Copos','Taças',
+    'Xícaras','Potes com tampa','Escorredor de louça','Panos de prato','Lixeira'
+  ],
+  'Sala':[
+    'Almofadas','Manta para sofá','Tapete','Cortina','Luminária','Abajur',
+    'Mesa lateral','Porta-retratos','Bandeja decorativa','Vasos decorativos'
+  ],
+  'Quarto':[
+    'Travesseiros','Protetor de colchão','Jogo de lençol','Edredom','Cobertor',
+    'Colcha','Cabides','Cortina','Abajur','Cesto organizador'
+  ],
+  'Banheiro':[
+    'Jogo de toalhas','Toalhas de rosto','Tapete de banheiro','Lixeira',
+    'Porta-sabonete','Porta-escova','Cesto de roupa','Organizador de banheiro',
+    'Roupão','Toalhas extras'
+  ],
+  'Lavanderia':[
+    'Cesto de roupa','Baldes','Varal','Pregadores','Tábua de passar','Ferro de passar',
+    'Organizador de produtos','Escova de limpeza','Rodo','Vassoura','Pá','Panos de chão'
+  ],
+  'Cama, mesa e banho':[
+    'Jogos de lençol','Fronhas extras','Toalhas de banho','Toalhas de rosto',
+    'Toalha de mesa','Jogos americanos','Guardanapos de tecido','Manta',
+    'Edredom extra','Protetores de travesseiro'
+  ],
+  'Eletrodomésticos':[
+    'Geladeira','Fogão ou cooktop','Micro-ondas','Liquidificador','Air fryer',
+    'Cafeteira','Sanduicheira','Batedeira','Ferro de passar','Aspirador de pó',
+    'Máquina de lavar','Televisão'
+  ],
+  'Decoração':[
+    'Quadros','Espelhos','Vasos','Plantas','Velas','Porta-retratos',
+    'Objetos decorativos','Luminárias','Tapetes','Almofadas decorativas'
+  ],
+  'Organização':[
+    'Colmeias organizadoras','Caixas organizadoras','Organizadores de gaveta',
+    'Sapateira','Cabides','Organizador de temperos','Organizador de geladeira',
+    'Potes herméticos','Cestos organizadores','Etiquetas'
+  ],
+  'Presentes e compras':[
+    'Lista de presentes','Vale-presente','Itens recebidos sem setor definido',
+    'Itens para troca','Itens duplicados','Compras pendentes pós-casamento'
+  ]
+};
+
+function normalizeEnxovalName(value){
+  return String(value||'').trim().toLocaleLowerCase('pt-BR');
+}
+function homePaidForItem(itemId){
+  return state.homePayments
+    .filter(p=>p.item_id===itemId)
+    .reduce((sum,p)=>sum+Number(p.amount||0),0);
+}
+function homeExpectedValue(item){
+  return Number(item.unit_value||0)*Math.max(1,Number(item.quantity||1));
+}
+function homeToBuy(item){
+  if(item.acquisition_status==='Comprado'||item.acquisition_status==='Presenteado')return 0;
+  return Math.max(0,Number(item.quantity||1)-Number(item.owned_quantity||0));
+}
+function homeResolved(item){
+  return homeToBuy(item)===0;
+}
+function homeDisplayStatus(item){
+  if(Number(item.owned_quantity||0)>=Number(item.quantity||1))return 'Já tenho';
+  return item.acquisition_status||'Falta';
+}
+function homeStatusClass(status){
+  if(['Comprado','Presenteado','Já tenho'].includes(status))return 'success';
+  return 'warning';
+}
+function homeTotals(){
+  const planned=state.homeItems.reduce((sum,item)=>sum+homeExpectedValue(item),0);
+  const paid=state.homePayments.reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const resolved=state.homeItems.filter(homeResolved).length;
+  const missing=state.homeItems.length-resolved;
+  const toBuyUnits=state.homeItems.reduce((sum,item)=>sum+homeToBuy(item),0);
+  return {planned,paid,balance:Math.max(0,planned-paid),resolved,missing,toBuyUnits};
+}
+
 function openHomeItemEditor(item){
   if(!requireWedding())return;
+  const desired=Number(item?.quantity||1);
   const body=
-    plannerSelect('Categoria / ambiente','room',homeRooms,item?.room||'Cozinha')+
+    plannerSelect('Setor','room',homeRooms,item?.room||'Cozinha')+
     plannerField('Item','item_name',item?.item_name||'','text','required')+
-    plannerField('Quantidade','quantity',item?.quantity||1,'number','min="1"')+
+    plannerField('Já tenho (quantidade)','owned_quantity',item?.owned_quantity||0,'number','min="0"')+
+    plannerField('Quero ter (quantidade)','quantity',desired,'number','min="1"')+
+    plannerField('Tamanho / modelo / medida','item_size',item?.item_size||'')+
     plannerSelect('Prioridade','priority',['Essencial','Importante','Desejo'],item?.priority||'Importante')+
-    plannerSelect('Situação','acquisition_status',['Falta','Comprado','Presenteado'],item?.acquisition_status||'Falta')+
-    plannerField('Valor unitário','unit_value',item?.unit_value||0,'number','min="0" step="0.01"')+
+    plannerSelect('Situação da aquisição','acquisition_status',['Falta','Comprado','Presenteado'],item?.acquisition_status||'Falta')+
+    plannerField('Valor previsto por unidade','unit_value',item?.unit_value||0,'number','min="0" step="0.01"')+
     plannerField('Loja','store_name',item?.store_name||'')+
     plannerField('Link do produto','item_link',item?.item_link||'','url')+
     plannerTextarea('Observações','notes',item?.notes||'');
 
-  plannerModal(item?'Editar item da casa':'Adicionar item à casa',body,item?'Salvar':'Adicionar',async back=>{
+  plannerModal(item?'Editar item do enxoval':'Adicionar item ao enxoval',body,item?'Salvar':'Adicionar',async back=>{
     const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
     const itemName=String(f.item_name||'').trim();
     if(!itemName){toast('Informe o item.');return false;}
+
+    const quantity=Math.max(1,Number(f.quantity||1));
+    const owned=Math.max(0,Number(f.owned_quantity||0));
     const payload={
       wedding_id:state.wedding.id,
       room:f.room||'Cozinha',
       item_name:itemName,
-      quantity:Math.max(1,Number(f.quantity||1)),
+      quantity,
+      owned_quantity:owned,
+      item_size:String(f.item_size||'').trim()||null,
       priority:f.priority||'Importante',
       acquisition_status:f.acquisition_status||'Falta',
       unit_value:Number(f.unit_value||0),
@@ -1349,54 +1454,268 @@ function openHomeItemEditor(item){
       notes:String(f.notes||'').trim()||null,
       updated_at:new Date().toISOString()
     };
+
     const res=item
       ?await sb.from('home_organization_items').update(payload).eq('id',item.id)
       :await sb.from('home_organization_items').insert(payload);
-    if(res.error){console.error(res.error);toast('Não foi possível salvar o item da casa.');return false;}
+
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o item do enxoval.');return false;}
     await reloadPlannerClient();
-    toast('Lista da casa atualizada.');
+    state.homeTab='lista';
+    render();
+    toast('Lista de enxoval atualizada.');
     return true;
   });
 }
 
+async function toggleHomeOwned(id){
+  const item=state.homeItems.find(x=>x.id===id);
+  if(!item)return;
+  const desired=Math.max(1,Number(item.quantity||1));
+  const currentlyResolvedByOwned=Number(item.owned_quantity||0)>=desired;
+  const {error}=await sb.from('home_organization_items').update({
+    owned_quantity:currentlyResolvedByOwned?0:desired,
+    updated_at:new Date().toISOString()
+  }).eq('id',id);
+  if(error){console.error(error);toast('Não foi possível atualizar “Já tenho”.');return;}
+  await reloadPlannerClient();
+}
+
 async function deleteHomeItem(id){
   const item=state.homeItems.find(x=>x.id===id);
-  if(!item||!confirm(`Excluir “${item.item_name}” da lista?`))return;
+  if(!item||!confirm(`Excluir “${item.item_name}” da lista de enxoval?`))return;
   const {error}=await sb.from('home_organization_items').delete().eq('id',id);
   if(error){console.error(error);toast('Não foi possível excluir o item.');return;}
   await reloadPlannerClient();
   toast('Item excluído.');
 }
 
-function homeOrganizationView(){
-  const items=state.homeItems.filter(item=>state.homeFilter==='Todos'||item.room===state.homeFilter);
-  const missing=state.homeItems.filter(x=>x.acquisition_status==='Falta').length;
-  const acquired=state.homeItems.filter(x=>x.acquisition_status!=='Falta').length;
-  const totalValue=state.homeItems
-    .filter(x=>x.acquisition_status==='Comprado')
-    .reduce((sum,x)=>sum+(Number(x.unit_value||0)*Number(x.quantity||1)),0);
+function openEnxovalSuggestions(){
+  const body=
+    plannerSelect('Setor','room',homeRooms,state.homeFilter!=='Todos'?state.homeFilter:'Cozinha')+
+    '<div class="planner-modal-note">Serão adicionados apenas os itens sugeridos que ainda não existem neste setor. Depois você pode editar, excluir ou acrescentar outros.</div>';
 
-  return `<div class="page">
-    <div class="page-head">
-      <div><div class="eyebrow">PREMIUM</div><h1>Organização da casa</h1><p>Organize o que vocês já têm, o que ganharam e o que ainda precisam comprar.</p></div>
-      <button class="btn-primary" id="new-home-item">+ Adicionar item</button>
+  plannerModal('Adicionar lista sugerida de enxoval',body,'Adicionar lista',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const room=f.room||'Cozinha';
+    const existing=new Set(
+      state.homeItems
+        .filter(item=>item.room===room)
+        .map(item=>normalizeEnxovalName(item.item_name))
+    );
+    const rows=(enxovalSuggestions[room]||[])
+      .filter(name=>!existing.has(normalizeEnxovalName(name)))
+      .map(name=>({
+        wedding_id:state.wedding.id,
+        room,
+        item_name:name,
+        quantity:1,
+        owned_quantity:0,
+        priority:'Importante',
+        acquisition_status:'Falta',
+        unit_value:0
+      }));
+
+    if(!rows.length){toast('Este setor já possui todos os itens sugeridos.');return true;}
+    const {error}=await sb.from('home_organization_items').insert(rows);
+    if(error){console.error(error);toast('Não foi possível adicionar a lista sugerida.');return false;}
+    await reloadPlannerClient();
+    state.homeFilter=room;
+    state.homeTab='lista';
+    render();
+    toast(`${rows.length} itens adicionados em ${room}.`);
+    return true;
+  });
+}
+
+function openHomePaymentEditor(payment,itemId){
+  if(!requireWedding())return;
+  const itemOptions=state.homeItems.map(item=>({
+    value:item.id,
+    label:`${item.room} — ${item.item_name}`
+  }));
+  const selectedItem=itemId||payment?.item_id||state.homeItems[0]?.id||'';
+
+  const body=
+    plannerSelect('Item do enxoval','item_id',itemOptions,selectedItem)+
+    plannerField('Valor pago','amount',payment?.amount||0,'number','min="0.01" step="0.01" required')+
+    plannerField('Data do pagamento','payment_date',payment?.payment_date||new Date().toISOString().slice(0,10),'date')+
+    plannerSelect('Forma de pagamento','payment_method',['PIX','Cartão de crédito','Cartão de débito','Dinheiro','Transferência','Boleto','Outro'],payment?.payment_method||'PIX')+
+    plannerTextarea('Observações','notes',payment?.notes||'');
+
+  plannerModal(payment?'Editar pagamento':'Lançar pagamento',body,payment?'Salvar':'Lançar',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const amount=Number(f.amount||0);
+    if(!f.item_id||amount<=0){toast('Selecione o item e informe um valor válido.');return false;}
+
+    const payload={
+      wedding_id:state.wedding.id,
+      item_id:f.item_id,
+      amount,
+      payment_date:f.payment_date||null,
+      payment_method:f.payment_method||null,
+      notes:String(f.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    const res=payment
+      ?await sb.from('home_item_payments').update(payload).eq('id',payment.id)
+      :await sb.from('home_item_payments').insert(payload);
+
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o pagamento.');return false;}
+    await reloadPlannerClient();
+    state.homeTab='financeiro';
+    render();
+    toast('Pagamento lançado.');
+    return true;
+  });
+}
+
+async function deleteHomePayment(id){
+  const payment=state.homePayments.find(x=>x.id===id);
+  if(!payment||!confirm('Excluir este pagamento?'))return;
+  const {error}=await sb.from('home_item_payments').delete().eq('id',id);
+  if(error){console.error(error);toast('Não foi possível excluir o pagamento.');return;}
+  await reloadPlannerClient();
+}
+
+function homeDashboardView(){
+  const t=homeTotals();
+  const completedPct=state.homeItems.length?Math.round((t.resolved/state.homeItems.length)*100):0;
+  const sectorCards=homeRooms.map(room=>{
+    const rows=state.homeItems.filter(item=>item.room===room);
+    const resolved=rows.filter(homeResolved).length;
+    const pct=rows.length?Math.round((resolved/rows.length)*100):0;
+    const planned=rows.reduce((sum,item)=>sum+homeExpectedValue(item),0);
+    const paid=state.homePayments
+      .filter(p=>rows.some(item=>item.id===p.item_id))
+      .reduce((sum,p)=>sum+Number(p.amount||0),0);
+    return `<button type="button" class="home-sector-card" data-open-home-sector="${esc(room)}">
+      <div class="home-sector-top"><strong>${esc(room)}</strong><span>${rows.length} itens</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="home-sector-meta"><span>${pct}% resolvido</span><span>${brl(paid)} / ${brl(planned)}</span></div>
+    </button>`;
+  }).join('');
+
+  return `<section class="home-tab-panel">
+    <div class="home-dashboard-kpis">
+      <div class="card card-pad"><span>Total de itens</span><strong>${state.homeItems.length}</strong><small>na lista de enxoval</small></div>
+      <div class="card card-pad"><span>Resolvidos</span><strong>${t.resolved}</strong><small>${completedPct}% da lista</small></div>
+      <div class="card card-pad"><span>A comprar</span><strong>${t.toBuyUnits}</strong><small>unidades restantes</small></div>
+      <div class="card card-pad"><span>Total pago</span><strong>${brl(t.paid)}</strong><small>de ${brl(t.planned)} previstos</small></div>
     </div>
-    <div class="planner-premium-kpis planner-home-kpis">
-      <div class="card card-pad"><span>Total de itens</span><strong>${state.homeItems.length}</strong></div>
-      <div class="card card-pad"><span>Já resolvidos</span><strong>${acquired}</strong></div>
-      <div class="card card-pad"><span>Ainda faltam</span><strong>${missing}</strong></div>
-      <div class="card card-pad"><span>Total comprado</span><strong>${brl(totalValue)}</strong></div>
+
+    <div class="card card-pad home-overview-card">
+      <div class="card-title">
+        <div><h2>Progresso do enxoval</h2><span class="sub">Visão geral por setor</span></div>
+        <strong class="home-overview-percent">${completedPct}%</strong>
+      </div>
+      <div class="progress-track home-overview-progress"><div class="progress-fill" style="width:${completedPct}%"></div></div>
+      <div class="home-sector-grid">${sectorCards}</div>
     </div>
-    <div class="filters">${['Todos',...homeRooms].map(f=>`<button class="filter-btn ${state.homeFilter===f?'active':''}" data-home-filter="${esc(f)}">${esc(f)}</button>`).join('')}</div>
+  </section>`;
+}
+
+function homeListView(){
+  const items=state.homeItems.filter(item=>state.homeFilter==='Todos'||item.room===state.homeFilter);
+  return `<section class="home-tab-panel">
+    <div class="home-list-tools">
+      <div>
+        <h2>Lista de enxoval</h2>
+        <p>Funciona como uma planilha de enxoval: setor, o que já tem, quanto quer ter, tamanho, quanto falta comprar e valores.</p>
+      </div>
+      <div class="action-row">
+        <button class="btn-secondary" id="home-suggested-list">+ Lista sugerida</button>
+        <button class="btn-primary" id="new-home-item">+ Adicionar item</button>
+      </div>
+    </div>
+
+    <div class="filters home-sector-filters">
+      ${['Todos',...homeRooms].map(room=>`<button class="filter-btn ${state.homeFilter===room?'active':''}" data-home-filter="${esc(room)}">${esc(room)}</button>`).join('')}
+    </div>
+
+    <div class="card home-enxoval-table-wrap">
+      <div class="home-enxoval-table">
+        <div class="home-enxoval-head">
+          <span>Item</span><span>Já tenho</span><span>Quero ter</span><span>Tamanho / modelo</span><span>Comprar</span><span>Situação</span><span>Previsto</span><span>Pago</span><span>Ações</span>
+        </div>
+        ${items.length?items.map(item=>{
+          const status=homeDisplayStatus(item);
+          const paid=homePaidForItem(item.id);
+          const planned=homeExpectedValue(item);
+          const owned=Number(item.owned_quantity||0);
+          const desired=Number(item.quantity||1);
+          return `<div class="home-enxoval-row">
+            <div class="home-item-main"><strong>${esc(item.item_name)}</strong><small>${esc(item.room)} • ${esc(item.priority||'Importante')}</small></div>
+            <div><button class="home-own-check ${owned>=desired?'checked':''}" data-toggle-home-owned="${item.id}" title="Marcar o item como já tenho">${owned>=desired?'✓':'○'}<small>${owned}</small></button></div>
+            <div class="home-table-number">${desired}</div>
+            <div class="home-table-text">${esc(item.item_size||'—')}</div>
+            <div class="home-table-number home-buy-number">${homeToBuy(item)}</div>
+            <div><span class="badge ${homeStatusClass(status)}">${esc(status)}</span></div>
+            <div class="home-table-money">${planned?brl(planned):'—'}</div>
+            <div class="home-table-money">${paid?brl(paid):'—'}</div>
+            <div class="planner-row-actions home-table-actions">
+              <button class="btn-secondary" data-home-payment="${item.id}">Pagamento</button>
+              <button class="btn-secondary" data-edit-home-item="${item.id}">Editar</button>
+              <button class="btn-danger" data-delete-home-item="${item.id}">Excluir</button>
+            </div>
+          </div>`;
+        }).join(''):emptyState('Sua lista de enxoval está vazia','Adicione um item ou use uma lista sugerida por setor.')}
+      </div>
+    </div>
+  </section>`;
+}
+
+function homeFinanceView(){
+  const t=homeTotals();
+  const rows=state.homePayments;
+  return `<section class="home-tab-panel">
+    <div class="home-list-tools">
+      <div><h2>Financeiro da casa</h2><p>Pagamentos vinculados diretamente aos itens da lista de enxoval.</p></div>
+      <button class="btn-primary" id="new-home-payment" ${state.homeItems.length?'':'disabled'}>+ Lançar pagamento</button>
+    </div>
+
+    <div class="finance-totals home-finance-kpis">
+      <div class="card money-card"><span>Total previsto</span><strong>${brl(t.planned)}</strong></div>
+      <div class="card money-card"><span>Total pago</span><strong>${brl(t.paid)}</strong></div>
+      <div class="card money-card"><span>Saldo previsto</span><strong>${brl(t.balance)}</strong></div>
+    </div>
+
     <div class="card list-card">
-      ${items.length?items.map(item=>`<div class="planner-home-row">
-        <div class="planner-home-status ${item.acquisition_status==='Falta'?'missing':'done'}">${item.acquisition_status==='Falta'?'○':'✓'}</div>
-        <div class="vendor-name"><strong>${esc(item.item_name)}</strong><span>${esc(item.room)} • ${item.quantity} un. • ${esc(item.priority)}</span></div>
-        <span class="badge ${item.acquisition_status==='Falta'?'warning':'success'}">${esc(item.acquisition_status)}</span>
-        <div class="planner-home-value">${item.unit_value?brl(Number(item.unit_value)*Number(item.quantity||1)):'—'}</div>
-        <div class="planner-row-actions"><button class="btn-secondary" data-edit-home-item="${item.id}">Editar</button><button class="btn-danger" data-delete-home-item="${item.id}">Excluir</button></div>
-      </div>`).join(''):emptyState('Sua lista da casa está vazia','Adicione itens por ambiente para acompanhar o que falta.')}
+      ${rows.length?rows.map(payment=>{
+        const item=state.homeItems.find(x=>x.id===payment.item_id);
+        return `<div class="list-row home-payment-row">
+          <div class="vendor-name"><strong>${esc(item?.item_name||'Item removido')}</strong><span>${esc(item?.room||'')} ${payment.payment_date?'• '+dateBR(payment.payment_date):''}</span></div>
+          <div class="small">${brl(payment.amount)}</div>
+          <div class="small muted">${esc(payment.payment_method||'—')}</div>
+          <div class="planner-row-actions"><button class="btn-secondary" data-edit-home-payment="${payment.id}">Editar</button><button class="btn-danger" data-delete-home-payment="${payment.id}">Excluir</button></div>
+        </div>`;
+      }).join(''):emptyState('Nenhum pagamento lançado','Na lista de enxoval, use o botão “Pagamento” de cada item.')}
     </div>
+  </section>`;
+}
+
+function homeOrganizationView(){
+  const t=homeTotals();
+  return `<div class="page home-workspace">
+    <div class="page-head home-main-head">
+      <div>
+        <div class="eyebrow">PREMIUM</div>
+        <h1>Organização da casa</h1>
+        <p>Lista de enxoval setorizada, acompanhamento de compras e financeiro próprio da nova casa.</p>
+      </div>
+      <div class="home-head-summary">
+        <span><strong>${state.homeItems.length}</strong> itens</span>
+        <span><strong>${t.resolved}</strong> resolvidos</span>
+        <span><strong>${brl(t.paid)}</strong> pagos</span>
+      </div>
+    </div>
+
+    <nav class="home-tabs" aria-label="Áreas da Organização da Casa">
+      ${homeTabs.map(([key,label])=>`<button type="button" class="home-tab-btn ${state.homeTab===key?'active':''}" data-home-tab="${key}">${esc(label)}</button>`).join('')}
+    </nav>
+
+    ${state.homeTab==='lista'?homeListView():state.homeTab==='financeiro'?homeFinanceView():homeDashboardView()}
   </div>`;
 }
 
@@ -1766,11 +2085,24 @@ bind=function(){
   const toggleShare=document.getElementById('toggle-ceremony-share');
   if(toggleShare)toggleShare.onclick=()=>setCeremonyShareActive(state.ceremonyShare?.active===false);
 
+  document.querySelectorAll('[data-home-tab]').forEach(b=>b.onclick=()=>{state.homeTab=b.dataset.homeTab;render();});
+  document.querySelectorAll('[data-open-home-sector]').forEach(b=>b.onclick=()=>{state.homeFilter=b.dataset.openHomeSector;state.homeTab='lista';render();});
+
   const newHomeItem=document.getElementById('new-home-item');
   if(newHomeItem)newHomeItem.onclick=()=>openHomeItemEditor(null);
+  const suggestedHome=document.getElementById('home-suggested-list');
+  if(suggestedHome)suggestedHome.onclick=openEnxovalSuggestions;
+
   document.querySelectorAll('[data-home-filter]').forEach(b=>b.onclick=()=>{state.homeFilter=b.dataset.homeFilter;render();});
+  document.querySelectorAll('[data-toggle-home-owned]').forEach(b=>b.onclick=()=>toggleHomeOwned(b.dataset.toggleHomeOwned));
+  document.querySelectorAll('[data-home-payment]').forEach(b=>b.onclick=()=>openHomePaymentEditor(null,b.dataset.homePayment));
   document.querySelectorAll('[data-edit-home-item]').forEach(b=>b.onclick=()=>openHomeItemEditor(state.homeItems.find(x=>x.id===b.dataset.editHomeItem)));
   document.querySelectorAll('[data-delete-home-item]').forEach(b=>b.onclick=()=>deleteHomeItem(b.dataset.deleteHomeItem));
+
+  const newHomePayment=document.getElementById('new-home-payment');
+  if(newHomePayment)newHomePayment.onclick=()=>openHomePaymentEditor(null,null);
+  document.querySelectorAll('[data-edit-home-payment]').forEach(b=>b.onclick=()=>openHomePaymentEditor(state.homePayments.find(x=>x.id===b.dataset.editHomePayment),null));
+  document.querySelectorAll('[data-delete-home-payment]').forEach(b=>b.onclick=()=>deleteHomePayment(b.dataset.deleteHomePayment));
 
   const newTicket=document.getElementById('new-support-ticket');
   if(newTicket)newTicket.onclick=openSupportTicket;
