@@ -1403,17 +1403,15 @@ function homeOrganizationView(){
 const PREMIUM_PREVIEWS={
   cerimonial:{
     title:'Cerimonial',
-    count:'8 áreas de organização',
-    description:'Tudo para transformar o planejamento em um roteiro claro para o grande dia.',
+    count:'6 abas integradas',
+    description:'Um espaço completo dividido por função, com agenda central e link público somente de visualização.',
     items:[
-      'Roteiro do grande dia',
-      'Cortejo e ordem de entrada',
-      'Músicas e trilha',
-      'Cronograma minuto a minuto',
-      'Responsáveis por cada etapa',
-      'Fornecedores envolvidos',
+      'Roteiro com checklist',
+      'Agenda do grande dia',
+      'Cerimônia em sequência',
       'Momentos especiais',
-      'Observações finais'
+      'Financeiro do Cerimonial',
+      'Compartilhar em modo leitura'
     ]
   },
   'organizacao-casa':{
