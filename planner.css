@@ -90,3 +90,35 @@ linear-gradient(145deg,#5e6547 0%,#454b35 100%);color:#fff}
   .topbar{padding:0 16px}
   .page{padding:24px 16px 48px}
 }
+
+/* Painel administrativo */
+.admin-subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+.admin-client-list{display:grid;gap:16px;margin-top:22px}
+.admin-client-card{background:#fffdf9;border:1px solid var(--line);border-radius:18px;padding:20px}
+.admin-client-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.admin-client-head h3{font-family:Georgia,serif;font-size:24px;font-weight:400;margin:8px 0 4px}
+.admin-client-head p{margin:0;color:var(--muted);font-size:13px}
+.admin-client-meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.admin-client-meta span{padding:7px 10px;border-radius:999px;background:#f3efe7;color:var(--brown);font-size:12px;font-weight:700}
+.status-chip{display:inline-block;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.status-chip.ok{background:#e7efe2;color:#4f6848}
+.status-chip.warn{background:#f3e7df;color:#8a513d}
+.admin-fields{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:12px;margin-top:18px}
+.admin-fields label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:800}
+.admin-fields .notes-field{grid-column:1/-1}
+.admin-notes{resize:vertical;min-height:84px}
+.admin-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:12px}
+.admin-card-actions .primary{width:auto;margin:0}
+.save-status{font-size:12px;color:var(--olive);font-weight:800}
+.empty-admin,.access-blocked{background:#fffdf9;border:1px solid var(--line);border-radius:20px;padding:34px;text-align:center}
+.access-blocked{max-width:680px;margin:60px auto}
+.access-blocked h1{font-family:Georgia,serif;font-weight:400;font-size:38px;margin:10px 0}
+.access-blocked p{color:var(--muted);line-height:1.7}
+@media(max-width:760px){
+  .admin-client-head{flex-direction:column}
+  .admin-client-meta{justify-content:flex-start}
+  .admin-fields{grid-template-columns:1fr}
+  .admin-fields .notes-field{grid-column:auto}
+  .admin-card-actions{align-items:stretch;flex-direction:column}
+  .admin-card-actions .primary{width:100%}
+}
