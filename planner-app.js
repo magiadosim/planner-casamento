@@ -228,6 +228,48 @@ function countdown(){
   return {days,months,hours,text:null};
 }
 
+function logicalBackRoute(r){
+  if(state.role==='admin'){
+    if(r==='admin')return null;
+    return 'admin';
+  }
+
+  if(r==='dashboard')return null;
+
+  if([
+    'meu-casamento','fornecedores','checklist','cronograma',
+    'convidados','documentos','financeiro','reunioes',
+    'outros-gastos','meus-dados'
+  ].includes(r))return 'festa-casamento';
+
+  if(r==='festa-casamento')return 'dashboard';
+
+  if(['cerimonial','organizacao-casa','lua-de-mel','premium'].includes(r)){
+    return 'dashboard';
+  }
+
+  if(['suporte','perfil'].includes(r))return 'dashboard';
+
+  return 'dashboard';
+}
+
+function pageNavigationControls(r){
+  const backRoute=logicalBackRoute(r);
+  return `<div class="planner-page-controls">
+    <button class="planner-back-btn" type="button" data-page-back="${backRoute||''}" ${backRoute?'':'disabled'}>
+      <span aria-hidden="true">←</span>
+      <span>Voltar</span>
+    </button>
+  </div>`;
+}
+
+function scrollControls(){
+  return `<div class="planner-scroll-controls" aria-label="Controles de rolagem">
+    <button type="button" class="planner-scroll-btn" data-scroll-page="up" aria-label="Rolar para cima">↑</button>
+    <button type="button" class="planner-scroll-btn" data-scroll-page="down" aria-label="Rolar para baixo">↓</button>
+  </div>`;
+}
+
 function shellView(r,content){
   const active=r.startsWith('fornecedores/')?'fornecedores':r;
   const displayName=state.profile?.full_name||(state.role==='admin'?'Assessoria':'Cliente');
@@ -295,8 +337,10 @@ function shellView(r,content){
         <div class="topbar-label small muted">${state.role==='admin'?'Administração do Planner':'Área dos Noivos'} — <strong>A Magia do Sim</strong></div>
         <div class="topbar-right"><button class="icon-btn" aria-label="Notificações">${icons.bell}</button><div class="profile-chip"><div class="avatar">${first}</div><span class="small">${esc(displayName)}</span></div></div>
       </header>
+      ${pageNavigationControls(r)}
       ${content}
     </main>
+    ${scrollControls()}
     <nav class="mobile-nav mobile-nav-v2">${mobileBase.map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')}</nav>
   </div>`;
 }
@@ -664,6 +708,22 @@ function render(){
 function bind(){
   document.querySelectorAll('[data-auth-mode]').forEach(b=>b.onclick=()=>{state.authMode=b.dataset.authMode;render();});
 
+  document.querySelectorAll('[data-page-back]').forEach(btn=>btn.onclick=()=>{
+    const target=btn.dataset.pageBack;
+    if(!target)return;
+    goto(target);
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  document.querySelectorAll('[data-scroll-page]').forEach(btn=>btn.onclick=()=>{
+    const direction=btn.dataset.scrollPage;
+    const amount=Math.max(320,Math.round(window.innerHeight*0.72));
+    window.scrollBy({
+      top:direction==='up'?-amount:amount,
+      behavior:'smooth'
+    });
+  });
+
   const login=document.getElementById('login-form');
   if(login)login.onsubmit=async e=>{
     e.preventDefault();
@@ -798,7 +858,7 @@ function bind(){
   if(lo1)lo1.onclick=logout;
 }
 
-window.addEventListener('hashchange',()=>{if(state.session)render();});
+window.addEventListener('hashchange',()=>{if(state.session){window.scrollTo({top:0,left:0,behavior:'auto'});render();}});
 
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(event==='PASSWORD_RECOVERY'&&session){
