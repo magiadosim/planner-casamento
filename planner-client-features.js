@@ -857,8 +857,131 @@ shellView=function(r,content){
   return html;
 };
 
+const PREMIUM_PREVIEWS={
+  cerimonial:{
+    title:'Cerimonial',
+    count:'8 áreas de organização',
+    description:'Tudo para transformar o planejamento em um roteiro claro para o grande dia.',
+    items:[
+      'Roteiro do grande dia',
+      'Cortejo e ordem de entrada',
+      'Músicas e trilha',
+      'Cronograma minuto a minuto',
+      'Responsáveis por cada etapa',
+      'Fornecedores envolvidos',
+      'Momentos especiais',
+      'Observações finais'
+    ]
+  },
+  'organizacao-casa':{
+    title:'Organização da casa',
+    count:'10 categorias para a nova casa',
+    description:'Uma lista completa para organizar compras, presentes, prioridades e o que ainda está faltando.',
+    items:[
+      'Cozinha',
+      'Sala',
+      'Quarto',
+      'Banheiro',
+      'Lavanderia',
+      'Eletrodomésticos',
+      'Cama, mesa e banho',
+      'Decoração',
+      'Organização',
+      'Presentes e compras'
+    ]
+  },
+  'lua-de-mel':{
+    title:'Lua de mel',
+    count:'10 categorias de viagem',
+    description:'Planeje a viagem completa, do orçamento aos documentos e pagamentos.',
+    items:[
+      'Passagens',
+      'Hospedagem',
+      'Passeios',
+      'Alimentação',
+      'Transporte',
+      'Seguro viagem',
+      'Documentos e vistos',
+      'Compras',
+      'Taxas',
+      'Reserva de emergência'
+    ]
+  }
+};
+
+function festaHubView(){
+  return `<div class="page">
+    <div class="page-head"><div><div class="eyebrow">PLANEJAMENTO PRINCIPAL</div><h1>Festa de Casamento</h1><p>Todos os recursos para organizar o casamento ficam reunidos aqui.</p></div></div>
+    <div class="planner-section-grid">
+      ${weddingPartyNav.map(([key,label,icon,feature])=>`<a href="#/${key}" class="card planner-section-card">
+        <div class="planner-section-icon">${icons[icon]}</div>
+        <div><strong>${esc(label)}</strong><span>${hasFeature(feature)?'Disponível no seu plano':'Bloqueado'}</span></div>
+        <div class="planner-section-arrow">›</div>
+      </a>`).join('')}
+    </div>
+  </div>`;
+}
+
+function premiumHubView(){
+  return `<div class="page">
+    <div class="page-head"><div><div class="eyebrow">EXPERIÊNCIA PREMIUM</div><h1>Recursos Premium</h1><p>Veja tudo que você pode adicionar ao seu planejamento.</p></div></div>
+    <div class="premium-preview-grid">
+      ${Object.entries(PREMIUM_PREVIEWS).map(([slug,item])=>`
+        <a href="#/${slug}" class="card premium-preview-card ${hasFeature(slug)?'premium-open':'premium-locked'}">
+          <div class="premium-card-top"><span class="premium-tag">PREMIUM</span>${hasFeature(slug)?'<span class="premium-status">Liberado</span>':'<span class="premium-status locked">Bloqueado</span>'}</div>
+          <h2>${esc(item.title)}</h2>
+          <strong class="premium-count">${esc(item.count)}</strong>
+          <p>${esc(item.description)}</p>
+          <span class="premium-card-cta">${hasFeature(slug)?'Abrir recurso':'Ver o que está incluído'} ›</span>
+        </a>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function premiumPreviewView(slug){
+  const item=PREMIUM_PREVIEWS[slug];
+  if(!item)return premiumHubView();
+  const unlocked=hasFeature(slug);
+
+  return `<div class="page">
+    <div class="page-head"><div><div class="eyebrow">RECURSO PREMIUM</div><h1>${esc(item.title)}</h1><p>${esc(item.description)}</p></div></div>
+
+    <section class="card card-pad premium-detail-hero">
+      <div class="premium-detail-copy">
+        <span class="premium-tag">PREMIUM</span>
+        <h2>${esc(item.count)}</h2>
+        <p>${unlocked?'Este recurso está liberado no seu plano.':'Você pode visualizar tudo que existe dentro desta área, mas o cadastro fica disponível somente no Premium.'}</p>
+      </div>
+      <div class="premium-detail-action">
+        ${unlocked
+          ? '<span class="badge success">Liberado no seu plano</span>'
+          : `<span class="premium-lock-large">${icons.lock}</span><button class="btn-primary" data-unlock="${slug}">Desbloquear Premium</button>`
+        }
+      </div>
+    </section>
+
+    <div class="premium-item-grid">
+      ${item.items.map((name,index)=>`<article class="card premium-item-preview">
+        <div class="premium-item-number">${String(index+1).padStart(2,'0')}</div>
+        <div><strong>${esc(name)}</strong><span>${unlocked?'Área liberada':'Visualização do conteúdo'}</span></div>
+        ${unlocked?'<span class="premium-mini-status open">✓</span>':`<span class="premium-mini-status">${icons.lock}</span>`}
+      </article>`).join('')}
+    </div>
+
+    ${!unlocked?`<div class="card card-pad premium-upgrade-box">
+      <div><strong>Quer usar todas essas ferramentas?</strong><p>Faça o upgrade para o Premium e libere Cerimonial, Organização da Casa e Lua de Mel.</p></div>
+      <button class="btn-primary" data-unlock="${slug}">Quero desbloquear</button>
+    </div>`:''}
+  </div>`;
+}
+
 const plannerBaseViewFor=viewFor;
 viewFor=function(r){
+  if(r==='festa-casamento'&&state.role==='client')return festaHubView();
+  if(r==='premium'&&state.role==='client')return premiumHubView();
+  if(['cerimonial','organizacao-casa'].includes(r)&&state.role==='client')return premiumPreviewView(r);
+  if(r==='lua-de-mel'&&state.role==='client'&&!hasFeature('lua-de-mel'))return premiumPreviewView('lua-de-mel');
   if(r==='suporte'&&state.role==='client')return supportView();
   if(r==='chamados'&&state.role==='admin')return adminTicketsView();
   return plannerBaseViewFor(r);
