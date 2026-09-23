@@ -179,11 +179,16 @@ function accessBlockedView(){
   </div>`;
 }
 
+function planName(planId,fallback=''){
+  return state.plans.find(p=>p.id===planId)?.name||fallback||'Sem plano';
+}
+
 function adminView(){
   const clients=state.adminClients||[];
   const active=clients.filter(c=>c.access_status==='active').length;
   const restricted=clients.length-active;
   const withDate=clients.filter(c=>c.wedding_date).length;
+
   return `<div class="dashboard admin-dashboard">
     <header class="topbar">
       <div>
@@ -192,20 +197,23 @@ function adminView(){
       </div>
       <div class="top-actions"><button class="secondary" id="logout">Sair</button></div>
     </header>
+
     <main class="page">
       <section class="welcome">
         <div>
           <div class="eyebrow">Painel administrativo</div>
           <h1>Clientes do Planner</h1>
-          <p>Gerencie plano, acesso, vencimento e observações internas de cada cliente.</p>
+          <p>Escolha o plano de cada cliente e os módulos são liberados automaticamente.</p>
         </div>
       </section>
+
       <section class="grid admin-metrics">
         <div class="metric"><span>Clientes cadastrados</span><strong>${clients.length}</strong></div>
         <div class="metric"><span>Acessos ativos</span><strong>${active}</strong></div>
         <div class="metric"><span>Pausados / expirados</span><strong>${restricted}</strong></div>
         <div class="metric"><span>Casamentos com data</span><strong>${withDate}</strong></div>
       </section>
+
       <section class="admin-client-list">
         ${clients.length?clients.map(c=>`<article class="admin-client-card" data-client-card="${c.id}">
           <div class="admin-client-head">
@@ -219,10 +227,17 @@ function adminView(){
               <span>${brl(c.budget||0)}</span>
             </div>
           </div>
+
           <div class="admin-fields">
             <label>Plano
-              <input class="input" name="plan_name" value="${esc(c.plan_name||'Completo')}" placeholder="Ex.: Completo">
+              ${state.plans.length
+                ? `<select class="input" name="plan_id">
+                    ${state.plans.map(p=>`<option value="${p.id}" ${String(c.plan_id||'')===String(p.id)?'selected':''}>${esc(p.name)}</option>`).join('')}
+                   </select>`
+                : `<input class="input" name="plan_name" value="${esc(c.plan_name||'Completo')}" placeholder="Plano">`
+              }
             </label>
+
             <label>Status do acesso
               <select class="input" name="access_status">
                 <option value="active" ${c.access_status==='active'?'selected':''}>Ativo</option>
@@ -230,13 +245,27 @@ function adminView(){
                 <option value="expired" ${c.access_status==='expired'?'selected':''}>Expirado</option>
               </select>
             </label>
+
             <label>Validade
               <input class="input" name="access_expires_at" type="date" value="${esc(c.access_expires_at||'')}">
             </label>
+
             <label class="notes-field">Observações internas
               <textarea class="input admin-notes" name="notes" rows="3" placeholder="Observações que só a administração verá...">${esc(c.admin_notes||'')}</textarea>
             </label>
           </div>
+
+          ${state.features.length?`<details class="feature-overrides">
+            <summary>Liberações específicas deste cliente</summary>
+            <p class="feature-help">Use somente quando quiser liberar um módulo extra sem mudar o plano inteiro.</p>
+            <div class="feature-grid">
+              ${state.features.map(feature=>`<label class="feature-check">
+                <input type="checkbox" name="extra_feature" value="${esc(feature.slug)}" ${c.extra_features?.includes(feature.slug)?'checked':''}>
+                <span>${esc(feature.name)}</span>
+              </label>`).join('')}
+            </div>
+          </details>`:''}
+
           <div class="admin-card-actions">
             <span class="save-status" aria-live="polite"></span>
             <button class="primary admin-save-client" type="button" data-client-id="${c.id}">Salvar alterações</button>
@@ -251,29 +280,58 @@ async function loadData(){
   if(!state.session)return;
   const userId=state.session.user.id;
   const {data:profile,error:pErr}=await sb.from('profiles').select('*').eq('id',userId).maybeSingle();
+
   if(pErr)console.error(pErr);
-  state.profile=profile||{full_name:state.session.user.email?.split('@')[0]||'Cliente',role:'client'};
+  state.profile=profile||{
+    full_name:state.session.user.email?.split('@')[0]||'Cliente',
+    role:'client'
+  };
 
   if(state.profile.role==='admin'){
-    const [{data:profiles,error:profilesErr},{data:weddings,error:weddingsErr},{data:access,error:accessErr},{data:notes,error:notesErr}]=await Promise.all([
+    const [
+      {data:profiles,error:profilesErr},
+      {data:weddings,error:weddingsErr},
+      {data:access,error:accessErr},
+      {data:notes,error:notesErr},
+      {data:plans,error:plansErr},
+      {data:features,error:featuresErr},
+      {data:planFeatures,error:planFeaturesErr},
+      {data:overrides,error:overridesErr}
+    ]=await Promise.all([
       sb.from('profiles').select('id,full_name,email,role').eq('role','client').order('created_at',{ascending:false}),
       sb.from('weddings').select('*'),
       sb.from('customer_access').select('*'),
-      sb.from('admin_customer_notes').select('*')
+      sb.from('admin_customer_notes').select('*'),
+      sb.from('planner_plans').select('*').eq('active',true).order('name',{ascending:true}),
+      sb.from('planner_features').select('*').eq('active',true).order('sort_order',{ascending:true}),
+      sb.from('planner_plan_features').select('*'),
+      sb.from('customer_feature_overrides').select('*').eq('enabled',true)
     ]);
-    if(profilesErr)console.error(profilesErr);
-    if(weddingsErr)console.error(weddingsErr);
-    if(accessErr)console.error(accessErr);
-    if(notesErr)console.error(notesErr);
+
+    [profilesErr,weddingsErr,accessErr,notesErr,plansErr,featuresErr,planFeaturesErr,overridesErr]
+      .filter(Boolean)
+      .forEach(console.error);
+
+    state.plans=plans||[];
+    state.features=features||[];
+    state.planFeatures=planFeatures||[];
 
     const weddingsMap=new Map((weddings||[]).map(w=>[w.client_user_id,w]));
     const accessMap=new Map((access||[]).map(a=>[a.client_user_id,a]));
     const notesMap=new Map((notes||[]).map(n=>[n.client_user_id,n]));
+    const overrideMap=new Map();
+
+    (overrides||[]).forEach(item=>{
+      const list=overrideMap.get(item.client_user_id)||[];
+      list.push(item.feature_slug);
+      overrideMap.set(item.client_user_id,list);
+    });
 
     state.adminClients=(profiles||[]).map(p=>{
       const w=weddingsMap.get(p.id)||{};
       const a=accessMap.get(p.id)||{};
       const n=notesMap.get(p.id)||{};
+
       return {
         id:p.id,
         full_name:p.full_name,
@@ -283,32 +341,81 @@ async function loadData(){
         venue:w.venue,
         guests:w.guests,
         budget:w.budget,
-        plan_name:a.plan_name||'Completo',
+        plan_id:a.plan_id||null,
+        plan_name:planName(a.plan_id,a.plan_name||'Completo'),
         access_status:a.access_status||'active',
         access_expires_at:a.access_expires_at||'',
-        admin_notes:n.notes||''
+        admin_notes:n.notes||'',
+        extra_features:overrideMap.get(p.id)||[]
       };
     });
+
     state.wedding=null;
     state.access=null;
+    state.entitlements=new Set();
     return;
   }
 
-  const [{data:wedding,error:wErr},{data:access,error:aErr}]=await Promise.all([
+  const [
+    {data:wedding,error:wErr},
+    {data:access,error:aErr},
+    {data:plans,error:plansErr},
+    {data:features,error:featuresErr}
+  ]=await Promise.all([
     sb.from('weddings').select('*').eq('client_user_id',userId).maybeSingle(),
-    sb.from('customer_access').select('*').eq('client_user_id',userId).maybeSingle()
+    sb.from('customer_access').select('*').eq('client_user_id',userId).maybeSingle(),
+    sb.from('planner_plans').select('*').eq('active',true).order('name',{ascending:true}),
+    sb.from('planner_features').select('*').eq('active',true).order('sort_order',{ascending:true})
   ]);
+
   if(wErr)console.error(wErr);
   if(aErr)console.error(aErr);
+  if(plansErr)console.error(plansErr);
+  if(featuresErr)console.error(featuresErr);
+
   state.wedding=wedding||null;
-  state.access=access||{plan_name:'Completo',access_status:'active',access_expires_at:null};
+  state.plans=plans||[];
+  state.features=features||[];
+  state.access=access||{
+    plan_name:'Essencial',
+    plan_id:state.plans.find(p=>p.slug==='essencial')?.id||null,
+    access_status:'active',
+    access_expires_at:null
+  };
+
+  if(state.access.plan_id){
+    const [
+      {data:planFeatures,error:pfErr},
+      {data:overrides,error:oErr}
+    ]=await Promise.all([
+      sb.from('planner_plan_features').select('feature_slug').eq('plan_id',state.access.plan_id),
+      sb.from('customer_feature_overrides').select('feature_slug,enabled').eq('client_user_id',userId)
+    ]);
+
+    if(pfErr)console.error(pfErr);
+    if(oErr)console.error(oErr);
+
+    const enabled=new Set((planFeatures||[]).map(item=>item.feature_slug));
+    (overrides||[]).forEach(item=>{
+      if(item.enabled)enabled.add(item.feature_slug);
+      else enabled.delete(item.feature_slug);
+    });
+    state.entitlements=enabled;
+  }else if(plansErr||featuresErr){
+    // Compatibilidade temporária enquanto o SQL de planos ainda não foi executado.
+    state.entitlements=new Set(PLANNER_MODULES.map(item=>item.slug));
+  }else{
+    state.entitlements=new Set();
+  }
 
   if(state.access.access_expires_at && state.access.access_status==='active'){
-    const today=new Date(); today.setHours(0,0,0,0);
+    const today=new Date();
+    today.setHours(0,0,0,0);
     const expires=new Date(state.access.access_expires_at+'T00:00:00');
-    if(expires<today) state.access.access_status='expired';
+    if(expires<today)state.access.access_status='expired';
   }
 }
+
 function render(){
   if(state.loading){app.innerHTML='<div class="loading">Preparando seu Planner…</div>';return;}
   if(!state.session){
