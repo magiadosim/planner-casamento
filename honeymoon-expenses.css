@@ -1,0 +1,56 @@
+
+.honeymoon-intro{
+  display:grid;
+  gap:4px;
+  margin-bottom:14px;
+  background:
+    radial-gradient(circle at 90% 20%,rgba(183,140,77,.12),transparent 24%),
+    linear-gradient(145deg,#f3eadc,#fffaf2);
+}
+.honeymoon-intro strong{
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:16px;
+  font-weight:600;
+}
+.honeymoon-intro span{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.45;
+}
+.honeymoon-money-card{
+  background:linear-gradient(145deg,#f2e7dd,#fffaf2);
+}
+.honeymoon-money-card strong{
+  color:#7b5943;
+}
+.finance-totals-5{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.expense-finance-sections{
+  margin-top:14px;
+}
+.honeymoon-finance-section{
+  background:
+    radial-gradient(circle at 100% 0,rgba(183,140,77,.08),transparent 30%),
+    rgba(255,250,242,.76);
+}
+@media(max-width:1200px){
+  .finance-totals-5{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:820px){
+  .finance-totals-5{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .expense-finance-sections{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:420px){
+  .finance-totals-5{
+    grid-template-columns:1fr;
+  }
+}
