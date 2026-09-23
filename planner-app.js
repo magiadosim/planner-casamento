@@ -317,9 +317,53 @@ function shellView(r,content){
       </div>`;
   }
 
-  const mobileBase=state.role==='admin'
+  const festaMobileActive=['festa-casamento',...weddingPartyNav.map(x=>x[0])].includes(active);
+  const moreMobileActive=['lua-de-mel','suporte','perfil'].includes(active);
+
+  const mobileNavHtml=state.role==='admin'
     ? [['admin','Clientes','admin'],['planos','Planos','check'],['perfil','Perfil','user']]
-    : [['dashboard','Início','home'],['festa-casamento','Festa','heart'],['cerimonial','Cerimonial','calendar'],['organizacao-casa','Casa','home'],['lua-de-mel','Lua de mel','heart']];
+        .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
+    : `
+        <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
+        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>Festa</span></a>
+        <a href="#/cerimonial" class="${active==='cerimonial'?'active':''}">${icons.calendar}<span>Cerimonial</span></a>
+        <a href="#/organizacao-casa" class="${active==='organizacao-casa'?'active':''}">${icons.home}<span>Casa</span></a>
+        <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open">${icons.menu}<span>Mais</span></button>
+      `;
+
+  const mobileMoreSheet=state.role==='client'?`
+    <div class="mobile-more-backdrop" id="mobile-more-backdrop" hidden>
+      <section class="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="Mais opções">
+        <div class="mobile-more-handle"></div>
+        <div class="mobile-more-head">
+          <div><strong>Mais opções</strong><span>Acesse outras áreas do Planner</span></div>
+          <button type="button" class="icon-btn" id="mobile-more-close" aria-label="Fechar">${icons.close||'×'}</button>
+        </div>
+        <div class="mobile-more-scroll">
+          <div class="mobile-more-section">
+            <div class="mobile-more-section-title">Premium</div>
+            <div class="mobile-more-grid">
+              <a class="mobile-more-item ${active==='lua-de-mel'?'active':''}" href="#/lua-de-mel">
+                <span class="mobile-more-icon">${icons.heart}</span><span>Lua de Mel</span>
+              </a>
+            </div>
+          </div>
+          <div class="mobile-more-section">
+            <div class="mobile-more-section-title">Conta e ajuda</div>
+            <div class="mobile-more-grid">
+              <a class="mobile-more-item ${active==='suporte'?'active':''}" href="#/suporte">
+                <span class="mobile-more-icon">${icons.meeting}</span><span>Suporte / Chamados</span>
+              </a>
+              <a class="mobile-more-item ${active==='perfil'?'active':''}" href="#/perfil">
+                <span class="mobile-more-icon">${icons.user}</span><span>Perfil</span>
+              </a>
+            </div>
+          </div>
+          <button class="mobile-more-logout" id="mobile-more-logout">${icons.logout}<span>Sair</span></button>
+        </div>
+      </section>
+    </div>
+  `:''; 
 
   return `<div class="app-shell ${state.role==='client'?'client-app-shell':'admin-app-shell'}">
     <aside class="sidebar">
@@ -341,7 +385,8 @@ function shellView(r,content){
       ${content}
     </main>
     ${scrollControls()}
-    <nav class="mobile-nav mobile-nav-v2">${mobileBase.map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')}</nav>
+    <nav class="mobile-nav mobile-nav-v2">${mobileNavHtml}</nav>
+    ${mobileMoreSheet}
   </div>`;
 }
 
@@ -724,6 +769,25 @@ function bind(){
     });
   });
 
+  const mobileMoreOpen=document.getElementById('mobile-more-open');
+  const mobileMoreBackdrop=document.getElementById('mobile-more-backdrop');
+  const mobileMoreClose=document.getElementById('mobile-more-close');
+  const closeMobileMore=()=>{
+    if(!mobileMoreBackdrop)return;
+    mobileMoreBackdrop.hidden=true;
+    document.body.classList.remove('mobile-menu-open');
+  };
+  if(mobileMoreOpen&&mobileMoreBackdrop){
+    mobileMoreOpen.onclick=()=>{
+      mobileMoreBackdrop.hidden=false;
+      document.body.classList.add('mobile-menu-open');
+    };
+  }
+  if(mobileMoreClose)mobileMoreClose.onclick=closeMobileMore;
+  if(mobileMoreBackdrop)mobileMoreBackdrop.onclick=e=>{
+    if(e.target===mobileMoreBackdrop)closeMobileMore();
+  };
+
   const login=document.getElementById('login-form');
   if(login)login.onsubmit=async e=>{
     e.preventDefault();
@@ -856,6 +920,8 @@ function bind(){
   };
   const lo1=document.getElementById('logout-side');
   if(lo1)lo1.onclick=logout;
+  const lo2=document.getElementById('mobile-more-logout');
+  if(lo2)lo2.onclick=logout;
 }
 
 window.addEventListener('hashchange',()=>{if(state.session){window.scrollTo({top:0,left:0,behavior:'auto'});render();}});
