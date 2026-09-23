@@ -1330,56 +1330,122 @@ const homeRooms=[
 const homeTabs=[
   ['dashboard','Dashboard'],
   ['lista','Lista de enxoval'],
+  ['sugestoes','Sugestões'],
   ['financeiro','Financeiro']
 ];
 
-const enxovalSuggestions={
-  'Cozinha':[
-    'Jogo de panelas','Frigideira','Panela de pressão','Assadeiras','Jogo de facas',
-    'Tábua de corte','Jogo de pratos','Jogo de talheres','Copos','Taças',
-    'Xícaras','Potes com tampa','Escorredor de louça','Panos de prato','Lixeira'
-  ],
-  'Sala':[
-    'Almofadas','Manta para sofá','Tapete','Cortina','Luminária','Abajur',
-    'Mesa lateral','Porta-retratos','Bandeja decorativa','Vasos decorativos'
-  ],
-  'Quarto':[
-    'Travesseiros','Protetor de colchão','Jogo de lençol','Edredom','Cobertor',
-    'Colcha','Cabides','Cortina','Abajur','Cesto organizador'
-  ],
-  'Banheiro':[
-    'Jogo de toalhas','Toalhas de rosto','Tapete de banheiro','Lixeira',
-    'Porta-sabonete','Porta-escova','Cesto de roupa','Organizador de banheiro',
-    'Roupão','Toalhas extras'
-  ],
-  'Lavanderia':[
-    'Cesto de roupa','Baldes','Varal','Pregadores','Tábua de passar','Ferro de passar',
-    'Organizador de produtos','Escova de limpeza','Rodo','Vassoura','Pá','Panos de chão'
-  ],
-  'Cama, mesa e banho':[
-    'Jogos de lençol','Fronhas extras','Toalhas de banho','Toalhas de rosto',
-    'Toalha de mesa','Jogos americanos','Guardanapos de tecido','Manta',
-    'Edredom extra','Protetores de travesseiro'
-  ],
-  'Eletrodomésticos':[
-    'Geladeira','Fogão ou cooktop','Micro-ondas','Liquidificador','Air fryer',
-    'Cafeteira','Sanduicheira','Batedeira','Ferro de passar','Aspirador de pó',
-    'Máquina de lavar','Televisão'
-  ],
-  'Decoração':[
-    'Quadros','Espelhos','Vasos','Plantas','Velas','Porta-retratos',
-    'Objetos decorativos','Luminárias','Tapetes','Almofadas decorativas'
-  ],
-  'Organização':[
-    'Colmeias organizadoras','Caixas organizadoras','Organizadores de gaveta',
-    'Sapateira','Cabides','Organizador de temperos','Organizador de geladeira',
-    'Potes herméticos','Cestos organizadores','Etiquetas'
-  ],
-  'Presentes e compras':[
-    'Lista de presentes','Vale-presente','Itens recebidos sem setor definido',
-    'Itens para troca','Itens duplicados','Compras pendentes pós-casamento'
-  ]
-};
+const enxovalPlannerSuggestions=[
+  {
+    title:'Cozinha — panelas e preparo',
+    room:'Cozinha',
+    items:[
+      'Faqueiro completo','Jogo de panelas','Panela de pressão','Cuscuzeira',
+      'Frigideira pequena','Assadeiras retangulares','Forma para bolos',
+      'Forma de pizza','Tigelas e potes pequenos','Kit de tábuas',
+      'Utensílios para mexer nas panelas','Escorredor de macarrão',
+      'Ralador','Amassador de batata','Descascador de batata'
+    ]
+  },
+  {
+    title:'Eletroportáteis',
+    room:'Eletrodomésticos',
+    items:[
+      'Liquidificador','Batedeira','Mixer','Chaleira','Cafeteira',
+      'Sanduicheira','Air fryer','Aspirador de pó','Ferro de passar'
+    ]
+  },
+  {
+    title:'Café, bebidas e café da manhã',
+    room:'Cozinha',
+    items:[
+      'Kit de copos','Jogo de xícaras','Jogo de xícaras com pires',
+      'Garrafa de café','Garrafa para suco','Jarra para suco',
+      'Leiteira','Bandeja para café da manhã','Cesta para pães'
+    ]
+  },
+  {
+    title:'Mantimentos e organização da cozinha',
+    room:'Organização',
+    items:[
+      'Potes herméticos para arroz, feijão e açúcar','Potes plásticos redondos',
+      'Potes plásticos quadrados','Porta-talheres','Organizador de temperos',
+      'Organizador de geladeira','Etiquetas','Cestos organizadores'
+    ]
+  },
+  {
+    title:'Louças e mesa posta',
+    room:'Cama, mesa e banho',
+    items:[
+      'Pratos rasos','Pratos fundos','Pratos de sobremesa','Cumbucas pequenas',
+      'Jogo de sousplats','Guardanapos de tecido','Porta-guardanapos',
+      'Saleiro','Açucareiro','Taças para água e suco','Taças para vinho'
+    ]
+  },
+  {
+    title:'Cama',
+    room:'Quarto',
+    items:[
+      'Cobertor','Manta','Colcha ou cobre-leito','Jogos de lençol completos',
+      'Lençóis de elástico','Fronhas extras','Travesseiros',
+      'Protetores de travesseiro','Protetor impermeável de colchão','Edredom'
+    ]
+  },
+  {
+    title:'Banheiro e lavabo',
+    room:'Banheiro',
+    items:[
+      'Tapetes para lavabo','Porta-papel higiênico','Toalhas de rosto',
+      'Toalhas de banho','Difusor ou aromatizador para lavabo',
+      'Escova elétrica para limpeza do banheiro','Lixeira pequena para banheiro',
+      'Saboneteira','Dispenser para sabonete líquido','Porta-escovas de dentes'
+    ]
+  },
+  {
+    title:'Lavanderia e limpeza',
+    room:'Lavanderia',
+    items:[
+      'Potes herméticos para sabão em pó e produtos de lavanderia',
+      'Cesto para transportar roupas limpas','Varal','Balde','Bacia','Vassoura',
+      'Rodo','Pá de lixo','Panos de chão','Esponjas de limpeza','Escovas de limpeza'
+    ]
+  },
+  {
+    title:'Tecidos e limpeza da cozinha',
+    room:'Cozinha',
+    items:[
+      'Panos de prato','Panos para pia','Escorredor de louças','Porta-detergente',
+      'Porta-esponja','Lixeira pequena de pia','Esponjas','Escovinha para lavar louças',
+      'Tapete para cozinha'
+    ]
+  },
+  {
+    title:'Organização de roupas',
+    room:'Organização',
+    items:[
+      'Cabides','Colmeias organizadoras para gavetas','Organizadores de roupas íntimas',
+      'Organizadores para sapatos','Caixas organizadoras','Sacos a vácuo para roupas de cama',
+      'Cestos organizadores'
+    ]
+  },
+  {
+    title:'Casa e utilidades',
+    room:'Organização',
+    items:[
+      'Tapete de entrada','Kit básico de ferramentas','Lixeira para os demais cômodos',
+      'Extensões elétricas','Filtros de linha','Lâmpadas extras','Kit de costura',
+      'Escadinha doméstica'
+    ]
+  }
+];
+
+const enxovalSuggestions=homeRooms.reduce((acc,room)=>{
+  acc[room]=[...new Set(
+    enxovalPlannerSuggestions
+      .filter(group=>group.room===room)
+      .flatMap(group=>group.items)
+  )];
+  return acc;
+},{});
 
 function normalizeEnxovalName(value){
   return String(value||'').trim().toLocaleLowerCase('pt-BR');
@@ -1666,6 +1732,103 @@ function homeListView(){
   </section>`;
 }
 
+function homeSuggestionExists(name,room){
+  const normalized=normalizeEnxovalName(name);
+  return state.homeItems.some(item=>
+    item.room===room &&
+    normalizeEnxovalName(item.item_name)===normalized
+  );
+}
+
+async function addSuggestedHomeItems(groupIndex,itemIndex=null){
+  const group=enxovalPlannerSuggestions[groupIndex];
+  if(!group)return;
+
+  const names=itemIndex===null
+    ?group.items
+    :[group.items[itemIndex]].filter(Boolean);
+
+  const rows=names
+    .filter(name=>!homeSuggestionExists(name,group.room))
+    .map(name=>({
+      wedding_id:state.wedding.id,
+      room:group.room,
+      item_name:name,
+      quantity:1,
+      owned_quantity:0,
+      priority:'Importante',
+      acquisition_status:'Falta',
+      unit_value:0
+    }));
+
+  if(!rows.length){
+    toast(itemIndex===null?'Todas as sugestões deste grupo já estão na sua lista.':'Este item já está na sua lista.');
+    return;
+  }
+
+  const {error}=await sb.from('home_organization_items').insert(rows);
+  if(error){
+    console.error(error);
+    toast('Não foi possível adicionar a sugestão.');
+    return;
+  }
+
+  await reloadPlannerClient();
+  state.homeTab='sugestoes';
+  render();
+  toast(rows.length===1?'Item adicionado à sua lista.':`${rows.length} sugestões adicionadas.`);
+}
+
+function homeSuggestionsView(){
+  const totalSuggestions=enxovalPlannerSuggestions.reduce((sum,group)=>sum+group.items.length,0);
+  const alreadyAdded=enxovalPlannerSuggestions.reduce((sum,group)=>
+    sum+group.items.filter(name=>homeSuggestionExists(name,group.room)).length,0
+  );
+
+  return `<section class="home-tab-panel">
+    <div class="home-suggestions-intro card card-pad">
+      <div>
+        <div class="eyebrow">INSPIRAÇÃO PARA O ENXOVAL</div>
+        <h2>Sugestões para montar a casa</h2>
+        <p>Use esta área como referência. As sugestões seguem a lógica do planner que você enviou: grupos práticos por uso da casa, sem obrigar a noiva a adicionar tudo.</p>
+      </div>
+      <div class="home-suggestion-progress">
+        <strong>${alreadyAdded}/${totalSuggestions}</strong>
+        <span>sugestões já adicionadas</span>
+      </div>
+    </div>
+
+    <div class="home-suggestion-grid">
+      ${enxovalPlannerSuggestions.map((group,groupIndex)=>{
+        const added=group.items.filter(name=>homeSuggestionExists(name,group.room)).length;
+        return `<article class="card home-suggestion-card">
+          <div class="home-suggestion-card-head">
+            <div>
+              <span class="home-suggestion-sector">${esc(group.room)}</span>
+              <h3>${esc(group.title)}</h3>
+            </div>
+            <span class="home-suggestion-count">${added}/${group.items.length}</span>
+          </div>
+
+          <div class="home-suggestion-items">
+            ${group.items.map((name,itemIndex)=>{
+              const exists=homeSuggestionExists(name,group.room);
+              return `<button type="button" class="home-suggestion-item ${exists?'added':''}" data-add-home-suggestion="${groupIndex}" data-suggestion-item="${itemIndex}" ${exists?'disabled':''}>
+                <span class="home-suggestion-check">${exists?'✓':'+'}</span>
+                <span>${esc(name)}</span>
+              </button>`;
+            }).join('')}
+          </div>
+
+          <button type="button" class="btn-secondary home-add-group-btn" data-add-home-suggestion-group="${groupIndex}">
+            + Adicionar o que falta deste grupo
+          </button>
+        </article>`;
+      }).join('')}
+    </div>
+  </section>`;
+}
+
 function homeFinanceView(){
   const t=homeTotals();
   const rows=state.homePayments;
@@ -1715,7 +1878,7 @@ function homeOrganizationView(){
       ${homeTabs.map(([key,label])=>`<button type="button" class="home-tab-btn ${state.homeTab===key?'active':''}" data-home-tab="${key}">${esc(label)}</button>`).join('')}
     </nav>
 
-    ${state.homeTab==='lista'?homeListView():state.homeTab==='financeiro'?homeFinanceView():homeDashboardView()}
+    ${state.homeTab==='lista'?homeListView():state.homeTab==='sugestoes'?homeSuggestionsView():state.homeTab==='financeiro'?homeFinanceView():homeDashboardView()}
   </div>`;
 }
 
@@ -2091,7 +2254,16 @@ bind=function(){
   const newHomeItem=document.getElementById('new-home-item');
   if(newHomeItem)newHomeItem.onclick=()=>openHomeItemEditor(null);
   const suggestedHome=document.getElementById('home-suggested-list');
-  if(suggestedHome)suggestedHome.onclick=openEnxovalSuggestions;
+  if(suggestedHome)suggestedHome.onclick=()=>{state.homeTab='sugestoes';render();};
+
+  document.querySelectorAll('[data-add-home-suggestion]').forEach(b=>b.onclick=()=>addSuggestedHomeItems(
+    Number(b.dataset.addHomeSuggestion),
+    Number(b.dataset.suggestionItem)
+  ));
+  document.querySelectorAll('[data-add-home-suggestion-group]').forEach(b=>b.onclick=()=>addSuggestedHomeItems(
+    Number(b.dataset.addHomeSuggestionGroup),
+    null
+  ));
 
   document.querySelectorAll('[data-home-filter]').forEach(b=>b.onclick=()=>{state.homeFilter=b.dataset.homeFilter;render();});
   document.querySelectorAll('[data-toggle-home-owned]').forEach(b=>b.onclick=()=>toggleHomeOwned(b.dataset.toggleHomeOwned));
