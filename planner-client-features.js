@@ -8,6 +8,9 @@ state.purchaseFilter=state.purchaseFilter||'Todos';
 state.ceremonyItems=state.ceremonyItems||[];
 state.homeItems=state.homeItems||[];
 state.ceremonyFilter=state.ceremonyFilter||'Todos';
+state.ceremonyTab=state.ceremonyTab||'agenda';
+state.moduleFinance=state.moduleFinance||[];
+state.ceremonyShare=state.ceremonyShare||null;
 state.homeFilter=state.homeFilter||'Todos';
 
 if(!clientNav.some(([key])=>key==='suporte')){
@@ -725,6 +728,17 @@ loadClientModules=async function(){
   state.homeItems=hasFeature('organizacao-casa')
     ?await safeQuery(sb.from('home_organization_items').select('*').eq('wedding_id',id).order('room',{ascending:true}).order('item_name',{ascending:true}))
     :[];
+
+  state.moduleFinance=(hasFeature('cerimonial')||hasFeature('organizacao-casa')||hasFeature('lua-de-mel'))
+    ?await safeQuery(sb.from('module_financial_entries').select('*').eq('wedding_id',id).order('due_date',{ascending:true}).order('created_at',{ascending:true}))
+    :[];
+
+  if(hasFeature('cerimonial')){
+    const shareRows=await safeQuery(sb.from('ceremony_share_links').select('share_code,active,updated_at').eq('wedding_id',id).limit(1));
+    state.ceremonyShare=shareRows[0]||null;
+  }else{
+    state.ceremonyShare=null;
+  }
 };
 
 // PERFIL: edição do nome + foto do casal, como no sistema original.
@@ -874,42 +888,96 @@ shellView=function(r,content){
 };
 
 // PREMIUM — CERIMONIAL
-const ceremonySections=[
-  'Roteiro',
-  'Cortejo',
-  'Músicas',
-  'Cronograma',
-  'Responsáveis',
-  'Fornecedores',
-  'Momentos especiais',
-  'Observações'
+const ceremonyTabs=[
+  ['roteiro','Roteiro'],
+  ['agenda','Agenda'],
+  ['cerimonia','Cerimônia'],
+  ['momentos','Momentos'],
+  ['financeiro','Financeiro'],
+  ['compartilhar','Compartilhar']
 ];
 
-function openCeremonyItemEditor(item){
-  if(!requireWedding())return;
-  const body=
-    plannerSelect('Área','section',ceremonySections,item?.section||'Roteiro')+
-    plannerField('Título / atividade','title',item?.title||'','text','required')+
+function canonicalCeremonySection(section){
+  if(section==='Cronograma')return 'Agenda';
+  if(section==='Momentos especiais')return 'Momentos';
+  if(['Cortejo','Músicas','Responsáveis','Fornecedores','Observações'].includes(section))return 'Cerimônia';
+  if(['Roteiro','Agenda','Cerimônia','Momentos'].includes(section))return section;
+  return 'Agenda';
+}
+
+function ceremonyItemsFor(section){
+  if(section==='Agenda'){
+    return [...state.ceremonyItems]
+      .filter(item=>item.scheduled_time)
+      .sort((a,b)=>{
+        const ta=String(a.scheduled_time||'99:99');
+        const tb=String(b.scheduled_time||'99:99');
+        if(ta!==tb)return ta.localeCompare(tb);
+        return Number(a.order_index||0)-Number(b.order_index||0);
+      });
+  }
+  return [...state.ceremonyItems]
+    .filter(item=>canonicalCeremonySection(item.section)===section)
+    .sort((a,b)=>Number(a.order_index||0)-Number(b.order_index||0));
+}
+
+function nextCeremonyOrder(section){
+  const rows=state.ceremonyItems.filter(item=>canonicalCeremonySection(item.section)===section);
+  return rows.reduce((max,item)=>Math.max(max,Number(item.order_index||0)),0)+1;
+}
+
+function ceremonyEditorFields(section,item){
+  const canonical=section||canonicalCeremonySection(item?.section);
+  let body=plannerField('Título / atividade','title',item?.title||'','text','required');
+
+  if(canonical==='Roteiro'){
+    body+=
+      plannerField('Horário opcional','scheduled_time',item?.scheduled_time?String(item.scheduled_time).slice(0,5):'','time')+
+      plannerField('Responsável','responsible',item?.responsible||'')+
+      plannerSelect('Status','completed',[{value:'false',label:'Pendente'},{value:'true',label:'Concluído'}],String(!!item?.completed))+
+      plannerTextarea('Observações','notes',item?.notes||'');
+    return body;
+  }
+
+  body+=
     plannerField('Horário','scheduled_time',item?.scheduled_time?String(item.scheduled_time).slice(0,5):'','time')+
-    plannerField('Ordem','order_index',item?.order_index||0,'number','min="0"')+
     plannerField('Responsável','responsible',item?.responsible||'')+
     plannerField('Participantes','participants',item?.participants||'')+
     plannerField('Música','music',item?.music||'')+
     plannerField('Fornecedor envolvido','vendor',item?.vendor||'')+
-    plannerField('Local','location',item?.location||'')+
-    plannerSelect('Status','completed',[{value:'false',label:'Pendente'},{value:'true',label:'Concluído'}],String(!!item?.completed))+
-    plannerTextarea('Observações','notes',item?.notes||'');
+    plannerField('Local','location',item?.location||'');
 
-  plannerModal(item?'Editar item do cerimonial':'Novo item do cerimonial',body,item?'Salvar':'Adicionar',async back=>{
+  if(canonical==='Cerimônia'||canonical==='Momentos'){
+    body+=plannerField('Ordem','order_index',item?.order_index||nextCeremonyOrder(canonical),'number','min="1"');
+  }
+
+  body+=plannerTextarea('Observações','notes',item?.notes||'');
+  return body;
+}
+
+function openCeremonyItemEditor(section,item){
+  if(!requireWedding())return;
+  const canonical=section||canonicalCeremonySection(item?.section||'Agenda');
+  const titleBySection={
+    Roteiro:item?'Editar item do roteiro':'Adicionar ao roteiro',
+    Agenda:item?'Editar item da agenda':'Adicionar à agenda',
+    'Cerimônia':item?'Editar etapa da cerimônia':'Adicionar etapa da cerimônia',
+    Momentos:item?'Editar momento':'Adicionar momento'
+  };
+
+  plannerModal(titleBySection[canonical]||'Item do cerimonial',ceremonyEditorFields(canonical,item),item?'Salvar':'Adicionar',async back=>{
     const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
     const title=String(f.title||'').trim();
     if(!title){toast('Informe o título da atividade.');return false;}
+
     const payload={
       wedding_id:state.wedding.id,
-      section:f.section||'Roteiro',
+      section:canonical,
       title,
       scheduled_time:f.scheduled_time||null,
-      order_index:Number(f.order_index||0),
+      order_index:(canonical==='Cerimônia'||canonical==='Momentos')
+        ?Math.max(1,Number(f.order_index||nextCeremonyOrder(canonical)))
+        :Number(item?.order_index||nextCeremonyOrder(canonical)),
       responsible:String(f.responsible||'').trim()||null,
       participants:String(f.participants||'').trim()||null,
       music:String(f.music||'').trim()||null,
@@ -919,11 +987,20 @@ function openCeremonyItemEditor(item){
       completed:f.completed==='true',
       updated_at:new Date().toISOString()
     };
+
     const res=item
       ?await sb.from('ceremony_items').update(payload).eq('id',item.id)
       :await sb.from('ceremony_items').insert(payload);
-    if(res.error){console.error(res.error);toast('Não foi possível salvar o item do cerimonial.');return false;}
+
+    if(res.error){
+      console.error(res.error);
+      toast('Não foi possível salvar este item.');
+      return false;
+    }
+
     await reloadPlannerClient();
+    state.ceremonyTab=canonical==='Roteiro'?'roteiro':canonical==='Cerimônia'?'cerimonia':canonical==='Momentos'?'momentos':'agenda';
+    render();
     toast('Cerimonial atualizado.');
     return true;
   });
@@ -940,6 +1017,27 @@ async function toggleCeremonyItem(id){
   await reloadPlannerClient();
 }
 
+async function moveCeremonyItem(id,direction){
+  const item=state.ceremonyItems.find(x=>x.id===id);
+  if(!item)return;
+  const section=canonicalCeremonySection(item.section);
+  const rows=ceremonyItemsFor(section);
+  const index=rows.findIndex(x=>x.id===id);
+  const targetIndex=index+direction;
+  if(index<0||targetIndex<0||targetIndex>=rows.length)return;
+
+  const target=rows[targetIndex];
+  const itemOrder=Number(item.order_index||index+1);
+  const targetOrder=Number(target.order_index||targetIndex+1);
+
+  const first=await sb.from('ceremony_items').update({order_index:targetOrder,updated_at:new Date().toISOString()}).eq('id',item.id);
+  if(first.error){console.error(first.error);toast('Não foi possível alterar a ordem.');return;}
+  const second=await sb.from('ceremony_items').update({order_index:itemOrder,updated_at:new Date().toISOString()}).eq('id',target.id);
+  if(second.error){console.error(second.error);toast('Não foi possível concluir a alteração da ordem.');return;}
+
+  await reloadPlannerClient();
+}
+
 async function deleteCeremonyItem(id){
   const item=state.ceremonyItems.find(x=>x.id===id);
   if(!item||!confirm(`Excluir “${item.title}” do cerimonial?`))return;
@@ -949,29 +1047,261 @@ async function deleteCeremonyItem(id){
   toast('Item excluído.');
 }
 
-function ceremonyView(){
-  const items=state.ceremonyItems.filter(item=>state.ceremonyFilter==='Todos'||item.section===state.ceremonyFilter);
-  const completed=state.ceremonyItems.filter(x=>x.completed).length;
-  return `<div class="page">
-    <div class="page-head">
-      <div><div class="eyebrow">PREMIUM</div><h1>Cerimonial</h1><p>Monte o roteiro operacional do grande dia, com horários, responsáveis, músicas e observações.</p></div>
-      <button class="btn-primary" id="new-ceremony-item">+ Novo item</button>
+function ceremonyFinanceRows(){
+  return (state.moduleFinance||[]).filter(x=>x.module_slug==='cerimonial');
+}
+
+function ceremonyFinanceSummary(){
+  const rows=ceremonyFinanceRows();
+  const total=rows.reduce((sum,row)=>sum+Number(row.amount||0),0);
+  const paid=rows.reduce((sum,row)=>sum+Math.min(Number(row.paid_amount||0),Number(row.amount||0)),0);
+  return {rows,total,paid,pending:Math.max(0,total-paid)};
+}
+
+function openCeremonyFinanceEditor(entry){
+  if(!requireWedding())return;
+  const body=
+    plannerField('Descrição','description',entry?.description||'','text','required')+
+    plannerField('Categoria','category',entry?.category||'')+
+    plannerField('Valor total','amount',entry?.amount||0,'number','min="0" step="0.01" required')+
+    plannerField('Valor pago','paid_amount',entry?.paid_amount||0,'number','min="0" step="0.01"')+
+    plannerField('Vencimento','due_date',entry?.due_date||'','date')+
+    plannerTextarea('Observações','notes',entry?.notes||'');
+
+  plannerModal(entry?'Editar lançamento':'Novo lançamento do Cerimonial',body,entry?'Salvar':'Adicionar',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const description=String(f.description||'').trim();
+    const amount=Number(f.amount||0);
+    const paid=Number(f.paid_amount||0);
+    if(!description||amount<0){toast('Informe descrição e valor válido.');return false;}
+
+    const status=amount>0&&paid>=amount?'Pago':paid>0?'Parcial':'Pendente';
+    const payload={
+      wedding_id:state.wedding.id,
+      module_slug:'cerimonial',
+      description,
+      category:String(f.category||'').trim()||null,
+      amount,
+      paid_amount:paid,
+      due_date:f.due_date||null,
+      status,
+      notes:String(f.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    const res=entry
+      ?await sb.from('module_financial_entries').update(payload).eq('id',entry.id)
+      :await sb.from('module_financial_entries').insert(payload);
+
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o financeiro.');return false;}
+    await reloadPlannerClient();
+    state.ceremonyTab='financeiro';
+    render();
+    toast('Financeiro do Cerimonial atualizado.');
+    return true;
+  });
+}
+
+async function deleteCeremonyFinance(id){
+  const row=state.moduleFinance.find(x=>x.id===id);
+  if(!row||!confirm(`Excluir “${row.description}” do financeiro?`))return;
+  const {error}=await sb.from('module_financial_entries').delete().eq('id',id);
+  if(error){console.error(error);toast('Não foi possível excluir o lançamento.');return;}
+  await reloadPlannerClient();
+}
+
+function ceremonyRoteiroView(){
+  const rows=ceremonyItemsFor('Roteiro');
+  const done=rows.filter(x=>x.completed).length;
+  return `<section class="ceremony-tab-panel">
+    <div class="ceremony-panel-head">
+      <div><h2>Roteiro</h2><p>Checklist livre do Cerimonial. Adicione quantos itens quiser e marque conforme forem resolvidos.</p></div>
+      <button class="btn-primary" data-new-ceremony-section="Roteiro">+ Adicionar item</button>
     </div>
-    <div class="planner-premium-kpis">
-      <div class="card card-pad"><span>Total de itens</span><strong>${state.ceremonyItems.length}</strong></div>
-      <div class="card card-pad"><span>Concluídos</span><strong>${completed}</strong></div>
-      <div class="card card-pad"><span>Pendentes</span><strong>${state.ceremonyItems.length-completed}</strong></div>
+    <div class="ceremony-mini-progress">
+      <span><strong>${done}</strong> concluídos</span>
+      <span><strong>${rows.length-done}</strong> pendentes</span>
+      <span><strong>${rows.length}</strong> no total</span>
     </div>
-    <div class="filters">${['Todos',...ceremonySections].map(f=>`<button class="filter-btn ${state.ceremonyFilter===f?'active':''}" data-ceremony-filter="${esc(f)}">${esc(f)}</button>`).join('')}</div>
+    <div class="card ceremony-checklist-card">
+      ${rows.length?rows.map(row=>`<div class="ceremony-check-row ${row.completed?'done':''}">
+        <button class="checkbox ${row.completed?'checked':''}" data-toggle-ceremony="${row.id}">${row.completed?'✓':''}</button>
+        <div class="ceremony-check-copy"><strong>${esc(row.title)}</strong><span>${esc([row.scheduled_time?timeBR(row.scheduled_time):'',row.responsible].filter(Boolean).join(' • ')||'Sem horário definido')}</span></div>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${row.id}">Editar</button><button class="btn-danger" data-delete-ceremony="${row.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Roteiro vazio','Adicione itens para começar seu checklist do Cerimonial.')}
+    </div>
+  </section>`;
+}
+
+function ceremonyAgendaView(){
+  const rows=ceremonyItemsFor('Agenda');
+  return `<section class="ceremony-tab-panel">
+    <div class="ceremony-panel-head">
+      <div><h2>Agenda do grande dia</h2><p>A visualização principal reúne tudo que possui horário, independentemente da aba onde foi cadastrado.</p></div>
+      <button class="btn-primary" data-new-ceremony-section="Agenda">+ Adicionar à agenda</button>
+    </div>
+    <div class="card ceremony-agenda-card">
+      ${rows.length?rows.map((row,index)=>`<article class="ceremony-agenda-row">
+        <div class="ceremony-agenda-time"><strong>${timeBR(row.scheduled_time)}</strong><span>${esc(canonicalCeremonySection(row.section))}</span></div>
+        <div class="ceremony-agenda-line"><span></span></div>
+        <div class="ceremony-agenda-content">
+          <div class="ceremony-agenda-title"><strong>${esc(row.title)}</strong><span>#${String(index+1).padStart(2,'0')}</span></div>
+          <div class="ceremony-agenda-meta">
+            ${row.location?`<span>Local: ${esc(row.location)}</span>`:''}
+            ${row.responsible?`<span>Responsável: ${esc(row.responsible)}</span>`:''}
+            ${row.participants?`<span>Participantes: ${esc(row.participants)}</span>`:''}
+            ${row.music?`<span>Música: ${esc(row.music)}</span>`:''}
+            ${row.vendor?`<span>Fornecedor: ${esc(row.vendor)}</span>`:''}
+          </div>
+          ${row.notes?`<p>${esc(row.notes)}</p>`:''}
+        </div>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${row.id}">Editar</button></div>
+      </article>`).join(''):emptyState('Agenda vazia','Adicione horários ao roteiro, cerimônia ou momentos, ou use “Adicionar à agenda”.')}
+    </div>
+  </section>`;
+}
+
+function ceremonySequenceView(section,title,description){
+  const rows=ceremonyItemsFor(section);
+  return `<section class="ceremony-tab-panel">
+    <div class="ceremony-panel-head">
+      <div><h2>${esc(title)}</h2><p>${esc(description)}</p></div>
+      <button class="btn-primary" data-new-ceremony-section="${esc(section)}">+ Adicionar</button>
+    </div>
+    <div class="card ceremony-sequence-card">
+      ${rows.length?rows.map((row,index)=>`<div class="ceremony-sequence-row">
+        <div class="ceremony-sequence-number">${String(index+1).padStart(2,'0')}</div>
+        <div class="ceremony-sequence-copy">
+          <strong>${esc(row.title)}</strong>
+          <span>${esc([row.scheduled_time?timeBR(row.scheduled_time):'',row.responsible,row.location].filter(Boolean).join(' • ')||'Sem horário definido')}</span>
+          ${row.music?`<small>♫ ${esc(row.music)}</small>`:''}
+        </div>
+        <div class="ceremony-order-actions">
+          <button class="ceremony-order-btn" data-move-ceremony="${row.id}" data-direction="-1" ${index===0?'disabled':''}>↑</button>
+          <button class="ceremony-order-btn" data-move-ceremony="${row.id}" data-direction="1" ${index===rows.length-1?'disabled':''}>↓</button>
+        </div>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${row.id}">Editar</button><button class="btn-danger" data-delete-ceremony="${row.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Nenhum item cadastrado','Monte a sequência usando o botão acima.')}
+    </div>
+  </section>`;
+}
+
+function ceremonyFinanceView(){
+  const s=ceremonyFinanceSummary();
+  return `<section class="ceremony-tab-panel">
+    <div class="ceremony-panel-head">
+      <div><h2>Financeiro do Cerimonial</h2><p>Este financeiro é exclusivo do Cerimonial e não se mistura com Festa, Casa ou Lua de Mel.</p></div>
+      <button class="btn-primary" id="new-ceremony-finance">+ Lançamento</button>
+    </div>
+    <div class="finance-totals ceremony-finance-kpis">
+      <div class="card money-card"><span>Total previsto</span><strong>${brl(s.total)}</strong></div>
+      <div class="card money-card"><span>Pago</span><strong>${brl(s.paid)}</strong></div>
+      <div class="card money-card"><span>Pendente</span><strong>${brl(s.pending)}</strong></div>
+    </div>
     <div class="card list-card">
-      ${items.length?items.map(item=>`<div class="planner-ceremony-row ${item.completed?'done':''}">
-        <button class="checkbox ${item.completed?'checked':''}" data-toggle-ceremony="${item.id}">${item.completed?'✓':''}</button>
-        <div class="planner-ceremony-time"><strong>${item.scheduled_time?timeBR(item.scheduled_time):'—'}</strong><span>${esc(item.section)}</span></div>
-        <div class="vendor-name"><strong>${esc(item.title)}</strong><span>${esc([item.responsible,item.location].filter(Boolean).join(' • ')||'Sem responsável definido')}</span></div>
-        <div class="planner-ceremony-extra">${item.music?'<span>♫ '+esc(item.music)+'</span>':''}${item.vendor?'<span>'+esc(item.vendor)+'</span>':''}</div>
-        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${item.id}">Editar</button><button class="btn-danger" data-delete-ceremony="${item.id}">Excluir</button></div>
-      </div>`).join(''):emptyState('Cerimonial ainda vazio','Adicione os momentos do grande dia para montar seu roteiro.')}
+      ${s.rows.length?s.rows.map(row=>`<div class="list-row ceremony-finance-row">
+        <div class="vendor-name"><strong>${esc(row.description)}</strong><span>${esc(row.category||'Sem categoria')}${row.due_date?' • '+dateBR(row.due_date):''}</span></div>
+        <div class="small">${brl(row.amount)}</div>
+        <div class="small muted">${brl(row.paid_amount)}</div>
+        <span class="badge ${row.status==='Pago'?'success':row.status==='Parcial'?'info':'warning'}">${esc(row.status)}</span>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony-finance="${row.id}">Editar</button><button class="btn-danger" data-delete-ceremony-finance="${row.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Sem lançamentos','Cadastre os custos específicos do Cerimonial.')}
     </div>
+  </section>`;
+}
+
+function ceremonyShareUrl(code){
+  if(!code)return '';
+  const url=new URL('cerimonial-publico.html',location.href);
+  url.hash='';
+  url.search='';
+  url.searchParams.set('code',code);
+  return url.toString();
+}
+
+async function createOrEnableCeremonyShare(){
+  if(!state.wedding)return;
+  const {data,error}=await sb.rpc('ceremony_get_or_create_share_link',{wedding_uuid:state.wedding.id});
+  if(error){console.error(error);toast('Não foi possível criar o link.');return;}
+  state.ceremonyShare={share_code:data,active:true};
+  state.ceremonyTab='compartilhar';
+  render();
+  toast('Link de visualização criado.');
+}
+
+async function regenerateCeremonyShare(){
+  if(!state.wedding||!confirm('Gerar um novo link? O link anterior deixará de funcionar.'))return;
+  const {data,error}=await sb.rpc('ceremony_regenerate_share_link',{wedding_uuid:state.wedding.id});
+  if(error){console.error(error);toast('Não foi possível gerar um novo link.');return;}
+  state.ceremonyShare={share_code:data,active:true};
+  render();
+  toast('Novo link gerado.');
+}
+
+async function setCeremonyShareActive(active){
+  if(!state.wedding)return;
+  const {error}=await sb.rpc('ceremony_set_share_active',{wedding_uuid:state.wedding.id,enabled:active});
+  if(error){console.error(error);toast('Não foi possível alterar o link.');return;}
+  state.ceremonyShare={...(state.ceremonyShare||{}),active};
+  render();
+  toast(active?'Link reativado.':'Link desativado.');
+}
+
+function ceremonyShareView(){
+  const code=state.ceremonyShare?.share_code||'';
+  const active=state.ceremonyShare?.active!==false;
+  const url=ceremonyShareUrl(code);
+
+  return `<section class="ceremony-tab-panel">
+    <div class="ceremony-panel-head">
+      <div><h2>Compartilhar Cerimonial</h2><p>Crie um link somente de visualização para enviar a familiares, padrinhos, fornecedores ou qualquer pessoa que precise acompanhar o roteiro.</p></div>
+    </div>
+
+    <div class="card card-pad ceremony-share-card">
+      ${code?`
+        <div class="ceremony-share-status"><span class="badge ${active?'success':'warning'}">${active?'Link ativo':'Link desativado'}</span><strong>Somente visualização</strong></div>
+        <p>O link público mostra Roteiro, Agenda, Cerimônia e Momentos. <strong>O financeiro não é compartilhado.</strong></p>
+        <div class="ceremony-share-url"><input class="input planner-plain-input" value="${esc(url)}" readonly><button class="btn-secondary" id="copy-ceremony-share">Copiar link</button></div>
+        <div class="action-row">
+          <button class="btn-primary" id="open-ceremony-share">Abrir visualização</button>
+          <button class="btn-secondary" id="regenerate-ceremony-share">Gerar novo link</button>
+          <button class="btn-secondary" id="toggle-ceremony-share">${active?'Desativar link':'Reativar link'}</button>
+        </div>
+      `:`
+        <div class="ceremony-share-empty">
+          <div class="planner-lock-icon">${icons.file}</div>
+          <div><strong>Ainda não existe um link público.</strong><p>Ao criar, qualquer pessoa com o link poderá visualizar o Cerimonial, sem editar nada.</p><button class="btn-primary" id="create-ceremony-share">Criar link de visualização</button></div>
+        </div>
+      `}
+    </div>
+  </section>`;
+}
+
+function ceremonyTabContent(){
+  if(state.ceremonyTab==='roteiro')return ceremonyRoteiroView();
+  if(state.ceremonyTab==='cerimonia')return ceremonySequenceView('Cerimônia','Cerimônia','Organize a sequência da cerimônia exatamente na ordem em que acontecerá.');
+  if(state.ceremonyTab==='momentos')return ceremonySequenceView('Momentos','Momentos','Organize entradas, falas, homenagens, fotos, brindes e outros momentos especiais em sequência.');
+  if(state.ceremonyTab==='financeiro')return ceremonyFinanceView();
+  if(state.ceremonyTab==='compartilhar')return ceremonyShareView();
+  return ceremonyAgendaView();
+}
+
+function ceremonyView(){
+  const total=state.ceremonyItems.length;
+  const timed=state.ceremonyItems.filter(x=>x.scheduled_time).length;
+  const completed=state.ceremonyItems.filter(x=>x.completed).length;
+
+  return `<div class="page ceremony-workspace">
+    <div class="page-head ceremony-main-head">
+      <div><div class="eyebrow">PREMIUM</div><h1>Cerimonial</h1><p>Um conjunto completo de ferramentas para organizar o grande dia — cada parte em sua própria aba.</p></div>
+      <div class="ceremony-head-stats"><span><strong>${total}</strong> itens</span><span><strong>${timed}</strong> na agenda</span><span><strong>${completed}</strong> concluídos</span></div>
+    </div>
+
+    <nav class="ceremony-tabs" aria-label="Áreas do Cerimonial">
+      ${ceremonyTabs.map(([key,label])=>`<button type="button" class="ceremony-tab-btn ${state.ceremonyTab===key?'active':''}" data-ceremony-tab="${key}">${esc(label)}</button>`).join('')}
+    </nav>
+
+    ${ceremonyTabContent()}
   </div>`;
 }
 
@@ -1402,12 +1732,41 @@ bind=function(){
   const exportGuests=document.getElementById('planner-export-guests');
   if(exportGuests)exportGuests.onclick=exportPlannerGuests;
 
-  const newCeremony=document.getElementById('new-ceremony-item');
-  if(newCeremony)newCeremony.onclick=()=>openCeremonyItemEditor(null);
-  document.querySelectorAll('[data-ceremony-filter]').forEach(b=>b.onclick=()=>{state.ceremonyFilter=b.dataset.ceremonyFilter;render();});
+  document.querySelectorAll('[data-ceremony-tab]').forEach(b=>b.onclick=()=>{
+    state.ceremonyTab=b.dataset.ceremonyTab;
+    render();
+  });
+  document.querySelectorAll('[data-new-ceremony-section]').forEach(b=>b.onclick=()=>openCeremonyItemEditor(b.dataset.newCeremonySection,null));
   document.querySelectorAll('[data-toggle-ceremony]').forEach(b=>b.onclick=()=>toggleCeremonyItem(b.dataset.toggleCeremony));
-  document.querySelectorAll('[data-edit-ceremony]').forEach(b=>b.onclick=()=>openCeremonyItemEditor(state.ceremonyItems.find(x=>x.id===b.dataset.editCeremony)));
+  document.querySelectorAll('[data-edit-ceremony]').forEach(b=>b.onclick=()=>{
+    const item=state.ceremonyItems.find(x=>x.id===b.dataset.editCeremony);
+    if(item)openCeremonyItemEditor(canonicalCeremonySection(item.section),item);
+  });
   document.querySelectorAll('[data-delete-ceremony]').forEach(b=>b.onclick=()=>deleteCeremonyItem(b.dataset.deleteCeremony));
+  document.querySelectorAll('[data-move-ceremony]').forEach(b=>b.onclick=()=>moveCeremonyItem(b.dataset.moveCeremony,Number(b.dataset.direction||0)));
+
+  const newCeremonyFinance=document.getElementById('new-ceremony-finance');
+  if(newCeremonyFinance)newCeremonyFinance.onclick=()=>openCeremonyFinanceEditor(null);
+  document.querySelectorAll('[data-edit-ceremony-finance]').forEach(b=>b.onclick=()=>{
+    const row=state.moduleFinance.find(x=>x.id===b.dataset.editCeremonyFinance);
+    if(row)openCeremonyFinanceEditor(row);
+  });
+  document.querySelectorAll('[data-delete-ceremony-finance]').forEach(b=>b.onclick=()=>deleteCeremonyFinance(b.dataset.deleteCeremonyFinance));
+
+  const createShare=document.getElementById('create-ceremony-share');
+  if(createShare)createShare.onclick=createOrEnableCeremonyShare;
+  const copyShare=document.getElementById('copy-ceremony-share');
+  if(copyShare)copyShare.onclick=async()=>{
+    const url=ceremonyShareUrl(state.ceremonyShare?.share_code);
+    try{await navigator.clipboard.writeText(url);toast('Link copiado.');}
+    catch{prompt('Copie o link:',url);}
+  };
+  const openShare=document.getElementById('open-ceremony-share');
+  if(openShare)openShare.onclick=()=>window.open(ceremonyShareUrl(state.ceremonyShare?.share_code),'_blank','noopener');
+  const regenerateShare=document.getElementById('regenerate-ceremony-share');
+  if(regenerateShare)regenerateShare.onclick=regenerateCeremonyShare;
+  const toggleShare=document.getElementById('toggle-ceremony-share');
+  if(toggleShare)toggleShare.onclick=()=>setCeremonyShareActive(state.ceremonyShare?.active===false);
 
   const newHomeItem=document.getElementById('new-home-item');
   if(newHomeItem)newHomeItem.onclick=()=>openHomeItemEditor(null);
