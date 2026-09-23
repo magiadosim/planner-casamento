@@ -435,6 +435,15 @@ function bind(){
     render();
   });
 
+  document.querySelectorAll('[data-unlock-feature]').forEach(btn=>btn.onclick=()=>{
+    showUnlockMessage(btn.dataset.unlockFeature);
+  });
+
+  document.querySelectorAll('[data-open-module]').forEach(btn=>btn.onclick=()=>{
+    const item=PLANNER_MODULES.find(m=>m.slug===btn.dataset.openModule);
+    alert(`${item?.title||'Módulo'} está liberado no seu plano. O conteúdo completo deste módulo será integrado a esta nova versão do Planner.`);
+  });
+
   const signup=document.getElementById('signup-form');
   if(signup)signup.onsubmit=async e=>{
     e.preventDefault();
@@ -513,11 +522,17 @@ function bind(){
     const id=btn.dataset.clientId;
     const card=document.querySelector(`[data-client-card="${id}"]`);
     if(!card)return;
+
     const status=card.querySelector('.save-status');
-    const plan_name=card.querySelector('[name=plan_name]').value.trim()||'Completo';
+    const planSelect=card.querySelector('[name=plan_id]');
+    const fallbackPlan=card.querySelector('[name=plan_name]');
+    const plan_id=planSelect?.value||null;
+    const selectedPlan=state.plans.find(p=>p.id===plan_id);
+    const plan_name=selectedPlan?.name||fallbackPlan?.value.trim()||'Completo';
     const access_status=card.querySelector('[name=access_status]').value;
     const access_expires_at=card.querySelector('[name=access_expires_at]').value||null;
     const notes=card.querySelector('[name=notes]').value.trim();
+    const extra_features=[...card.querySelectorAll('[name=extra_feature]:checked')].map(el=>el.value);
 
     btn.disabled=true;
     btn.textContent='Salvando…';
@@ -526,6 +541,7 @@ function bind(){
     const [{error:aErr},{error:nErr}]=await Promise.all([
       sb.from('customer_access').upsert({
         client_user_id:id,
+        plan_id,
         plan_name,
         access_status,
         access_expires_at
@@ -536,8 +552,29 @@ function bind(){
       },{onConflict:'client_user_id'})
     ]);
 
-    if(aErr||nErr){
-      console.error(aErr||nErr);
+    let overrideError=null;
+    if(!aErr&&!nErr){
+      const {error:deleteErr}=await sb
+        .from('customer_feature_overrides')
+        .delete()
+        .eq('client_user_id',id);
+
+      if(deleteErr){
+        overrideError=deleteErr;
+      }else if(extra_features.length){
+        const {error:insertErr}=await sb
+          .from('customer_feature_overrides')
+          .insert(extra_features.map(feature_slug=>({
+            client_user_id:id,
+            feature_slug,
+            enabled:true
+          })));
+        overrideError=insertErr||null;
+      }
+    }
+
+    if(aErr||nErr||overrideError){
+      console.error(aErr||nErr||overrideError);
       if(status)status.textContent='Não foi possível salvar.';
       btn.disabled=false;
       btn.textContent='Salvar alterações';
@@ -546,7 +583,15 @@ function bind(){
 
     if(status)status.textContent='Salvo ✓';
     const row=state.adminClients.find(c=>c.id===id);
-    if(row)Object.assign(row,{plan_name,access_status,access_expires_at:access_expires_at||'',admin_notes:notes});
+    if(row)Object.assign(row,{
+      plan_id,
+      plan_name,
+      access_status,
+      access_expires_at:access_expires_at||'',
+      admin_notes:notes,
+      extra_features
+    });
+
     btn.disabled=false;
     btn.textContent='Salvar alterações';
   });
@@ -559,6 +604,10 @@ function bind(){
     state.wedding=null;
     state.access=null;
     state.adminClients=[];
+    state.plans=[];
+    state.features=[];
+    state.planFeatures=[];
+    state.entitlements=new Set();
     state.mode='login';
     render();
   };
