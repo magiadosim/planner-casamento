@@ -5,6 +5,10 @@ icons.close='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d=
 state.tickets=state.tickets||[];
 state.guestFilter=state.guestFilter||'Todos';
 state.purchaseFilter=state.purchaseFilter||'Todos';
+state.ceremonyItems=state.ceremonyItems||[];
+state.homeItems=state.homeItems||[];
+state.ceremonyFilter=state.ceremonyFilter||'Todos';
+state.homeFilter=state.homeFilter||'Todos';
 
 if(!clientNav.some(([key])=>key==='suporte')){
   clientNav.push(['suporte','Suporte / Chamados','meeting',null]);
@@ -541,7 +545,9 @@ function backupSnapshot(){
     purchases:state.purchases,
     tasks:state.tasks,
     meetings:state.meetings,
-    documents:state.docs
+    documents:state.docs,
+    cerimonial:state.ceremonyItems,
+    organizacao_da_casa:state.homeItems
   };
 }
 function downloadPlannerJson(){
@@ -561,7 +567,9 @@ function downloadPlannerXlsx(){
     ['Outros e Lua de Mel',state.purchases],
     ['Checklist',state.tasks],
     ['Reuniões',state.meetings],
-    ['Documentos',state.docs]
+    ['Documentos',state.docs],
+    ['Cerimonial',state.ceremonyItems],
+    ['Organização da Casa',state.homeItems]
   ];
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
@@ -570,7 +578,7 @@ function downloadPlannerXlsx(){
 }
 myDataView=function(){
   return `<div class="page"><div class="page-head"><div><h1>Meus dados</h1><p>Baixe uma cópia das informações do seu casamento sempre que quiser.</p></div></div>
-    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">CÓPIA COMPLETA</span><h2>Baixar todos os meus dados</h2><p>Inclui cadastro, casamento, convidados, fornecedores, financeiro, checklist, reuniões e documentos. Sua senha nunca é exportada.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar tudo (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
+    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">CÓPIA COMPLETA</span><h2>Baixar todos os meus dados</h2><p>Inclui cadastro, casamento, convidados, fornecedores, financeiro, checklist, reuniões, documentos e, quando disponíveis no plano, os recursos Premium. Sua senha nunca é exportada.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar tudo (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
   </div>`;
 };
 
@@ -708,6 +716,14 @@ loadClientModules=async function(){
 
   state.purchases=(hasFeature('outros-gastos')||hasFeature('lua-de-mel'))
     ?await safeQuery(sb.from('wedding_purchases').select('*').eq('wedding_id',id).order('purchase_date',{ascending:false}).order('created_at',{ascending:false}))
+    :[];
+
+  state.ceremonyItems=hasFeature('cerimonial')
+    ?await safeQuery(sb.from('ceremony_items').select('*').eq('wedding_id',id).order('order_index',{ascending:true}).order('scheduled_time',{ascending:true}))
+    :[];
+
+  state.homeItems=hasFeature('organizacao-casa')
+    ?await safeQuery(sb.from('home_organization_items').select('*').eq('wedding_id',id).order('room',{ascending:true}).order('item_name',{ascending:true}))
     :[];
 };
 
@@ -857,6 +873,203 @@ shellView=function(r,content){
   return html;
 };
 
+// PREMIUM — CERIMONIAL
+const ceremonySections=[
+  'Roteiro',
+  'Cortejo',
+  'Músicas',
+  'Cronograma',
+  'Responsáveis',
+  'Fornecedores',
+  'Momentos especiais',
+  'Observações'
+];
+
+function openCeremonyItemEditor(item){
+  if(!requireWedding())return;
+  const body=
+    plannerSelect('Área','section',ceremonySections,item?.section||'Roteiro')+
+    plannerField('Título / atividade','title',item?.title||'','text','required')+
+    plannerField('Horário','scheduled_time',item?.scheduled_time?String(item.scheduled_time).slice(0,5):'','time')+
+    plannerField('Ordem','order_index',item?.order_index||0,'number','min="0"')+
+    plannerField('Responsável','responsible',item?.responsible||'')+
+    plannerField('Participantes','participants',item?.participants||'')+
+    plannerField('Música','music',item?.music||'')+
+    plannerField('Fornecedor envolvido','vendor',item?.vendor||'')+
+    plannerField('Local','location',item?.location||'')+
+    plannerSelect('Status','completed',[{value:'false',label:'Pendente'},{value:'true',label:'Concluído'}],String(!!item?.completed))+
+    plannerTextarea('Observações','notes',item?.notes||'');
+
+  plannerModal(item?'Editar item do cerimonial':'Novo item do cerimonial',body,item?'Salvar':'Adicionar',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const title=String(f.title||'').trim();
+    if(!title){toast('Informe o título da atividade.');return false;}
+    const payload={
+      wedding_id:state.wedding.id,
+      section:f.section||'Roteiro',
+      title,
+      scheduled_time:f.scheduled_time||null,
+      order_index:Number(f.order_index||0),
+      responsible:String(f.responsible||'').trim()||null,
+      participants:String(f.participants||'').trim()||null,
+      music:String(f.music||'').trim()||null,
+      vendor:String(f.vendor||'').trim()||null,
+      location:String(f.location||'').trim()||null,
+      notes:String(f.notes||'').trim()||null,
+      completed:f.completed==='true',
+      updated_at:new Date().toISOString()
+    };
+    const res=item
+      ?await sb.from('ceremony_items').update(payload).eq('id',item.id)
+      :await sb.from('ceremony_items').insert(payload);
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o item do cerimonial.');return false;}
+    await reloadPlannerClient();
+    toast('Cerimonial atualizado.');
+    return true;
+  });
+}
+
+async function toggleCeremonyItem(id){
+  const item=state.ceremonyItems.find(x=>x.id===id);
+  if(!item)return;
+  const {error}=await sb.from('ceremony_items').update({
+    completed:!item.completed,
+    updated_at:new Date().toISOString()
+  }).eq('id',id);
+  if(error){console.error(error);toast('Não foi possível atualizar o item.');return;}
+  await reloadPlannerClient();
+}
+
+async function deleteCeremonyItem(id){
+  const item=state.ceremonyItems.find(x=>x.id===id);
+  if(!item||!confirm(`Excluir “${item.title}” do cerimonial?`))return;
+  const {error}=await sb.from('ceremony_items').delete().eq('id',id);
+  if(error){console.error(error);toast('Não foi possível excluir o item.');return;}
+  await reloadPlannerClient();
+  toast('Item excluído.');
+}
+
+function ceremonyView(){
+  const items=state.ceremonyItems.filter(item=>state.ceremonyFilter==='Todos'||item.section===state.ceremonyFilter);
+  const completed=state.ceremonyItems.filter(x=>x.completed).length;
+  return `<div class="page">
+    <div class="page-head">
+      <div><div class="eyebrow">PREMIUM</div><h1>Cerimonial</h1><p>Monte o roteiro operacional do grande dia, com horários, responsáveis, músicas e observações.</p></div>
+      <button class="btn-primary" id="new-ceremony-item">+ Novo item</button>
+    </div>
+    <div class="planner-premium-kpis">
+      <div class="card card-pad"><span>Total de itens</span><strong>${state.ceremonyItems.length}</strong></div>
+      <div class="card card-pad"><span>Concluídos</span><strong>${completed}</strong></div>
+      <div class="card card-pad"><span>Pendentes</span><strong>${state.ceremonyItems.length-completed}</strong></div>
+    </div>
+    <div class="filters">${['Todos',...ceremonySections].map(f=>`<button class="filter-btn ${state.ceremonyFilter===f?'active':''}" data-ceremony-filter="${esc(f)}">${esc(f)}</button>`).join('')}</div>
+    <div class="card list-card">
+      ${items.length?items.map(item=>`<div class="planner-ceremony-row ${item.completed?'done':''}">
+        <button class="checkbox ${item.completed?'checked':''}" data-toggle-ceremony="${item.id}">${item.completed?'✓':''}</button>
+        <div class="planner-ceremony-time"><strong>${item.scheduled_time?timeBR(item.scheduled_time):'—'}</strong><span>${esc(item.section)}</span></div>
+        <div class="vendor-name"><strong>${esc(item.title)}</strong><span>${esc([item.responsible,item.location].filter(Boolean).join(' • ')||'Sem responsável definido')}</span></div>
+        <div class="planner-ceremony-extra">${item.music?'<span>♫ '+esc(item.music)+'</span>':''}${item.vendor?'<span>'+esc(item.vendor)+'</span>':''}</div>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-ceremony="${item.id}">Editar</button><button class="btn-danger" data-delete-ceremony="${item.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Cerimonial ainda vazio','Adicione os momentos do grande dia para montar seu roteiro.')}
+    </div>
+  </div>`;
+}
+
+// PREMIUM — ORGANIZAÇÃO DA CASA
+const homeRooms=[
+  'Cozinha',
+  'Sala',
+  'Quarto',
+  'Banheiro',
+  'Lavanderia',
+  'Eletrodomésticos',
+  'Cama, mesa e banho',
+  'Decoração',
+  'Organização',
+  'Presentes e compras'
+];
+
+function openHomeItemEditor(item){
+  if(!requireWedding())return;
+  const body=
+    plannerSelect('Categoria / ambiente','room',homeRooms,item?.room||'Cozinha')+
+    plannerField('Item','item_name',item?.item_name||'','text','required')+
+    plannerField('Quantidade','quantity',item?.quantity||1,'number','min="1"')+
+    plannerSelect('Prioridade','priority',['Essencial','Importante','Desejo'],item?.priority||'Importante')+
+    plannerSelect('Situação','acquisition_status',['Falta','Comprado','Presenteado'],item?.acquisition_status||'Falta')+
+    plannerField('Valor unitário','unit_value',item?.unit_value||0,'number','min="0" step="0.01"')+
+    plannerField('Loja','store_name',item?.store_name||'')+
+    plannerField('Link do produto','item_link',item?.item_link||'','url')+
+    plannerTextarea('Observações','notes',item?.notes||'');
+
+  plannerModal(item?'Editar item da casa':'Adicionar item à casa',body,item?'Salvar':'Adicionar',async back=>{
+    const f=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const itemName=String(f.item_name||'').trim();
+    if(!itemName){toast('Informe o item.');return false;}
+    const payload={
+      wedding_id:state.wedding.id,
+      room:f.room||'Cozinha',
+      item_name:itemName,
+      quantity:Math.max(1,Number(f.quantity||1)),
+      priority:f.priority||'Importante',
+      acquisition_status:f.acquisition_status||'Falta',
+      unit_value:Number(f.unit_value||0),
+      store_name:String(f.store_name||'').trim()||null,
+      item_link:String(f.item_link||'').trim()||null,
+      notes:String(f.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+    const res=item
+      ?await sb.from('home_organization_items').update(payload).eq('id',item.id)
+      :await sb.from('home_organization_items').insert(payload);
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o item da casa.');return false;}
+    await reloadPlannerClient();
+    toast('Lista da casa atualizada.');
+    return true;
+  });
+}
+
+async function deleteHomeItem(id){
+  const item=state.homeItems.find(x=>x.id===id);
+  if(!item||!confirm(`Excluir “${item.item_name}” da lista?`))return;
+  const {error}=await sb.from('home_organization_items').delete().eq('id',id);
+  if(error){console.error(error);toast('Não foi possível excluir o item.');return;}
+  await reloadPlannerClient();
+  toast('Item excluído.');
+}
+
+function homeOrganizationView(){
+  const items=state.homeItems.filter(item=>state.homeFilter==='Todos'||item.room===state.homeFilter);
+  const missing=state.homeItems.filter(x=>x.acquisition_status==='Falta').length;
+  const acquired=state.homeItems.filter(x=>x.acquisition_status!=='Falta').length;
+  const totalValue=state.homeItems
+    .filter(x=>x.acquisition_status==='Comprado')
+    .reduce((sum,x)=>sum+(Number(x.unit_value||0)*Number(x.quantity||1)),0);
+
+  return `<div class="page">
+    <div class="page-head">
+      <div><div class="eyebrow">PREMIUM</div><h1>Organização da casa</h1><p>Organize o que vocês já têm, o que ganharam e o que ainda precisam comprar.</p></div>
+      <button class="btn-primary" id="new-home-item">+ Adicionar item</button>
+    </div>
+    <div class="planner-premium-kpis planner-home-kpis">
+      <div class="card card-pad"><span>Total de itens</span><strong>${state.homeItems.length}</strong></div>
+      <div class="card card-pad"><span>Já resolvidos</span><strong>${acquired}</strong></div>
+      <div class="card card-pad"><span>Ainda faltam</span><strong>${missing}</strong></div>
+      <div class="card card-pad"><span>Total comprado</span><strong>${brl(totalValue)}</strong></div>
+    </div>
+    <div class="filters">${['Todos',...homeRooms].map(f=>`<button class="filter-btn ${state.homeFilter===f?'active':''}" data-home-filter="${esc(f)}">${esc(f)}</button>`).join('')}</div>
+    <div class="card list-card">
+      ${items.length?items.map(item=>`<div class="planner-home-row">
+        <div class="planner-home-status ${item.acquisition_status==='Falta'?'missing':'done'}">${item.acquisition_status==='Falta'?'○':'✓'}</div>
+        <div class="vendor-name"><strong>${esc(item.item_name)}</strong><span>${esc(item.room)} • ${item.quantity} un. • ${esc(item.priority)}</span></div>
+        <span class="badge ${item.acquisition_status==='Falta'?'warning':'success'}">${esc(item.acquisition_status)}</span>
+        <div class="planner-home-value">${item.unit_value?brl(Number(item.unit_value)*Number(item.quantity||1)):'—'}</div>
+        <div class="planner-row-actions"><button class="btn-secondary" data-edit-home-item="${item.id}">Editar</button><button class="btn-danger" data-delete-home-item="${item.id}">Excluir</button></div>
+      </div>`).join(''):emptyState('Sua lista da casa está vazia','Adicione itens por ambiente para acompanhar o que falta.')}
+    </div>
+  </div>`;
+}
+
 const PREMIUM_PREVIEWS={
   cerimonial:{
     title:'Cerimonial',
@@ -980,7 +1193,8 @@ const plannerBaseViewFor=viewFor;
 viewFor=function(r){
   if(r==='festa-casamento'&&state.role==='client')return festaHubView();
   if(r==='premium'&&state.role==='client')return premiumHubView();
-  if(['cerimonial','organizacao-casa'].includes(r)&&state.role==='client')return premiumPreviewView(r);
+  if(r==='cerimonial'&&state.role==='client')return hasFeature('cerimonial')?ceremonyView():premiumPreviewView('cerimonial');
+  if(r==='organizacao-casa'&&state.role==='client')return hasFeature('organizacao-casa')?homeOrganizationView():premiumPreviewView('organizacao-casa');
   if(r==='lua-de-mel'&&state.role==='client'&&!hasFeature('lua-de-mel'))return premiumPreviewView('lua-de-mel');
   if(r==='suporte'&&state.role==='client')return supportView();
   if(r==='chamados'&&state.role==='admin')return adminTicketsView();
@@ -1076,6 +1290,19 @@ bind=function(){
   }
   const exportGuests=document.getElementById('planner-export-guests');
   if(exportGuests)exportGuests.onclick=exportPlannerGuests;
+
+  const newCeremony=document.getElementById('new-ceremony-item');
+  if(newCeremony)newCeremony.onclick=()=>openCeremonyItemEditor(null);
+  document.querySelectorAll('[data-ceremony-filter]').forEach(b=>b.onclick=()=>{state.ceremonyFilter=b.dataset.ceremonyFilter;render();});
+  document.querySelectorAll('[data-toggle-ceremony]').forEach(b=>b.onclick=()=>toggleCeremonyItem(b.dataset.toggleCeremony));
+  document.querySelectorAll('[data-edit-ceremony]').forEach(b=>b.onclick=()=>openCeremonyItemEditor(state.ceremonyItems.find(x=>x.id===b.dataset.editCeremony)));
+  document.querySelectorAll('[data-delete-ceremony]').forEach(b=>b.onclick=()=>deleteCeremonyItem(b.dataset.deleteCeremony));
+
+  const newHomeItem=document.getElementById('new-home-item');
+  if(newHomeItem)newHomeItem.onclick=()=>openHomeItemEditor(null);
+  document.querySelectorAll('[data-home-filter]').forEach(b=>b.onclick=()=>{state.homeFilter=b.dataset.homeFilter;render();});
+  document.querySelectorAll('[data-edit-home-item]').forEach(b=>b.onclick=()=>openHomeItemEditor(state.homeItems.find(x=>x.id===b.dataset.editHomeItem)));
+  document.querySelectorAll('[data-delete-home-item]').forEach(b=>b.onclick=()=>deleteHomeItem(b.dataset.deleteHomeItem));
 
   const newTicket=document.getElementById('new-support-ticket');
   if(newTicket)newTicket.onclick=openSupportTicket;
