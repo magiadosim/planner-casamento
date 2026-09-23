@@ -98,6 +98,28 @@ $$;
 
 grant execute on function public.wedding_has_feature(uuid,text) to authenticated, anon;
 
+-- O cliente só pode editar os dados principais do casamento quando
+-- o módulo "Meu casamento" estiver liberado no plano.
+drop policy if exists "weddings_update_owner_or_admin" on public.weddings;
+create policy "weddings_update_owner_or_admin"
+on public.weddings
+for update
+to authenticated
+using (
+  public.is_admin()
+  or (
+    client_user_id=auth.uid()
+    and public.has_planner_feature('meu-casamento')
+  )
+)
+with check (
+  public.is_admin()
+  or (
+    client_user_id=auth.uid()
+    and public.has_planner_feature('meu-casamento')
+  )
+);
+
 -- 2) Cadastro geral de fornecedores
 create table if not exists public.suppliers (
   id uuid primary key default gen_random_uuid(),
