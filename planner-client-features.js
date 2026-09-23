@@ -1123,15 +1123,126 @@ const PREMIUM_PREVIEWS={
 };
 
 function festaHubView(){
-  return `<div class="page">
-    <div class="page-head"><div><div class="eyebrow">PLANEJAMENTO PRINCIPAL</div><h1>Festa de Casamento</h1><p>Todos os recursos para organizar o casamento ficam reunidos aqui.</p></div></div>
-    <div class="planner-section-grid">
-      ${weddingPartyNav.map(([key,label,icon,feature])=>`<a href="#/${key}" class="card planner-section-card">
-        <div class="planner-section-icon">${icons[icon]}</div>
-        <div><strong>${esc(label)}</strong><span>${hasFeature(feature)?'Disponível no seu plano':'Bloqueado'}</span></div>
-        <div class="planner-section-arrow">›</div>
-      </a>`).join('')}
-    </div>
+  const cd=countdown();
+  const comp=completion();
+
+  const contracted=state.vendors.reduce((sum,v)=>sum+Number(v.amount||0),0);
+  const paidSuppliers=state.vendors.reduce((sum,v)=>sum+Number(v.paid||0),0);
+
+  const otherExpenses=state.purchases.filter(p=>p.expense_group==='other');
+  const otherTotal=otherExpenses.reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const otherPaid=otherExpenses
+    .filter(p=>p.status==='Pago')
+    .reduce((sum,p)=>sum+Number(p.amount||0),0);
+
+  const committed=contracted+otherTotal;
+  const totalPaid=paidSuppliers+otherPaid;
+  const budget=Number(state.wedding?.budget||0);
+  const budgetBalance=budget>0?budget-committed:0;
+  const budgetPct=budget>0?Math.min(100,Math.round((committed/budget)*100)):0;
+
+  const doneTasks=state.tasks.filter(t=>t.done).length;
+  const totalTasks=state.tasks.length;
+
+  const accessCards=weddingPartyNav.map(([key,label,icon,feature])=>{
+    const unlocked=hasFeature(feature);
+    return `<a href="#/${key}" class="festa-access-card ${unlocked?'':'locked'}">
+      <span class="festa-access-icon">${icons[icon]}</span>
+      <span class="festa-access-copy">
+        <strong>${esc(label)}</strong>
+        <small>${unlocked?'Acessar':'Bloqueado'}</small>
+      </span>
+      <span class="festa-access-arrow">${unlocked?'›':'⌑'}</span>
+    </a>`;
+  }).join('');
+
+  return `<div class="page festa-dashboard-page">
+    <section class="hero festa-dashboard-hero">
+      <div class="card hero-main festa-couple-card">
+        <div class="eyebrow">FESTA DE CASAMENTO</div>
+        <h1 class="hero-title">${esc(partnerNames())} ♡</h1>
+        <p class="hero-sub">Tudo do casamento organizado em um só lugar.</p>
+        <div class="date">${icons.calendar} ${esc(dateLong(state.wedding?.wedding_date))}${state.wedding?.venue?' • '+esc(state.wedding.venue):''}</div>
+      </div>
+
+      <div class="card countdown festa-countdown-card">
+        ${cd.text
+          ?`<div><span class="countdown-label">Contagem regressiva</span><div class="countdown-number festa-countdown-text">${esc(cd.text)}</div></div>`
+          :`<div><span class="countdown-label">Faltam</span><div class="countdown-number">${cd.days}</div><span class="countdown-unit">dias para o grande dia ♡</span></div>
+             <div class="countdown-mini"><div><strong>${cd.months}</strong><span>meses</span></div><div><strong>${cd.days}</strong><span>dias</span></div><div><strong>${cd.hours}</strong><span>horas</span></div></div>`
+        }
+      </div>
+    </section>
+
+    <section class="festa-dashboard-main">
+      <div class="card card-pad festa-progress-card">
+        <div class="card-title">
+          <div>
+            <div class="eyebrow">PLANEJAMENTO</div>
+            <h2>Conclusão do evento</h2>
+          </div>
+          <strong class="festa-progress-value">${comp}%</strong>
+        </div>
+
+        <div class="progress-track festa-progress-track">
+          <div class="progress-fill" style="width:${comp}%"></div>
+        </div>
+
+        <div class="festa-progress-meta">
+          <span><strong>${doneTasks}</strong> tarefas concluídas</span>
+          <span><strong>${Math.max(0,totalTasks-doneTasks)}</strong> pendentes</span>
+          <span><strong>${totalTasks}</strong> tarefas no total</span>
+        </div>
+      </div>
+
+      <div class="card card-pad festa-finance-card">
+        <div class="card-title">
+          <div>
+            <div class="eyebrow">FINANCEIRO DA FESTA</div>
+            <h2>Resumo de gastos</h2>
+          </div>
+          <a href="#/financeiro" class="sub">Ver financeiro ›</a>
+        </div>
+
+        <div class="festa-money-grid">
+          <div>
+            <span>Orçamento</span>
+            <strong>${budget>0?brl(budget):'A definir'}</strong>
+          </div>
+          <div>
+            <span>Comprometido</span>
+            <strong>${brl(committed)}</strong>
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>${brl(totalPaid)}</strong>
+          </div>
+          <div>
+            <span>${budget>0?'Saldo do orçamento':'Pendente contratado'}</span>
+            <strong class="${budget>0&&budgetBalance<0?'negative':''}">${budget>0?brl(budgetBalance):brl(Math.max(0,committed-totalPaid))}</strong>
+          </div>
+        </div>
+
+        ${budget>0?`<div class="festa-budget-progress">
+          <div class="festa-budget-progress-head"><span>Orçamento comprometido</span><strong>${budgetPct}%</strong></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${budgetPct}%"></div></div>
+        </div>`:''}
+      </div>
+    </section>
+
+    <section class="festa-quick-access">
+      <div class="festa-section-heading">
+        <div>
+          <div class="eyebrow">ACESSO RÁPIDO</div>
+          <h2>Organize cada parte da festa</h2>
+        </div>
+        <span>Escolha uma área para abrir</span>
+      </div>
+
+      <div class="festa-access-grid">
+        ${accessCards}
+      </div>
+    </section>
   </div>`;
 }
 
