@@ -673,3 +673,209 @@
   .home-welcome-strip{align-items:stretch;flex-direction:column}
   .home-countdown-compact{min-width:0;width:100%}
 }
+
+
+/* ===== Dashboard interno: Festa de Casamento ===== */
+.festa-dashboard-page{
+  max-width:1180px;
+}
+.festa-dashboard-hero{
+  grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr);
+  margin-bottom:16px;
+}
+.festa-couple-card{
+  min-height:220px;
+}
+.festa-countdown-card{
+  min-height:220px;
+}
+.festa-countdown-text{
+  margin-top:10px;
+  font-size:28px!important;
+  line-height:1.2;
+}
+.festa-dashboard-main{
+  display:grid;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.35fr);
+  gap:16px;
+  margin-bottom:18px;
+}
+.festa-progress-card,
+.festa-finance-card{
+  min-height:245px;
+}
+.festa-progress-card .card-title h2,
+.festa-finance-card .card-title h2,
+.festa-section-heading h2{
+  margin:3px 0 0;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:23px;
+  font-weight:500;
+}
+.festa-progress-value{
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:38px;
+  font-weight:500;
+}
+.festa-progress-track{
+  height:12px;
+  margin:24px 0 18px;
+}
+.festa-progress-meta{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+.festa-progress-meta span{
+  padding:11px;
+  border-radius:12px;
+  background:#f4efe7;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.35;
+}
+.festa-progress-meta strong{
+  display:block;
+  margin-bottom:3px;
+  color:var(--brown);
+  font-size:15px;
+}
+.festa-money-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:15px;
+}
+.festa-money-grid>div{
+  padding:13px 14px;
+  border-radius:13px;
+  background:#f4efe7;
+  border:1px solid #e5dccf;
+}
+.festa-money-grid span{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.festa-money-grid strong{
+  display:block;
+  margin-top:5px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.festa-money-grid strong.negative{
+  color:#9c5148;
+}
+.festa-budget-progress{
+  margin-top:16px;
+}
+.festa-budget-progress-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:9px;
+}
+.festa-budget-progress-head strong{
+  color:var(--olive);
+}
+.festa-quick-access{
+  margin-top:6px;
+}
+.festa-section-heading{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:12px;
+}
+.festa-section-heading>span{
+  color:var(--muted);
+  font-size:9px;
+}
+.festa-access-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+.festa-access-card{
+  min-height:112px;
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:13px;
+  border-radius:15px;
+  text-decoration:none;
+  background:#f7f3eb;
+  border:1px solid #e2d8ca;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.festa-access-card:hover{
+  transform:translateY(-2px);
+  border-color:#b9aa98;
+  box-shadow:0 9px 24px rgba(67,56,44,.07);
+}
+.festa-access-icon{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:#e1e4d5;
+  color:#4b5234;
+}
+.festa-access-icon svg{
+  width:18px;
+  height:18px;
+}
+.festa-access-copy{
+  min-width:0;
+}
+.festa-access-copy strong{
+  display:block;
+  color:var(--brown);
+  font-size:10px;
+  line-height:1.25;
+}
+.festa-access-copy small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:8px;
+}
+.festa-access-arrow{
+  color:#7a6654;
+  font-size:17px;
+}
+.festa-access-card.locked{
+  opacity:.65;
+}
+@media(max-width:1100px){
+  .festa-access-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .festa-dashboard-hero,
+  .festa-dashboard-main{grid-template-columns:1fr}
+  .festa-progress-card,
+  .festa-finance-card{min-height:0}
+}
+@media(max-width:650px){
+  .festa-money-grid,
+  .festa-progress-meta,
+  .festa-access-grid{grid-template-columns:1fr 1fr}
+  .festa-section-heading{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:420px){
+  .festa-money-grid,
+  .festa-progress-meta,
+  .festa-access-grid{grid-template-columns:1fr}
+}
