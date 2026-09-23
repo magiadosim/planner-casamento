@@ -245,25 +245,46 @@ function shellView(r,content){
       ['planos','Planos e liberações','check',null]
     ].map(x=>itemHtml(x)).join('');
   }else{
-    const supportItem=clientNav.find(([key])=>key==='suporte');
+    const festaActive=['festa-casamento',...weddingPartyNav.map(x=>x[0])].includes(active);
     navHtml=
-      itemHtml(['dashboard','Início','home',null])+
-      '<div class="nav-section-label">Festa de Casamento</div>'+
-      weddingPartyNav.map(x=>itemHtml(x,'nav-subitem')).join('')+
-      '<div class="nav-section-label premium-label">Premium <span>EXCLUSIVO</span></div>'+
-      premiumNav.map(x=>itemHtml(x,'nav-subitem nav-premium-item')).join('')+
-      (supportItem?'<div class="nav-section-label">Ajuda</div>'+itemHtml(supportItem,'nav-subitem'):'');
+      itemHtml(['dashboard','Início','home',null],'nav-main-entry')+
+      `<div class="nav-main-modules">
+        <a href="#/festa-casamento" class="nav-module-entry ${festaActive?'active':''}">
+          <span class="nav-module-icon">${icons.heart}</span>
+          <span class="nav-module-copy"><strong>Festa de Casamento</strong><small>Planejamento completo</small></span>
+          <span class="nav-module-arrow">›</span>
+        </a>
+
+        <a href="#/cerimonial" class="nav-module-entry ${active==='cerimonial'?'active':''} ${hasFeature('cerimonial')?'':'locked'}">
+          <span class="nav-module-icon">${icons.calendar}</span>
+          <span class="nav-module-copy"><strong>Cerimonial</strong><small>${hasFeature('cerimonial')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-arrow">${hasFeature('cerimonial')?'›':'⌑'}</span>
+        </a>
+
+        <a href="#/organizacao-casa" class="nav-module-entry ${active==='organizacao-casa'?'active':''} ${hasFeature('organizacao-casa')?'':'locked'}">
+          <span class="nav-module-icon">${icons.home}</span>
+          <span class="nav-module-copy"><strong>Organização da Casa</strong><small>${hasFeature('organizacao-casa')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-arrow">${hasFeature('organizacao-casa')?'›':'⌑'}</span>
+        </a>
+
+        <a href="#/lua-de-mel" class="nav-module-entry ${active==='lua-de-mel'?'active':''} ${hasFeature('lua-de-mel')?'':'locked'}">
+          <span class="nav-module-icon">${icons.heart}</span>
+          <span class="nav-module-copy"><strong>Lua de Mel</strong><small>${hasFeature('lua-de-mel')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-arrow">${hasFeature('lua-de-mel')?'›':'⌑'}</span>
+        </a>
+      </div>`;
   }
 
   const mobileBase=state.role==='admin'
     ? [['admin','Clientes','admin'],['planos','Planos','check'],['perfil','Perfil','user']]
-    : [['dashboard','Início','home'],['festa-casamento','Festa','heart'],['premium','Premium','lock'],['suporte','Suporte','meeting'],['perfil','Perfil','user']];
+    : [['dashboard','Início','home'],['festa-casamento','Festa','heart'],['cerimonial','Cerimonial','calendar'],['organizacao-casa','Casa','home'],['lua-de-mel','Lua de mel','heart']];
 
   return `<div class="app-shell ${state.role==='client'?'client-app-shell':'admin-app-shell'}">
     <aside class="sidebar">
       <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="A Magia do Sim"></div><div class="sidebar-name">A Magia<br>do Sim</div></div>
       <nav class="nav">${navHtml}</nav>
       <div class="sidebar-bottom">
+        ${state.role==='client'?'<a href="#/suporte" class="nav-item '+(active==='suporte'?'active':'')+'">'+icons.meeting+'<span>Suporte / Chamados</span></a>':''}
         <a href="#/perfil" class="nav-item ${active==='perfil'?'active':''}">${icons.user}<span>Perfil</span></a>
         <button class="nav-item" id="logout-side" style="border:0;background:none;text-align:left;width:100%">${icons.logout}<span>Sair</span></button>
       </div>
@@ -298,37 +319,81 @@ function noWeddingView(){
   return `<div class="page"><div class="page-head"><div><h1>Área dos Noivos</h1><p>Sua conta ainda não possui um casamento configurado.</p></div></div>${emptyState('Nenhum casamento encontrado','Entre em contato com a equipe A Magia do Sim.')}</div>`;
 }
 function dashboardView(){
-  const c=countdown(),comp=completion();
-  const next=state.tasks.filter(t=>!t.done).slice(0,3);
-  const contracted=state.vendors.filter(v=>v.status==='Contratado').length;
-  const negotiating=state.vendors.filter(v=>v.status==='Em negociação').length;
-  const pending=state.vendors.filter(v=>v.status==='Pendente').length;
-  const nextMeetings=state.meetings.slice(0,2);
-  return `<div class="page">
-    <section class="hero desktop-dashboard-hero">
-      <div class="card hero-main"><h1 class="hero-title">Olá, ${esc(partnerNames())}! ♡</h1><p class="hero-sub">Que bom ter você por aqui. Vamos juntos até o grande dia.</p><div class="date">${icons.calendar} ${esc(dateLong(state.wedding?.wedding_date))}</div></div>
-      <div class="card countdown">${c.text?`<div><span class="countdown-label">Contagem regressiva</span><div class="countdown-number" style="font-size:38px">${esc(c.text)}</div></div>`:`<div><span class="countdown-label">Faltam</span><div class="countdown-number">${c.days}</div><span class="countdown-unit">dias para o grande dia ♡</span></div><div class="countdown-mini"><div><strong>${c.months}</strong><span>meses</span></div><div><strong>${c.days}</strong><span>dias</span></div><div><strong>${c.hours}</strong><span>horas</span></div></div>`}</div>
-    </section>
-    <section class="mobile-client-home">
-      <div class="mobile-app-home-card">
-        <div class="mobile-home-copy"><span class="mobile-home-kicker">A MAGIA DO SIM</span><h1>Olá, ${esc(partnerNames())}! ♡</h1><p>${esc(dateLong(state.wedding?.wedding_date))}</p></div>
-        <div class="mobile-home-count">${c.text?`<strong class="mobile-countdown-text">${esc(c.text)}</strong>`:`<strong>${c.days}</strong><span>dias</span>`}</div>
-        <div class="mobile-home-progress"><div class="mobile-progress-head"><span>Seu planejamento</span><strong>${comp}%</strong></div><div class="progress-track"><div class="progress-fill" style="width:${comp}%"></div></div></div>
+  const c=countdown();
+
+  const moduleCard=(routeKey,title,description,icon,feature,badge='')=>{
+    const unlocked=!feature||hasFeature(feature);
+    return `<a href="#/${routeKey}" class="card home-module-card ${unlocked?'':'locked'}">
+      <div class="home-module-card-top">
+        <div class="home-module-icon">${icons[icon]}</div>
+        ${badge?`<span class="home-module-badge">${esc(badge)}</span>`:''}
+      </div>
+      <div class="home-module-copy">
+        <h2>${esc(title)}</h2>
+        <p>${esc(description)}</p>
+      </div>
+      <div class="home-module-footer">
+        <span>${unlocked?'Abrir módulo':'Conhecer Premium'}</span>
+        <strong>${unlocked?'›':'⌑'}</strong>
+      </div>
+    </a>`;
+  };
+
+  return `<div class="page planner-home-page">
+    <section class="home-welcome-strip">
+      <div>
+        <div class="eyebrow">SEU PLANNER</div>
+        <h1>Olá, ${esc(partnerNames())}! ♡</h1>
+        <p>${esc(dateLong(state.wedding?.wedding_date))}</p>
+      </div>
+      <div class="home-countdown-compact">
+        ${c.text
+          ?`<strong>${esc(c.text)}</strong>`
+          :`<strong>${c.days}</strong><span>dias para o grande dia</span>`
+        }
       </div>
     </section>
-    <section class="dashboard-main">
-      <div class="card card-pad"><div class="card-title"><h2>Seu planejamento</h2><span class="sub">${comp}% concluído</span></div><div class="progress-track"><div class="progress-fill" style="width:${comp}%"></div></div><div class="steps">${[['Local',!!state.wedding?.venue],['Fotografia',state.vendors.some(v=>v.category==='Fotografia'&&v.status==='Contratado')],['Buffet',state.vendors.some(v=>v.category==='Buffet'&&v.status==='Contratado')],['Decoração',state.vendors.some(v=>v.category==='Decoração'&&v.status!=='Pendente')],['Música',state.vendors.some(v=>v.category==='Música'&&v.status==='Contratado')]].map(([t,done])=>`<div class="step ${done?'done':''}"><div class="step-dot">${done?'✓':'○'}</div>${t}</div>`).join('')}</div></div>
-      <div class="card card-pad"><div class="card-title"><h2>Próximos passos</h2><a href="#/checklist" class="sub">Ver todos ›</a></div><div class="next-list">${next.length?next.map((t,i)=>`<a class="next-item" href="#/checklist"><div class="next-num">0${i+1}</div><div><strong>${esc(t.title)}</strong><span>Prazo: ${esc(t.due)}</span></div>${icons.chevron}</a>`).join(''):emptyState('Tudo em dia!','Nenhuma tarefa pendente no momento.')}</div></div>
+
+    <section class="home-module-grid">
+      ${moduleCard(
+        'festa-casamento',
+        'Festa de Casamento',
+        'Todos os recursos atuais do planejamento: fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões, gastos e backup.',
+        'heart',
+        null,
+        'PLANO INICIAL'
+      )}
+
+      ${moduleCard(
+        'cerimonial',
+        'Cerimonial',
+        'Roteiro do grande dia, cortejo, músicas, horários, responsáveis, fornecedores envolvidos e financeiro próprio.',
+        'calendar',
+        'cerimonial',
+        'PREMIUM'
+      )}
+
+      ${moduleCard(
+        'organizacao-casa',
+        'Organização da Casa',
+        'Lista por ambientes, itens, prioridades, presentes, compras e financeiro próprio da nova casa.',
+        'home',
+        'organizacao-casa',
+        'PREMIUM'
+      )}
+
+      ${moduleCard(
+        'lua-de-mel',
+        'Lua de Mel',
+        'Planejamento da viagem, passagens, hospedagem, passeios, documentos e financeiro exclusivo da lua de mel.',
+        'heart',
+        'lua-de-mel',
+        'PREMIUM'
+      )}
     </section>
-    <section class="summary-cards">
-      <div class="card kpi-card"><div class="kpi-head">${icons.users} Fornecedores</div><div class="kpi-list"><div><strong>${contracted}</strong> contratados</div><div><strong>${negotiating}</strong> em negociação</div><div><strong>${pending}</strong> pendentes</div><a href="#/fornecedores" class="small" style="margin-top:9px;color:var(--brown)">Ver todos ›</a></div></div>
-      <div class="card kpi-card"><div class="kpi-head">${icons.calendar} Próximos compromissos</div><div class="kpi-list">${nextMeetings.length?nextMeetings.map(m=>`<div><strong>${esc(m.title)}</strong><br>${dateBR(m.date)} às ${timeBR(m.time)}</div>`).join(''):'<div class="muted">Nenhuma reunião cadastrada.</div>'}<a href="#/reunioes" class="small" style="margin-top:9px;color:var(--brown)">Ver calendário ›</a></div></div>
-      <div class="card kpi-card"><div class="kpi-head">${icons.check} Pendências <span class="badge danger">${state.tasks.filter(t=>!t.done).length}</span></div><div class="kpi-list">${state.tasks.filter(t=>!t.done).slice(0,3).map(t=>`<div>${esc(t.title)}</div>`).join('')||'<div class="muted">Nenhuma pendência.</div>'}<a href="#/checklist" class="small" style="margin-top:9px;color:var(--brown)">Ver todas ›</a></div></div>
-      <div class="card inspiration"><blockquote>“Cada detalhe tem um propósito... e tudo se encaixa no tempo certo.” ♡</blockquote></div>
-    </section>
-    <section class="card card-pad planner-plan-box"><div class="card-title"><h2>Seu plano</h2><span class="badge success">${esc(state.access?.plan_name||'Plano')}</span></div><div class="planner-plan-modules">${clientNav.filter(x=>x[3]).map(([k,l,i,f])=>`<a href="#/${k}" class="${hasFeature(f)?'available':'locked'}"><span>${icons[i]}</span><strong>${esc(l)}</strong><em>${hasFeature(f)?'Disponível':'Desbloquear'}</em></a>`).join('')}</div></section>
   </div>`;
 }
+
 function weddingView(){
   const w=state.wedding||{};
   return `<div class="page"><div class="page-head"><div><h1>Meu casamento</h1><p>As principais informações do grande dia em um só lugar.</p></div></div>
