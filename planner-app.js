@@ -50,8 +50,7 @@ const icons={
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
 };
 
-const clientNav=[
-  ['dashboard','Início','home',null],
+const weddingPartyNav=[
   ['meu-casamento','Meu casamento','heart','meu-casamento'],
   ['fornecedores','Fornecedores','users','fornecedores'],
   ['checklist','Checklist','check','checklist'],
@@ -61,8 +60,19 @@ const clientNav=[
   ['financeiro','Financeiro','money','financeiro'],
   ['reunioes','Reuniões','meeting','reunioes'],
   ['outros-gastos','Outros gastos','money','outros-gastos'],
-  ['lua-de-mel','Lua de mel','heart','lua-de-mel'],
   ['meus-dados','Meus dados','file','meus-dados']
+];
+
+const premiumNav=[
+  ['cerimonial','Cerimonial','calendar','cerimonial'],
+  ['organizacao-casa','Organização da casa','home','organizacao-casa'],
+  ['lua-de-mel','Lua de mel','heart','lua-de-mel']
+];
+
+const clientNav=[
+  ['dashboard','Início','home',null],
+  ...weddingPartyNav,
+  ...premiumNav
 ];
 
 function esc(v=''){
@@ -115,6 +125,8 @@ function featureForRoute(r){
     reunioes:'reunioes',
     'outros-gastos':'outros-gastos',
     'lua-de-mel':'lua-de-mel',
+    cerimonial:'cerimonial',
+    'organizacao-casa':'organizacao-casa',
     'meus-dados':'meus-dados'
   })[r]||null;
 }
@@ -131,6 +143,8 @@ function moduleName(feature){
     reunioes:'Reuniões',
     'outros-gastos':'Outros gastos',
     'lua-de-mel':'Lua de mel',
+    cerimonial:'Cerimonial',
+    'organizacao-casa':'Organização da casa',
     'meus-dados':'Meus dados / Backup'
   })[feature]||'Recurso';
 }
@@ -218,21 +232,32 @@ function shellView(r,content){
   const active=r.startsWith('fornecedores/')?'fornecedores':r;
   const displayName=state.profile?.full_name||(state.role==='admin'?'Assessoria':'Cliente');
   const first=(displayName||'A').trim()[0]?.toUpperCase()||'A';
-  const nav=state.role==='admin'
-    ? [
-        ['admin','Clientes','admin',null],
-        ['planos','Planos e liberações','check',null]
-      ]
-    : clientNav;
 
-  const navHtml=nav.map(([key,label,icon,feature])=>{
+  const itemHtml=([key,label,icon,feature],extraClass='')=>{
     const locked=state.role!=='admin'&&feature&&!hasFeature(feature);
-    return `<a href="#/${key}" class="nav-item ${active===key?'active':''}">${icons[icon]}<span>${label}</span>${locked?'<span class="nav-lock">⌑</span>':''}</a>`;
-  }).join('');
+    return `<a href="#/${key}" class="nav-item ${extraClass} ${active===key?'active':''}">${icons[icon]}<span>${label}</span>${locked?'<span class="nav-lock">⌑</span>':''}</a>`;
+  };
+
+  let navHtml='';
+  if(state.role==='admin'){
+    navHtml=[
+      ['admin','Clientes','admin',null],
+      ['planos','Planos e liberações','check',null]
+    ].map(x=>itemHtml(x)).join('');
+  }else{
+    const supportItem=clientNav.find(([key])=>key==='suporte');
+    navHtml=
+      itemHtml(['dashboard','Início','home',null])+
+      '<div class="nav-section-label">Festa de Casamento</div>'+
+      weddingPartyNav.map(x=>itemHtml(x,'nav-subitem')).join('')+
+      '<div class="nav-section-label premium-label">Premium <span>EXCLUSIVO</span></div>'+
+      premiumNav.map(x=>itemHtml(x,'nav-subitem nav-premium-item')).join('')+
+      (supportItem?'<div class="nav-section-label">Ajuda</div>'+itemHtml(supportItem,'nav-subitem'):'');
+  }
 
   const mobileBase=state.role==='admin'
     ? [['admin','Clientes','admin'],['planos','Planos','check'],['perfil','Perfil','user']]
-    : [['dashboard','Início','home'],['fornecedores','Fornecedores','users'],['checklist','Checklist','check'],['cronograma','Cronograma','calendar'],['meu-casamento','Mais','menu']];
+    : [['dashboard','Início','home'],['festa-casamento','Festa','heart'],['premium','Premium','lock'],['suporte','Suporte','meeting'],['perfil','Perfil','user']];
 
   return `<div class="app-shell ${state.role==='client'?'client-app-shell':'admin-app-shell'}">
     <aside class="sidebar">
