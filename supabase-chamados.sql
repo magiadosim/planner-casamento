@@ -8,6 +8,7 @@ create table if not exists public.support_tickets (
   wedding_id uuid references public.weddings(id) on delete set null,
   category text not null default 'Funcionalidade'
     check (category in ('Funcionalidade','Erro','Dúvida','Sugestão','Outro')),
+  feature_slug text references public.planner_features(slug) on delete set null,
   subject text not null,
   description text not null,
   priority text not null default 'Normal'
@@ -19,6 +20,9 @@ create table if not exists public.support_tickets (
   updated_at timestamptz not null default now(),
   responded_at timestamptz
 );
+
+alter table public.support_tickets
+  add column if not exists feature_slug text;
 
 create index if not exists support_tickets_client_idx
   on public.support_tickets(client_user_id,created_at desc);
