@@ -29,7 +29,7 @@ const state={
   vendorFilter:'Todos',
   taskFilter:'Todos',
   docFilter:'Todos',
-  authMode:'login'
+  authMode:'signup'
 };
 
 const icons={
@@ -162,14 +162,14 @@ function authView(){
     </section>
     <section class="login-form-wrap">
       <form class="login-form" id="${signup?'signup-form':'login-form'}">
-        <div class="eyebrow">Área exclusiva dos noivos</div>
-        <h1>${signup?'Comece sua jornada.':'Bem-vinda à sua jornada.'}</h1>
-        <p>${signup?'Crie sua conta e organize o casamento em um só lugar.':'Seu casamento, organizado em um só lugar.'}</p>
+        <div class="eyebrow">${signup?'CRIE SEU PLANNER':'ÁREA DOS NOIVOS'}</div>
+        <h1>${signup?'Comece sua jornada.':'Bem-vinda de volta.'}</h1>
+        <p>${signup?'Faça seu próprio cadastro e comece a organizar o casamento em um só lugar.':'Entre para continuar o planejamento do seu casamento.'}</p>
         ${signup?signupFields():loginFields()}
         <div id="auth-message" class="small" style="min-height:18px;margin-top:8px"></div>
         <div class="login-meta">
           ${signup
-            ? '<button class="link-btn" type="button" data-auth-mode="login">Já tenho uma conta</button>'
+            ? '<span class="auth-switch-copy">Já tem cadastro?</span><button class="link-btn" type="button" data-auth-mode="login">Entrar na minha conta</button>'
             : '<button class="link-btn" type="button" id="forgot">Esqueci minha senha</button><button class="link-btn" type="button" data-auth-mode="signup">Criar minha conta</button>'
           }
         </div>
@@ -914,7 +914,7 @@ function bind(){
 
   const logout=async()=>{
     await sb.auth.signOut();
-    state.session=null;state.user=null;state.profile=null;state.wedding=null;state.access=null;state.role='client';state.authMode='login';
+    state.session=null;state.user=null;state.profile=null;state.wedding=null;state.access=null;state.role='client';state.authMode='signup';
     location.hash='';
     render();
   };
