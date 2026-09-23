@@ -6,7 +6,7 @@ const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey
 const app=document.getElementById('app');
 const SITE_URL='https://magiadosim.github.io/planner-casamento/';
 
-const state={loading:true,session:null,profile:null,wedding:null,access:null,adminClients:[],mode:'signup'};
+const state={loading:true,session:null,profile:null,wedding:null,access:null,adminClients:[],plans:[],features:[],planFeatures:[],entitlements:new Set(),mode:'signup'};
 
 function esc(v=''){
   return String(v??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -24,6 +24,45 @@ function dateBR(date){
 }
 function accessLabel(status){
   return ({active:'Ativo',paused:'Pausado',expired:'Expirado'})[status]||status||'Ativo';
+}
+
+const PLANNER_MODULES=[
+  {slug:'meu-casamento',title:'Meu casamento',desc:'Dados dos noivos, data, local e informações principais do casamento.'},
+  {slug:'fornecedores',title:'Fornecedores',desc:'Cadastre fornecedores, contatos, contratos, valores e pagamentos.'},
+  {slug:'checklist',title:'Checklist',desc:'Organize tarefas, etapas, responsáveis e prazos do planejamento.'},
+  {slug:'cronograma',title:'Cronograma',desc:'Visualize a linha do tempo e os compromissos do casamento.'},
+  {slug:'convidados',title:'Lista de convidados',desc:'Controle convidados, grupos, confirmações e check-in.'},
+  {slug:'rsvp',title:'RSVP',desc:'Disponibilize um link para os convidados confirmarem presença.'},
+  {slug:'documentos',title:'Documentos',desc:'Organize contratos, pagamentos e outros arquivos importantes.'},
+  {slug:'financeiro',title:'Financeiro',desc:'Acompanhe valores contratados, pagos, pendentes e orçamento.'},
+  {slug:'reunioes',title:'Reuniões',desc:'Registre reuniões, datas, participantes, links e observações.'},
+  {slug:'outros-gastos',title:'Outros gastos',desc:'Registre compras e despesas adicionais do casamento.'},
+  {slug:'lua-de-mel',title:'Lua de mel',desc:'Planeje passagens, hospedagem, passeios e demais despesas da viagem.'},
+  {slug:'meus-dados',title:'Meus dados / Backup',desc:'Exporte e guarde uma cópia dos dados do seu planejamento.'}
+];
+
+function hasFeature(slug){
+  if(state.profile?.role==='admin')return true;
+  return state.entitlements instanceof Set && state.entitlements.has(slug);
+}
+
+function moduleCard(module){
+  const unlocked=hasFeature(module.slug);
+  return `<article class="module ${unlocked?'module-unlocked':'module-locked'}">
+    <div class="module-status">${unlocked?'Disponível':'Bloqueado'}</div>
+    <h3>${esc(module.title)}</h3>
+    <p>${esc(module.desc)}</p>
+    ${unlocked
+      ? `<button class="module-action" type="button" data-open-module="${module.slug}">Abrir</button>`
+      : `<button class="module-action unlock" type="button" data-unlock-feature="${module.slug}">Desbloquear</button>`
+    }
+  </article>`;
+}
+
+function showUnlockMessage(slug){
+  const item=PLANNER_MODULES.find(m=>m.slug===slug);
+  const name=item?.title||'Este recurso';
+  alert(`${name} não está incluído no seu plano atual. A equipe A Magia do Sim pode liberar o módulo ao alterar seu plano.`);
 }
 function setMessage(text,type=''){
   const el=document.getElementById('auth-message');
@@ -116,13 +155,8 @@ function dashboardView(){
         <div class="metric"><span>Data do casamento</span><strong>${w.wedding_date?new Date(w.wedding_date+'T00:00:00').toLocaleDateString('pt-BR'):'A definir'}</strong></div>
         <div class="metric"><span>Plano</span><strong>${esc(state.access?.plan_name||'Completo')}</strong></div>
       </section>
-      <section class="modules">
-        <article class="module"><h3>Checklist</h3><p>Organize todas as etapas por prioridade e prazo.</p><span class="pill">Próxima etapa</span></article>
-        <article class="module"><h3>Financeiro</h3><p>Acompanhe orçamento, pagamentos e gastos do casamento.</p><span class="pill">Próxima etapa</span></article>
-        <article class="module"><h3>Convidados</h3><p>Monte sua lista e acompanhe confirmações de presença.</p><span class="pill">Próxima etapa</span></article>
-        <article class="module"><h3>Fornecedores</h3><p>Centralize contatos, contratos, valores e prazos.</p><span class="pill">Próxima etapa</span></article>
-        <article class="module"><h3>Documentos</h3><p>Guarde contratos e arquivos importantes com organização.</p><span class="pill">Em breve</span></article>
-        <article class="module"><h3>Lua de mel</h3><p>Planeje os principais custos e compromissos da viagem.</p><span class="pill">Em breve</span></article>
+      <section class="modules planner-modules">
+        ${PLANNER_MODULES.map(moduleCard).join('')}
       </section>
     </main>
   </div>`;
