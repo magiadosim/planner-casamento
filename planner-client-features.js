@@ -637,6 +637,193 @@ function adminTicketsView(){
   </div>`;
 }
 
+// Carregamento detalhado dos módulos, preservando todos os campos editáveis.
+loadClientModules=async function(){
+  if(!state.wedding)return;
+  const id=state.wedding.id;
+
+  if(hasFeature('fornecedores')){
+    const rows=await safeQuery(sb.from('vendors').select('*').eq('wedding_id',id).order('created_at',{ascending:true}));
+    state.vendors=rows.map(v=>({
+      id:v.id,
+      category:v.category||'Fornecedor',
+      name:v.name||'Fornecedor',
+      status:v.status||'Pendente',
+      phone:v.phone||'—',
+      instagram:v.instagram||'—',
+      site:v.website||'—',
+      amount:Number(v.contract_value||0),
+      paid:Number(v.paid_value||0),
+      note:v.notes||'Sem observações.',
+      contractDate:v.contract_date||'',
+      dueDate:v.due_date||''
+    }));
+  }else state.vendors=[];
+
+  if(hasFeature('checklist')||hasFeature('cronograma')){
+    const rows=await safeQuery(sb.from('tasks').select('*').eq('wedding_id',id).order('due_date',{ascending:true}));
+    state.tasks=rows.map(t=>({
+      id:t.id,
+      title:t.title,
+      due:t.due_date?dateBR(t.due_date):'Sem prazo',
+      dueISO:t.due_date||'',
+      assignee:t.responsible||'Casal',
+      status:t.status||'Pendente',
+      done:!!t.completed
+    }));
+  }else state.tasks=[];
+
+  if(hasFeature('reunioes')||hasFeature('cronograma')){
+    const rows=await safeQuery(sb.from('meetings').select('*').eq('wedding_id',id).order('meeting_date',{ascending:true}));
+    state.meetings=rows.map(m=>({
+      id:m.id,
+      title:m.title,
+      date:m.meeting_date||'',
+      time:m.meeting_time||'',
+      people:m.participants||'—',
+      notes:m.notes||'',
+      link:m.meeting_link||'',
+      type:m.meeting_link?'Online':'Presencial'
+    }));
+  }else state.meetings=[];
+
+  state.docs=hasFeature('documentos')
+    ?(await safeQuery(sb.from('documents').select('*').eq('wedding_id',id).order('created_at',{ascending:false}))).map(d=>({
+      id:d.id,name:d.name,type:d.document_type||'Outro',date:d.created_at?dateBR(d.created_at.slice(0,10)):'—',path:d.file_path||''
+    }))
+    :[];
+
+  state.payments=hasFeature('financeiro')
+    ?await safeQuery(sb.from('payments').select('*').eq('wedding_id',id).order('payment_date',{ascending:false}))
+    :[];
+
+  state.guests=hasFeature('convidados')
+    ?await safeQuery(sb.from('wedding_guests').select('*').eq('wedding_id',id).order('full_name',{ascending:true}))
+    :[];
+
+  state.purchases=(hasFeature('outros-gastos')||hasFeature('lua-de-mel'))
+    ?await safeQuery(sb.from('wedding_purchases').select('*').eq('wedding_id',id).order('purchase_date',{ascending:false}).order('created_at',{ascending:false}))
+    :[];
+};
+
+// PERFIL: edição do nome + foto do casal, como no sistema original.
+async function savePlannerProfile(){
+  const input=document.getElementById('planner-profile-name');
+  const name=input?.value.trim();
+  if(!name)return;
+  const {error}=await sb.from('profiles').update({full_name:name,updated_at:new Date().toISOString()}).eq('id',state.user.id);
+  if(error){console.error(error);toast('Não foi possível atualizar o nome.');return;}
+  state.profile.full_name=name;
+  toast('Nome atualizado.');
+  render();
+}
+async function uploadPlannerCouplePhoto(){
+  if(!state.wedding)return;
+  const input=document.getElementById('planner-couple-photo-file');
+  const file=input?.files?.[0];
+  if(!file){toast('Escolha uma foto primeiro.');return;}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){toast('Use uma imagem JPG, PNG ou WEBP.');return;}
+  if(file.size>5*1024*1024){toast('A foto deve ter no máximo 5 MB.');return;}
+
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`${state.wedding.id}/perfil-${Date.now()}.${ext}`;
+  const oldPath=state.wedding.couple_photo_path||'';
+  const {error:uploadError}=await sb.storage.from('couple-profile-photos').upload(path,file,{upsert:false,contentType:file.type});
+  if(uploadError){console.error(uploadError);toast('Não foi possível enviar a foto.');return;}
+
+  const {error:rpcError}=await sb.rpc('set_couple_photo',{wedding_uuid:state.wedding.id,photo_path:path});
+  if(rpcError){
+    console.error(rpcError);
+    await sb.storage.from('couple-profile-photos').remove([path]);
+    toast('Não foi possível salvar a foto.');
+    return;
+  }
+  if(oldPath&&oldPath!==path)await sb.storage.from('couple-profile-photos').remove([oldPath]);
+  state.wedding.couple_photo_path=path;
+  toast('Foto do casal atualizada.');
+  render();
+}
+async function plannerCouplePhotoUrl(){
+  const path=state.wedding?.couple_photo_path;
+  if(!path)return '';
+  const {data,error}=await sb.storage.from('couple-profile-photos').createSignedUrl(path,3600);
+  if(error)return '';
+  return data?.signedUrl||'';
+}
+profileView=function(){
+  const client=state.role==='client';
+  return `<div class="page"><div class="page-head"><div><h1>Perfil</h1><p>Seus dados e preferências de acesso.</p></div></div>
+    ${client?`<div class="card card-pad planner-photo-card"><div class="card-title"><h2>Foto do casal</h2></div><div class="planner-photo-row"><div id="planner-photo-preview" class="planner-photo-preview">♡</div><div class="planner-photo-actions"><div class="field"><label>Escolher foto</label><input class="input planner-plain-input" id="planner-couple-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div><button class="btn-primary" id="planner-upload-couple-photo">Atualizar foto do casal</button></div></div></div>`:''}
+    <div class="grid grid-2" style="margin-top:${client?'14px':'0'}"><div class="card card-pad"><div class="card-title"><h2>Dados pessoais</h2></div><div class="field"><label>Nome</label><input class="input planner-plain-input" id="planner-profile-name" value="${esc(state.profile?.full_name||'')}" ${client?'':'disabled'}></div><div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div>${client?'<button class="btn-primary" id="planner-save-profile">Salvar nome</button>':''}</div><div class="card card-pad"><div class="card-title"><h2>${client?'Seu plano':'Acesso administrativo'}</h2></div><div class="contract-lines"><div class="contract-line"><span>Perfil</span><strong>${client?'Cliente':'Administrador'}</strong></div><div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div><div class="contract-line"><span>Assessoria</span><strong>A Magia do Sim</strong></div></div></div></div>
+  </div>`;
+};
+
+// Importação e exportação de convidados.
+function normalizedGuestHeader(value){
+  return String(value||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+}
+async function importPlannerGuests(file){
+  if(!file)return;
+  if(!window.XLSX){toast('O importador de Excel não carregou. Atualize a página.');return;}
+  let workbook;
+  try{
+    const buffer=await file.arrayBuffer();
+    workbook=XLSX.read(buffer,{type:'array'});
+  }catch(error){
+    console.error(error);toast('Não foi possível ler a planilha.');return;
+  }
+  const sheet=workbook.Sheets[workbook.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
+  const payload=[];
+  for(const row of rows){
+    const mapped={};
+    Object.entries(row).forEach(([key,value])=>mapped[normalizedGuestHeader(key)]=value);
+    const name=String(mapped.nome||mapped.nomecompleto||mapped.convidado||'').trim();
+    if(!name)continue;
+    const rawType=String(mapped.tipo||mapped.faixa||mapped.idade||'adulto').toLowerCase();
+    const rawStatus=String(mapped.status||'').toLowerCase();
+    payload.push({
+      wedding_id:state.wedding.id,
+      full_name:name,
+      group_name:String(mapped.familia||mapped.grupo||mapped.familiagrupo||'').trim()||null,
+      age_group:rawType.includes('crian')?'child':'adult',
+      phone:String(mapped.telefone||mapped.celular||mapped.whatsapp||'').trim()||null,
+      status:rawStatus.includes('confirm')?'confirmed':rawStatus.includes('recus')||rawStatus.includes('nao')?'declined':'pending',
+      notes:String(mapped.observacao||mapped.observacoes||mapped.obs||'').trim()||null
+    });
+  }
+  if(!payload.length){toast('Não encontrei convidados válidos na planilha. Use uma coluna chamada Nome.');return;}
+  const {error}=await sb.from('wedding_guests').insert(payload);
+  if(error){console.error(error);toast('Não foi possível importar a lista.');return;}
+  await reloadPlannerClient();
+  toast(`${payload.length} convidado(s) importado(s).`);
+}
+function exportPlannerGuests(){
+  if(!window.XLSX){toast('O recurso de Excel não carregou.');return;}
+  const rows=state.guests.map(g=>({
+    Nome:g.full_name,
+    Familia_Grupo:g.group_name||'',
+    Tipo:g.age_group==='child'?'Criança':'Adulto',
+    Telefone:g.phone||'',
+    Status:guestStatusLabel(g.status),
+    Check_in:g.checked_in?'Sim':'Não',
+    Observacoes:g.notes||''
+  }));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{Informação:'Sem convidados'}]),'Convidados');
+  XLSX.writeFile(wb,'Lista_de_Convidados.xlsx');
+}
+
+const guestsViewWithImport=guestsView;
+guestsView=function(){
+  let html=guestsViewWithImport();
+  html=html.replace(
+    '<button class="btn-secondary" id="copy-rsvp-client">Copiar link RSVP</button>',
+    '<input type="file" id="planner-guest-import-file" accept=".xlsx,.xls,.csv" hidden><button class="btn-secondary" id="planner-import-guests">Importar Excel</button><button class="btn-secondary" id="planner-export-guests">Exportar lista</button><button class="btn-secondary" id="copy-rsvp-client">Copiar link RSVP</button>'
+  );
+  return html;
+};
+
 // Carrega chamados depois do carregamento normal.
 const plannerBaseLoadData=loadData;
 loadData=async function(){
@@ -739,6 +926,28 @@ bind=function(){
   if(exportXlsx)exportXlsx.onclick=downloadPlannerXlsx;
   const exportJson=document.getElementById('export-planner-json');
   if(exportJson)exportJson.onclick=downloadPlannerJson;
+
+  const saveProfile=document.getElementById('planner-save-profile');
+  if(saveProfile)saveProfile.onclick=savePlannerProfile;
+  const uploadPhoto=document.getElementById('planner-upload-couple-photo');
+  if(uploadPhoto)uploadPhoto.onclick=uploadPlannerCouplePhoto;
+  const photoPreview=document.getElementById('planner-photo-preview');
+  if(photoPreview&&state.wedding?.couple_photo_path){
+    plannerCouplePhotoUrl().then(url=>{
+      if(url&&document.getElementById('planner-photo-preview')){
+        document.getElementById('planner-photo-preview').innerHTML=`<img src="${esc(url)}" alt="Foto do casal">`;
+      }
+    });
+  }
+
+  const importGuests=document.getElementById('planner-import-guests');
+  const guestFile=document.getElementById('planner-guest-import-file');
+  if(importGuests&&guestFile){
+    importGuests.onclick=()=>guestFile.click();
+    guestFile.onchange=()=>importPlannerGuests(guestFile.files?.[0]);
+  }
+  const exportGuests=document.getElementById('planner-export-guests');
+  if(exportGuests)exportGuests.onclick=exportPlannerGuests;
 
   const newTicket=document.getElementById('new-support-ticket');
   if(newTicket)newTicket.onclick=openSupportTicket;
