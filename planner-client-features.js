@@ -582,8 +582,12 @@ function ticketStatusClass(status){
   return 'danger';
 }
 function openSupportTicket(){
+  const featureOptions=[{value:'',label:'Geral / não se aplica'}].concat(
+    (state.features||[]).map(f=>({value:f.slug,label:f.name}))
+  );
   const body=
     plannerSelect('Tipo','category',['Funcionalidade','Erro','Dúvida','Sugestão','Outro'],'Funcionalidade')+
+    plannerSelect('Funcionalidade relacionada','feature_slug',featureOptions,'')+
     plannerField('Assunto','subject','','text','required')+
     plannerTextarea('Descreva o que você precisa','description','','rows="6" required')+
     plannerSelect('Prioridade','priority',['Baixa','Normal','Alta'],'Normal');
@@ -596,6 +600,7 @@ function openSupportTicket(){
       client_user_id:state.user.id,
       wedding_id:state.wedding?.id||null,
       category:f.category||'Funcionalidade',
+      feature_slug:f.feature_slug||null,
       subject,
       description,
       priority:f.priority||'Normal'
@@ -611,7 +616,7 @@ function supportView(){
     <div class="page-head"><div><h1>Suporte e chamados</h1><p>Encontrou um problema, precisa de ajuda ou quer solicitar uma funcionalidade? Fale diretamente com a administração.</p></div><button class="btn-primary" id="new-support-ticket">+ Abrir chamado</button></div>
     <div class="card card-pad support-intro"><strong>Como funciona</strong><p class="muted">Seu chamado fica vinculado à sua conta. Quando houver retorno da A Magia do Sim, a resposta aparecerá aqui.</p></div>
     <div class="support-ticket-list">${state.tickets.length?state.tickets.map(t=>`<article class="card card-pad support-ticket">
-      <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(t.category)} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(t.status)}</span></div>
+      <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(t.category)}${t.feature_slug?' • '+esc(moduleName(t.feature_slug)):''} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(t.status)}</span></div>
       <p class="support-description">${esc(t.description)}</p>
       <div class="support-meta"><span>Prioridade: <strong>${esc(t.priority)}</strong></span></div>
       ${t.admin_response?`<div class="support-response"><strong>Resposta da A Magia do Sim</strong><p>${esc(t.admin_response)}</p></div>`:''}
@@ -624,7 +629,7 @@ function adminTicketsView(){
     <div class="support-ticket-list">${state.tickets.length?state.tickets.map(t=>{
       const client=state.adminClients.find(c=>c.id===t.client_user_id);
       return `<article class="card card-pad support-ticket" data-ticket="${t.id}">
-        <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(client?.couple_name||client?.full_name||client?.email||'Cliente')} • ${esc(t.category)} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(t.status)}</span></div>
+        <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(client?.couple_name||client?.full_name||client?.email||'Cliente')} • ${esc(t.category)}${t.feature_slug?' • '+esc(moduleName(t.feature_slug)):''} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(t.status)}</span></div>
         <p class="support-description">${esc(t.description)}</p>
         <div class="planner-admin-grid support-admin-grid">
           <div class="field"><label>Status</label><select class="input planner-plain-input" name="ticket_status"><option value="Aberto" ${t.status==='Aberto'?'selected':''}>Aberto</option><option value="Em análise" ${t.status==='Em análise'?'selected':''}>Em análise</option><option value="Respondido" ${t.status==='Respondido'?'selected':''}>Respondido</option><option value="Concluído" ${t.status==='Concluído'?'selected':''}>Concluído</option></select></div>
