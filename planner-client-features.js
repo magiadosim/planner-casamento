@@ -1735,19 +1735,19 @@ const PREMIUM_PREVIEWS={
   },
   'organizacao-casa':{
     title:'Organização da casa',
-    count:'10 categorias para a nova casa',
-    description:'Uma lista completa para organizar compras, presentes, prioridades e o que ainda está faltando.',
+    count:'Lista de enxoval + financeiro',
+    description:'Organize o enxoval por setores, acompanhe o que já tem, o que falta comprar e os pagamentos de cada item.',
     items:[
-      'Cozinha',
-      'Sala',
-      'Quarto',
-      'Banheiro',
-      'Lavanderia',
-      'Eletrodomésticos',
-      'Cama, mesa e banho',
-      'Decoração',
-      'Organização',
-      'Presentes e compras'
+      'Dashboard do enxoval',
+      'Lista setorizada estilo planilha',
+      'Já tenho x quero ter',
+      'Tamanho, modelo e quantidade',
+      'Lista sugerida por setor',
+      'Comprado ou presenteado',
+      'Valores previstos por item',
+      'Pagamentos vinculados aos itens',
+      'Financeiro da casa',
+      'Progresso por setor'
     ]
   },
   'lua-de-mel':{
