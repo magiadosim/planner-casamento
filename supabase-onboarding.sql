@@ -49,7 +49,31 @@ begin
     nullif(new.raw_user_meta_data ->> 'partner1_name',''),
     nullif(new.raw_user_meta_data ->> 'partner2_name',''),
     case
-      when coalesce(new.raw_user_meta_data ->> 'wedding_date','') ~ '^\\d{4}-\\d{2}-\\d{2}$'
+      when coalesce(new.raw_user_meta_data ->> 'wedding_date','') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}
+      then (new.raw_user_meta_data ->> 'wedding_date')::date
+      else null
+    end,
+    nullif(new.raw_user_meta_data ->> 'venue',''),
+    case
+      when coalesce(new.raw_user_meta_data ->> 'guests','') ~ '^[0-9]+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
       then (new.raw_user_meta_data ->> 'wedding_date')::date
       else null
     end,
@@ -61,6 +85,247 @@ begin
     end,
     case
       when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^\\d+(\\.\\d+)?$'
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then (new.raw_user_meta_data ->> 'wedding_date')::date
+      else null
+    end,
+    nullif(new.raw_user_meta_data ->> 'venue',''),
+    case
+      when coalesce(new.raw_user_meta_data ->> 'guests','') ~ '^\\d+$'
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then (new.raw_user_meta_data ->> 'wedding_date')::date
+      else null
+    end,
+    nullif(new.raw_user_meta_data ->> 'venue',''),
+    case
+      when coalesce(new.raw_user_meta_data ->> 'guests','') ~ '^[0-9]+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^\\d+(\\.\\d+)?$'
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then (new.raw_user_meta_data ->> 'wedding_date')::date
+      else null
+    end,
+    nullif(new.raw_user_meta_data ->> 'venue',''),
+    case
+      when coalesce(new.raw_user_meta_data ->> 'guests','') ~ '^\\d+$'
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^\\d+(\\.\\d+)?$'
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then (new.raw_user_meta_data ->> 'wedding_date')::date
+      else null
+    end,
+    nullif(new.raw_user_meta_data ->> 'venue',''),
+    case
+      when coalesce(new.raw_user_meta_data ->> 'guests','') ~ '^[0-9]+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
+      then greatest((new.raw_user_meta_data ->> 'guests')::integer,0)
+      else 0
+    end,
+    case
+      when coalesce(new.raw_user_meta_data ->> 'budget','') ~ '^[0-9]+([.][0-9]+)?
+      then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
+      else 0
+    end
+  )
+  on conflict (client_user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+-- O trigger criado na base inicial já aponta para handle_new_user(),
+-- então não é necessário recriá-lo.
+
       then greatest((new.raw_user_meta_data ->> 'budget')::numeric,0)
       else 0
     end
