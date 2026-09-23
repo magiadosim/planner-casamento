@@ -545,7 +545,9 @@ function backupSnapshot(){
     purchases:state.purchases,
     tasks:state.tasks,
     meetings:state.meetings,
-    documents:state.docs
+    documents:state.docs,
+    cerimonial:state.ceremonyItems,
+    organizacao_da_casa:state.homeItems
   };
 }
 function downloadPlannerJson(){
@@ -565,7 +567,9 @@ function downloadPlannerXlsx(){
     ['Outros e Lua de Mel',state.purchases],
     ['Checklist',state.tasks],
     ['Reuniões',state.meetings],
-    ['Documentos',state.docs]
+    ['Documentos',state.docs],
+    ['Cerimonial',state.ceremonyItems],
+    ['Organização da Casa',state.homeItems]
   ];
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
@@ -574,7 +578,7 @@ function downloadPlannerXlsx(){
 }
 myDataView=function(){
   return `<div class="page"><div class="page-head"><div><h1>Meus dados</h1><p>Baixe uma cópia das informações do seu casamento sempre que quiser.</p></div></div>
-    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">CÓPIA COMPLETA</span><h2>Baixar todos os meus dados</h2><p>Inclui cadastro, casamento, convidados, fornecedores, financeiro, checklist, reuniões e documentos. Sua senha nunca é exportada.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar tudo (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
+    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">CÓPIA COMPLETA</span><h2>Baixar todos os meus dados</h2><p>Inclui cadastro, casamento, convidados, fornecedores, financeiro, checklist, reuniões, documentos e, quando disponíveis no plano, os recursos Premium. Sua senha nunca é exportada.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar tudo (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
   </div>`;
 };
 
