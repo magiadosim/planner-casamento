@@ -2074,22 +2074,53 @@ function premiumHubView(){
 }
 
 
+const ESSENTIAL_PRICE='R$ 89,90';
+const ESSENTIAL_PERIOD='por semestre';
 const PREMIUM_PRICE='R$ 29,90';
 const PREMIUM_PIX_KEY='amagiadosim2026@gmail.com';
 const PREMIUM_WHATSAPP='5521984629190';
 
-function openPremiumPaymentModal(){
+function paymentPlanForFeature(feature){
+  const premiumFeatures=['cerimonial','organizacao-casa','lua-de-mel'];
+  if(premiumFeatures.includes(feature)){
+    return {
+      name:'Premium',
+      price:PREMIUM_PRICE,
+      period:'adicional ao Essencial',
+      description:'Libera Cerimonial, Organização da Casa e Lua de Mel.',
+      premium:true
+    };
+  }
+  return {
+    name:'Essencial',
+    price:ESSENTIAL_PRICE,
+    period:ESSENTIAL_PERIOD,
+    description:'Libera toda a área Festa de Casamento, incluindo fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões, gastos e backup.',
+    premium:false
+  };
+}
+
+function openPlanPaymentModal(feature){
+  const plan=paymentPlanForFeature(feature);
+  const essentialActive=hasFeature('meu-casamento');
+  const premiumWarning=plan.premium&&!essentialActive
+    ? '<div class="premium-payment-warning"><strong>Importante</strong><span>O Premium é um adicional. Para usar os recursos Premium, o pacote Essencial também precisa estar ativo.</span></div>'
+    : '';
+
   const body=`
     <div class="premium-payment-box">
       <div class="premium-payment-price">
-        <span>Premium</span>
-        <strong>${PREMIUM_PRICE}</strong>
-        <small>Liberação do pacote Premium</small>
+        <span>${plan.name}</span>
+        <strong>${plan.price}</strong>
+        <small>${plan.period}</small>
       </div>
+
+      <p class="premium-payment-description">${plan.description}</p>
+      ${premiumWarning}
 
       <div class="premium-payment-steps">
         <div><b>1</b><span>Copie a chave Pix abaixo.</span></div>
-        <div><b>2</b><span>Faça o pagamento de ${PREMIUM_PRICE}.</span></div>
+        <div><b>2</b><span>Faça o pagamento de ${plan.price}.</span></div>
         <div><b>3</b><span>Envie o comprovante pelo WhatsApp para solicitar a liberação.</span></div>
       </div>
 
@@ -2099,13 +2130,13 @@ function openPremiumPaymentModal(){
         <button type="button" class="btn-secondary" id="copy-premium-pix">Copiar chave Pix</button>
       </div>
 
-      <p class="premium-payment-note">Após a confirmação do pagamento, o Premium será liberado pela administração do Magia Para Todos.</p>
+      <p class="premium-payment-note">A liberação é feita manualmente pela administração após a conferência do pagamento.</p>
 
       <a class="btn-primary premium-whatsapp-proof" id="premium-whatsapp-proof" href="#" target="_blank" rel="noopener noreferrer">Enviar comprovante pelo WhatsApp</a>
     </div>
   `;
 
-  plannerModal('Desbloquear Premium',body,'Fechar',async()=>true);
+  plannerModal(`Desbloquear ${plan.name}`,body,'Fechar',async()=>true);
 
   const modal=document.querySelector('.modal-backdrop:last-of-type')||document.querySelector('.modal-backdrop');
   const copyBtn=modal?.querySelector('#copy-premium-pix');
@@ -2123,7 +2154,7 @@ function openPremiumPaymentModal(){
   if(whatsapp){
     const couple=state.wedding?.couple_name||state.profile?.full_name||'Cliente';
     const email=state.user?.email||state.profile?.email||'';
-    const message=`Olá! Fiz o pagamento de ${PREMIUM_PRICE} do Premium do Magia Para Todos e quero solicitar a liberação do meu plano. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
+    const message=`Olá! Fiz o pagamento de ${plan.price} referente ao pacote ${plan.name} do Magia Para Todos e quero solicitar a liberação. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
     whatsapp.href=`https://wa.me/${PREMIUM_WHATSAPP}?text=${encodeURIComponent(message)}`;
   }
 }
@@ -2192,7 +2223,7 @@ const plannerBaseBind=bind;
 bind=function(){
   plannerBaseBind();
 
-  document.querySelectorAll('[data-unlock]').forEach(btn=>btn.onclick=openPremiumPaymentModal);
+  document.querySelectorAll('[data-unlock]').forEach(btn=>btn.onclick=()=>openPlanPaymentModal(btn.dataset.unlock));
 
   const editWedding=document.getElementById('edit-wedding-client');
   if(editWedding)editWedding.onclick=openPlannerWeddingEditor;
