@@ -1,128 +1,4 @@
-/* MAGIA PARA TODOS — paletas por cliente, planos editáveis e chat */
-const MPT_THEME_DEFAULT={
-  id:'classico',
-  primary:'#4c5030',
-  secondary:'#5c3f2c',
-  accent:'#b78c4d',
-  background:'#f7f1e7'
-};
-const MPT_THEME_PRESETS=[
-  {id:'classico',name:'Clássico',primary:'#4c5030',secondary:'#5c3f2c',accent:'#b78c4d',background:'#f7f1e7'},
-  {id:'romantico',name:'Romântico',primary:'#8d5d68',secondary:'#6d474f',accent:'#c99a9f',background:'#fbf2f3'},
-  {id:'terracota',name:'Terracota',primary:'#9a5f45',secondary:'#5e4338',accent:'#c8946d',background:'#f8efe8'},
-  {id:'oliva',name:'Verde Oliva',primary:'#66704b',secondary:'#4e4938',accent:'#b9a46f',background:'#f5f2e8'},
-  {id:'serenity',name:'Azul Serenity',primary:'#657f91',secondary:'#465a68',accent:'#a9bdc8',background:'#f1f6f8'},
-  {id:'rose',name:'Rosé',primary:'#a36f76',secondary:'#6f4e52',accent:'#d2a5a9',background:'#faf1f1'}
-];
-
-function mptValidColor(value,fallback){
-  return /^#[0-9a-f]{6}$/i.test(String(value||''))?String(value).toLowerCase():fallback;
-}
-function mptNormalizeTheme(theme={}){
-  return {
-    id:String(theme.id||'personalizado'),
-    primary:mptValidColor(theme.primary,MPT_THEME_DEFAULT.primary),
-    secondary:mptValidColor(theme.secondary,MPT_THEME_DEFAULT.secondary),
-    accent:mptValidColor(theme.accent,MPT_THEME_DEFAULT.accent),
-    background:mptValidColor(theme.background,MPT_THEME_DEFAULT.background)
-  };
-}
-function mptApplyTheme(theme){
-  const t=mptNormalizeTheme(theme);
-  const root=document.documentElement;
-  root.style.setProperty('--planner-theme-primary',t.primary);
-  root.style.setProperty('--planner-theme-secondary',t.secondary);
-  root.style.setProperty('--planner-theme-accent',t.accent);
-  root.style.setProperty('--planner-theme-background',t.background);
-  root.style.setProperty('--olive',t.primary);
-  root.style.setProperty('--brown',t.secondary);
-  root.style.setProperty('--gold',t.accent);
-  root.style.setProperty('--cream',t.background);
-  const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta)meta.setAttribute('content',t.primary);
-  state.theme=t;
-}
-function mptUserTheme(){
-  return mptNormalizeTheme(state.user?.user_metadata?.planner_theme||MPT_THEME_DEFAULT);
-}
-async function mptSaveTheme(theme){
-  if(!state.user)return;
-  const normalized=mptNormalizeTheme(theme);
-  const current={...(state.user.user_metadata||{})};
-  const {data,error}=await sb.auth.updateUser({data:{...current,planner_theme:normalized}});
-  if(error){console.error(error);toast('Não foi possível salvar a paleta.');return false;}
-  if(data?.user){
-    state.user=data.user;
-    if(state.session)state.session.user=data.user;
-  }
-  mptApplyTheme(normalized);
-  toast('Paleta salva. Seu Planner já está com as novas cores.');
-  render();
-  return true;
-}
-function mptThemePresetHtml(p,current){
-  const active=current.id===p.id;
-  return `<button type="button" class="planner-theme-preset ${active?'active':''}" data-theme-preset="${esc(p.id)}">
-    <span class="planner-theme-swatches">
-      <i style="background:${p.primary}"></i><i style="background:${p.secondary}"></i><i style="background:${p.accent}"></i><i style="background:${p.background}"></i>
-    </span>
-    <strong>${esc(p.name)}</strong>
-  </button>`;
-}
-function mptThemeCard(){
-  const t=state.theme||mptUserTheme();
-  return `<section class="card card-pad planner-theme-card">
-    <div class="card-title"><div><h2>Paleta do meu Planner</h2><span class="sub">Escolha as cores que combinam com o seu casamento.</span></div></div>
-    <p class="planner-theme-intro">A paleta fica salva na sua conta e aparece automaticamente quando você entrar em outro celular ou computador.</p>
-    <div class="planner-theme-presets">${MPT_THEME_PRESETS.map(p=>mptThemePresetHtml(p,t)).join('')}</div>
-    <div class="planner-theme-custom-grid">
-      <label class="planner-theme-color">Cor principal<input type="color" id="mpt-theme-primary" value="${esc(t.primary)}"></label>
-      <label class="planner-theme-color">Cor secundária<input type="color" id="mpt-theme-secondary" value="${esc(t.secondary)}"></label>
-      <label class="planner-theme-color">Destaque<input type="color" id="mpt-theme-accent" value="${esc(t.accent)}"></label>
-      <label class="planner-theme-color">Fundo<input type="color" id="mpt-theme-background" value="${esc(t.background)}"></label>
-    </div>
-    <div class="planner-theme-actions">
-      <button type="button" class="btn-secondary" id="mpt-theme-reset">Restaurar padrão</button>
-      <button type="button" class="btn-primary" id="mpt-theme-save">Salvar paleta</button>
-    </div>
-  </section>`;
-}
-
-/* PERFIL */
-const mptBaseProfileView=profileView;
-profileView=function(){
-  if(state.role!=='client')return mptBaseProfileView();
-  return `<div class="page">
-    <div class="page-head"><div><h1>Perfil</h1><p>Seus dados e a identidade visual do seu Planner.</p></div></div>
-    <div class="card card-pad planner-photo-card">
-      <div class="card-title"><h2>Foto do casal</h2></div>
-      <div class="planner-photo-row">
-        <div id="planner-photo-preview" class="planner-photo-preview">♡</div>
-        <div class="planner-photo-actions">
-          <div class="field"><label>Escolher foto</label><input class="input planner-plain-input" id="planner-couple-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div>
-          <button class="btn-primary" id="planner-upload-couple-photo">Atualizar foto do casal</button>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-2" style="margin-top:14px">
-      <div class="card card-pad">
-        <div class="card-title"><h2>Dados pessoais</h2></div>
-        <div class="field"><label>Nome</label><input class="input planner-plain-input" id="planner-profile-name" value="${esc(state.profile?.full_name||'')}"></div>
-        <div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div>
-        <button class="btn-primary" id="planner-save-profile">Salvar nome</button>
-      </div>
-      <div class="card card-pad">
-        <div class="card-title"><h2>Seu plano</h2></div>
-        <div class="contract-lines">
-          <div class="contract-line"><span>Perfil</span><strong>Cliente</strong></div>
-          <div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div>
-          <div class="contract-line"><span>Plataforma</span><strong>Magia Para Todos</strong></div>
-        </div>
-      </div>
-    </div>
-    ${mptThemeCard()}
-  </div>`;
-};
+/* MAGIA PARA TODOS — planos editáveis, chat e chamados */
 
 /* CATÁLOGO DE PLANOS */
 async function mptLoadAdminCatalog(){
@@ -415,12 +291,7 @@ const mptBaseLoadData=loadData;
 loadData=async function(){
   await mptBaseLoadData();
   if(!state.session)return;
-  if(state.role==='admin'){
-    mptApplyTheme(MPT_THEME_DEFAULT);
-    await mptLoadAdminCatalog();
-  }else{
-    mptApplyTheme(mptUserTheme());
-  }
+  if(state.role==='admin')await mptLoadAdminCatalog();
   await mptLoadChatMessages();
 };
 
@@ -451,33 +322,6 @@ const mptBaseBind=bind;
 bind=function(){
   mptBaseBind();
 
-  document.querySelectorAll('[data-theme-preset]').forEach(btn=>btn.onclick=()=>{
-    const preset=MPT_THEME_PRESETS.find(p=>p.id===btn.dataset.themePreset);
-    if(!preset)return;
-    mptApplyTheme(preset);
-    render();
-  });
-  ['primary','secondary','accent','background'].forEach(key=>{
-    const input=document.getElementById(`mpt-theme-${key}`);
-    if(input)input.oninput=()=>{
-      const t={...(state.theme||mptUserTheme()),id:'personalizado',[key]:input.value};
-      mptApplyTheme(t);
-    };
-  });
-  const saveTheme=document.getElementById('mpt-theme-save');
-  if(saveTheme)saveTheme.onclick=()=>{
-    const theme={
-      id:state.theme?.id||'personalizado',
-      primary:document.getElementById('mpt-theme-primary')?.value,
-      secondary:document.getElementById('mpt-theme-secondary')?.value,
-      accent:document.getElementById('mpt-theme-accent')?.value,
-      background:document.getElementById('mpt-theme-background')?.value
-    };
-    mptSaveTheme(theme);
-  };
-  const resetTheme=document.getElementById('mpt-theme-reset');
-  if(resetTheme)resetTheme.onclick=()=>mptSaveTheme(MPT_THEME_DEFAULT);
-
   const newPlan=document.getElementById('mpt-new-plan');
   if(newPlan)newPlan.onclick=mptOpenNewPlan;
   document.querySelectorAll('.admin-save-plan').forEach(btn=>btn.onclick=()=>mptSavePlan(btn.dataset.planId));
@@ -494,8 +338,3 @@ bind=function(){
 
   document.querySelectorAll('[data-close-ticket]').forEach(btn=>btn.onclick=()=>mptCloseTicket(btn.dataset.closeTicket));
 };
-
-if(state.session){
-  if(state.role==='client')mptApplyTheme(mptUserTheme());
-  else mptApplyTheme(MPT_THEME_DEFAULT);
-}
