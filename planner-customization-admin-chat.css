@@ -225,3 +225,17 @@
   background:#7fb36a;
   box-shadow:0 0 0 3px rgba(127,179,106,.12);
 }
+
+
+.admin-inactive-plans{
+  margin-top:18px;
+}
+.admin-inactive-plans>summary{
+  cursor:pointer;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+}
+.admin-inactive-plans .admin-plan-grid{
+  margin-top:14px;
+}
