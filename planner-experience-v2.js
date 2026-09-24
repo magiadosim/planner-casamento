@@ -66,7 +66,7 @@ ceremonyView=function(){
 // CASA — LISTA DE PRESENTES
 function mptGiftShareUrl(code){
   if(!code)return '';
-  const url=new URL('presentes.html',location.href);url.hash='';url.search='';url.searchParams.set('code',code);return url.toString();
+  const url=new URL('presentes.html',location.href);url.hash='';url.search='';url.searchParams.set('v','20260924-5');url.searchParams.set('code',code);return url.toString();
 }
 
 function mptOpenGiftItemEditor(item){
@@ -75,7 +75,7 @@ function mptOpenGiftItemEditor(item){
     plannerField('Nome do presente','item_name',item&&item.item_name?item.item_name:'','text','required')+
     plannerSelect('Categoria / ambiente','room',homeRooms,item&&item.room?item.room:'Cozinha')+
     plannerField('Quantidade desejada','quantity',item&&item.quantity?item.quantity:1,'number','min="1"')+
-    plannerField('Valor do produto','unit_value',item?Number(item.unit_value||0):0,'number','min="0" step="0.01"')+
+    plannerField('Valor do presente','unit_value',item?Number(item.unit_value||0):'','number','min="0.01" step="0.01" required')+
     plannerField('Tamanho / modelo','item_size',item&&item.item_size?item.item_size:'')+
     plannerField('Link do produto / site','item_link',item&&item.item_link?item.item_link:'','url','placeholder="https://..."')+
     plannerField('Loja / site','store_name',item&&item.store_name?item.store_name:'')+
@@ -87,6 +87,8 @@ function mptOpenGiftItemEditor(item){
     const name=String(d.item_name||'').trim();
     if(!name){toast('Informe o nome do presente.');return false;}
     const link=String(d.item_link||'').trim();
+    const value=Number(d.unit_value||0);
+    if(value<=0){toast('Informe o valor do presente.');return false;}
     if(link&&!/^https?:\/\//i.test(link)){toast('O link precisa começar com http:// ou https://');return false;}
 
     const payload={
@@ -98,7 +100,7 @@ function mptOpenGiftItemEditor(item){
       item_size:String(d.item_size||'').trim()||null,
       priority:d.priority||'Importante',
       acquisition_status:'Falta',
-      unit_value:Number(d.unit_value||0),
+      unit_value:value,
       store_name:String(d.store_name||'').trim()||null,
       item_link:link||null,
       notes:String(d.notes||'').trim()||null,
