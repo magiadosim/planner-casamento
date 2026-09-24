@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" role="img" aria-labelledby="title desc">
+  <title id="title">Magia Para Todos</title>
+  <desc id="desc">Marca do Planner Magia Para Todos</desc>
+  <rect width="640" height="240" rx="34" fill="#f7f1e7"/>
+  <g transform="translate(52 38)">
+    <circle cx="82" cy="82" r="70" fill="#4c5030"/>
+    <path d="M49 101c18-49 49-77 78-85-10 31-28 58-56 82 21-12 41-17 61-16-18 22-42 36-73 42" fill="none" stroke="#f7f1e7" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="48" cy="49" r="5" fill="#b78c4d"/>
+    <circle cx="121" cy="47" r="5" fill="#b78c4d"/>
+    <circle cx="126" cy="119" r="5" fill="#b78c4d"/>
+  </g>
+  <g fill="#5c3f2c">
+    <text x="225" y="102" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="600">Magia</text>
+    <text x="225" y="158" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="600">Para Todos</text>
+  </g>
+  <text x="228" y="193" font-family="Arial, sans-serif" font-size="18" letter-spacing="3" fill="#7f745f">PLANNER DE CASAMENTO</text>
+</svg>
