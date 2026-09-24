@@ -31,7 +31,7 @@ function validUuid(v){
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 }
 function brand(){
-  return '<div class="rsvp-brand"><img src="https://magiadosim.github.io/magia-do-sim/assets/logo-oficial.png" alt="A Magia do Sim"><strong>A Magia do Sim</strong></div>';
+  return '<div class="rsvp-brand"><img src="https://magiadosim.github.io/planner-casamento/magia-para-todos-logo.svg" alt="Magia Para Todos"><strong>Magia Para Todos</strong></div>';
 }
 function hero(){
   return `<div class="rsvp-hero"><span class="rsvp-eyebrow">CONFIRMAÇÃO DE PRESENÇA</span><h1>${esc(wedding.couple_name)}</h1><p>${esc(dateLong(wedding.wedding_date))}${wedding.venue?' • '+esc(wedding.venue):''}</p></div>`;
@@ -161,7 +161,7 @@ function renderSuccess(){
         </div>
       </div>
     </section>
-    <p class="rsvp-privacy">A Magia do Sim • Onde os sonhos se tornam alianças.</p>
+    <p class="rsvp-privacy">Magia Para Todos • Onde os sonhos se tornam alianças.</p>
   </div>`;
   document.getElementById('rsvp-search-again').onclick=()=>renderSearch();
 }
