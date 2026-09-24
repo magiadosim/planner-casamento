@@ -553,7 +553,12 @@ function backupSnapshot(){
     documents:state.docs,
     cerimonial:state.ceremonyItems,
     organizacao_da_casa:state.homeItems,
-    pagamentos_da_casa:state.homePayments
+    pagamentos_da_casa:state.homePayments,
+    lua_de_mel_viagem:state.honeymoonProfile||null,
+    lua_de_mel_roteiro:state.honeymoonItinerary||[],
+    lua_de_mel_reservas:state.honeymoonReservations||[],
+    lua_de_mel_checklist:state.honeymoonChecklist||[],
+    lista_presentes_reservas:state.homeGiftReservations||[]
   };
 }
 function downloadPlannerJson(){
@@ -622,7 +627,11 @@ function downloadPlannerXlsx(){
     ['Documentos',state.docs],
     ['Cerimonial',state.ceremonyItems],
     ['Organização da Casa',state.homeItems],
-    ['Pagamentos da Casa',state.homePayments]
+    ['Pagamentos da Casa',state.homePayments],
+    ['Viagem Lua de Mel',state.honeymoonProfile?[state.honeymoonProfile]:[]],
+    ['Roteiro Lua de Mel',state.honeymoonItinerary||[]],
+    ['Reservas Lua de Mel',state.honeymoonReservations||[]],
+    ['Checklist Lua de Mel',state.honeymoonChecklist||[]]
   ];
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
