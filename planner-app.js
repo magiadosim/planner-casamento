@@ -4,7 +4,7 @@ const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey
 });
 
 const SITE_URL='https://magiadosim.github.io/planner-casamento/';
-const LOGO_URL='https://magiadosim.github.io/magia-do-sim/assets/logo-oficial.png';
+const LOGO_URL='https://magiadosim.github.io/planner-casamento/magia-para-todos-logo.svg';
 const app=document.getElementById('app');
 
 const state={
@@ -149,7 +149,7 @@ function moduleName(feature){
   })[feature]||'Recurso';
 }
 function loadingView(){
-  return `<div class="login-page" style="display:grid;place-items:center;min-height:100vh"><div class="card card-pad" style="max-width:420px;text-align:center"><img src="${LOGO_URL}" alt="A Magia do Sim" style="max-width:180px;margin:auto"><p class="muted">Carregando sua área exclusiva...</p></div></div>`;
+  return `<div class="login-page" style="display:grid;place-items:center;min-height:100vh"><div class="card card-pad" style="max-width:420px;text-align:center"><img src="${LOGO_URL}" alt="Magia Para Todos" style="max-width:180px;margin:auto"><p class="muted">Carregando sua área exclusiva...</p></div></div>`;
 }
 
 function authView(){
@@ -158,7 +158,7 @@ function authView(){
     <section class="login-art" aria-hidden="true">
       <div class="botanical left"><div class="branch"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div></div>
       <div class="botanical right"><div class="branch"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div></div>
-      <div class="login-brand-card"><img src="${LOGO_URL}" alt="Logo A Magia do Sim"><div class="rings"><div class="ring one"></div><div class="ring two"></div></div></div>
+      <div class="login-brand-card"><img src="${LOGO_URL}" alt="Logo Magia Para Todos"><div class="rings"><div class="ring one"></div><div class="ring two"></div></div></div>
     </section>
     <section class="login-form-wrap">
       <form class="login-form" id="${signup?'signup-form':'login-form'}">
@@ -174,7 +174,7 @@ function authView(){
           }
         </div>
         <div class="demo-box">${signup?'Seu cadastro cria uma área individual. O que ficará liberado depende do plano contratado.':'Acesso protegido. Cada cliente visualiza apenas o próprio casamento e os recursos liberados em seu plano.'}</div>
-        <div class="brand-signoff">A Magia do Sim<br><span class="small">Onde os sonhos se tornam alianças.</span></div>
+        <div class="brand-signoff">Magia Para Todos<br><span class="small">Onde os sonhos se tornam alianças.</span></div>
       </form>
     </section>
   </main>`;
@@ -367,7 +367,7 @@ function shellView(r,content){
 
   return `<div class="app-shell ${state.role==='client'?'client-app-shell':'admin-app-shell'}">
     <aside class="sidebar">
-      <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="A Magia do Sim"></div><div class="sidebar-name">A Magia<br>do Sim</div></div>
+      <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="Magia Para Todos"></div><div class="sidebar-name">A Magia<br>do Sim</div></div>
       <nav class="nav">${navHtml}</nav>
       <div class="sidebar-bottom">
         ${state.role==='client'?'<a href="#/suporte" class="nav-item '+(active==='suporte'?'active':'')+'">'+icons.meeting+'<span>Suporte / Chamados</span></a>':''}
@@ -377,8 +377,8 @@ function shellView(r,content){
     </aside>
     <main class="main">
       <header class="topbar">
-        <div class="mobile-app-brand"><img src="${LOGO_URL}" alt="A Magia do Sim"><div><strong>A Magia do Sim</strong><span>${state.role==='admin'?'Administração':'Área dos Noivos'}</span></div></div>
-        <div class="topbar-label small muted">${state.role==='admin'?'Administração do Planner':'Área dos Noivos'} — <strong>A Magia do Sim</strong></div>
+        <div class="mobile-app-brand"><img src="${LOGO_URL}" alt="Magia Para Todos"><div><strong>Magia Para Todos</strong><span>${state.role==='admin'?'Administração':'Área dos Noivos'}</span></div></div>
+        <div class="topbar-label small muted">${state.role==='admin'?'Administração do Planner':'Área dos Noivos'} — <strong>Magia Para Todos</strong></div>
         <div class="topbar-right"><button class="icon-btn" aria-label="Notificações">${icons.bell}</button><div class="profile-chip"><div class="avatar">${first}</div><span class="small">${esc(displayName)}</span></div></div>
       </header>
       ${pageNavigationControls(r)}
@@ -405,7 +405,7 @@ function lockedView(feature){
   </div>`;
 }
 function noWeddingView(){
-  return `<div class="page"><div class="page-head"><div><h1>Área dos Noivos</h1><p>Sua conta ainda não possui um casamento configurado.</p></div></div>${emptyState('Nenhum casamento encontrado','Entre em contato com a equipe A Magia do Sim.')}</div>`;
+  return `<div class="page"><div class="page-head"><div><h1>Área dos Noivos</h1><p>Sua conta ainda não possui um casamento configurado.</p></div></div>${emptyState('Nenhum casamento encontrado','Entre em contato com a equipe Magia Para Todos.')}</div>`;
 }
 function dashboardView(){
   const c=countdown();
@@ -542,7 +542,7 @@ function purchasesView(group){
   return `<div class="page"><div class="page-head"><div><h1>${honeymoon?'Lua de mel':'Outros gastos'}</h1><p>${honeymoon?'Planeje os custos da viagem depois do sim.':'Acompanhe despesas extras do casamento.'}</p></div></div><div class="finance-totals"><div class="card money-card"><span>Total pago</span><strong>${brl(paid)}</strong></div><div class="card money-card"><span>Registros</span><strong>${items.length}</strong></div></div><div class="card list-card">${items.length?items.map(p=>`<div class="list-row payment-row"><div class="vendor-name"><strong>${esc(p.description)}</strong><span>${esc(p.category||'Outros')}</span></div><div class="small">${brl(p.amount)}</div><div class="paid small muted">${esc(p.status)}</div></div>`).join(''):emptyState('Nenhum gasto registrado','Suas despesas aparecerão aqui.')}</div></div>`;
 }
 function profileView(){
-  return `<div class="page"><div class="page-head"><div><h1>Perfil</h1><p>Seus dados e preferências de acesso.</p></div></div><div class="grid grid-2"><div class="card card-pad"><div class="card-title"><h2>Dados pessoais</h2></div><div class="field"><label>Nome</label><input class="input planner-plain-input" value="${esc(state.profile?.full_name||'')}" disabled></div><div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div></div><div class="card card-pad"><div class="card-title"><h2>${state.role==='admin'?'Acesso administrativo':'Seu plano'}</h2></div><div class="contract-lines"><div class="contract-line"><span>Perfil</span><strong>${state.role==='admin'?'Administrador':'Cliente'}</strong></div><div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div><div class="contract-line"><span>Assessoria</span><strong>A Magia do Sim</strong></div></div></div></div></div>`;
+  return `<div class="page"><div class="page-head"><div><h1>Perfil</h1><p>Seus dados e preferências de acesso.</p></div></div><div class="grid grid-2"><div class="card card-pad"><div class="card-title"><h2>Dados pessoais</h2></div><div class="field"><label>Nome</label><input class="input planner-plain-input" value="${esc(state.profile?.full_name||'')}" disabled></div><div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div></div><div class="card card-pad"><div class="card-title"><h2>${state.role==='admin'?'Acesso administrativo':'Seu plano'}</h2></div><div class="contract-lines"><div class="contract-line"><span>Perfil</span><strong>${state.role==='admin'?'Administrador':'Cliente'}</strong></div><div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div><div class="contract-line"><span>Assessoria</span><strong>Magia Para Todos</strong></div></div></div></div></div>`;
 }
 function myDataView(){
   return `<div class="page"><div class="page-head"><div><h1>Meus dados</h1><p>Faça backup das informações do seu casamento.</p></div></div><div class="card card-pad"><div class="card-title"><h2>Backup e segurança</h2></div><p class="muted">No plano que inclui este recurso, você poderá exportar os dados do casamento em arquivos para guardar uma cópia.</p><button class="btn-primary" disabled>Exportar meus dados</button></div></div>`;
@@ -734,7 +734,7 @@ async function loadData(){
 }
 
 function accessBlockedView(){
-  return `<div class="page"><div class="page-head"><div><h1>Acesso ao Planner</h1><p>Seu plano está temporariamente indisponível.</p></div></div><div class="card card-pad planner-locked-card"><div class="planner-lock-icon">${icons.lock}</div><div><h2>${state.access?.access_status==='expired'?'Acesso expirado':'Acesso pausado'}</h2><p class="muted">Entre em contato com a A Magia do Sim para regularizar ou renovar o acesso.</p></div></div></div>`;
+  return `<div class="page"><div class="page-head"><div><h1>Acesso ao Planner</h1><p>Seu plano está temporariamente indisponível.</p></div></div><div class="card card-pad planner-locked-card"><div class="planner-lock-icon">${icons.lock}</div><div><h2>${state.access?.access_status==='expired'?'Acesso expirado':'Acesso pausado'}</h2><p class="muted">Entre em contato com a Magia Para Todos para regularizar ou renovar o acesso.</p></div></div></div>`;
 }
 
 function render(){
