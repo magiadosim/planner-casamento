@@ -63,6 +63,213 @@ ceremonyView=function(){
   return html.replace('<nav class="ceremony-tabs"',strip+'<nav class="ceremony-tabs"');
 };
 
+
+/* CASA V3 — LISTA ESTIMADA + COMPRAS */
+function mptHomePurchasedQty(itemId){
+  return (state.homePayments||[])
+    .filter(function(p){return p.item_id===itemId;})
+    .reduce(function(sum,p){return sum+Math.max(1,Number(p.quantity||1));},0);
+}
+function mptHomeItemRemaining(item){
+  const desired=Math.max(1,Number(item.quantity||1));
+  if(item.acquisition_status==='Comprado'||item.acquisition_status==='Presenteado')return 0;
+  const owned=Math.max(0,Number(item.owned_quantity||0));
+  const purchased=mptHomePurchasedQty(item.id);
+  return Math.max(0,desired-owned-purchased);
+}
+function mptHomeProgressStats(){
+  const items=state.homeItems||[];
+  let totalUnits=0,coveredUnits=0,remainingUnits=0,completeItems=0;
+  let planned=0,remainingEstimated=0;
+
+  items.forEach(function(item){
+    const desired=Math.max(1,Number(item.quantity||1));
+    const remaining=mptHomeItemRemaining(item);
+    const covered=Math.max(0,desired-remaining);
+    const unitValue=Math.max(0,Number(item.unit_value||0));
+
+    totalUnits+=desired;
+    coveredUnits+=covered;
+    remainingUnits+=remaining;
+    if(remaining===0)completeItems++;
+    planned+=unitValue*desired;
+    remainingEstimated+=unitValue*remaining;
+  });
+
+  const actual=(state.homePayments||[]).reduce(function(sum,p){return sum+Number(p.amount||0);},0);
+  const itemPct=totalUnits?Math.round((coveredUnits/totalUnits)*100):0;
+  const valuePct=planned?Math.min(100,Math.round((actual/planned)*100)):0;
+
+  return {
+    itemCount:items.length,
+    completeItems:completeItems,
+    remainingItems:Math.max(0,items.length-completeItems),
+    totalUnits:totalUnits,
+    coveredUnits:coveredUnits,
+    remainingUnits:remainingUnits,
+    planned:planned,
+    actual:actual,
+    remainingEstimated:remainingEstimated,
+    itemPct:itemPct,
+    valuePct:valuePct
+  };
+}
+
+// Faz todo o módulo considerar as compras lançadas no cálculo do que ainda falta.
+homeToBuy=function(item){return mptHomeItemRemaining(item);};
+homeResolved=function(item){return mptHomeItemRemaining(item)===0;};
+homeDisplayStatus=function(item){
+  if(item.acquisition_status==='Presenteado')return 'Presenteado';
+  const desired=Math.max(1,Number(item.quantity||1));
+  const owned=Math.max(0,Number(item.owned_quantity||0));
+  const purchased=mptHomePurchasedQty(item.id);
+  if(owned>=desired)return 'Já tenho';
+  if(mptHomeItemRemaining(item)===0&&purchased>0)return 'Comprado';
+  return item.acquisition_status||'Falta';
+};
+
+const mptHomeBaseListView=homeListView;
+homeListView=function(){
+  return mptHomeBaseListView()
+    .replace(/>Pagamento<\/button>/g,'>Compra</button>')
+    .replace('quanto falta comprar e valores.','quanto falta comprar, compras lançadas e valores.');
+};
+
+openHomePaymentEditor=function(payment,itemId){
+  if(!requireWedding())return;
+  if(!state.homeItems.length){toast('Adicione primeiro os itens da sua lista ideal.');return;}
+
+  const itemOptions=state.homeItems.map(function(item){
+    return {value:item.id,label:item.room+' — '+item.item_name};
+  });
+  const selectedItem=itemId||(payment&&payment.item_id)||state.homeItems[0].id;
+
+  const body=
+    plannerSelect('Item da lista ideal','item_id',itemOptions,selectedItem)+
+    plannerField('Quantidade comprada','quantity',payment?Math.max(1,Number(payment.quantity||1)):1,'number','min="1" required')+
+    plannerField('Valor total da compra','amount',payment?Number(payment.amount||0):'','number','min="0.01" step="0.01" required')+
+    plannerField('Loja / site','store_name',payment&&payment.store_name?payment.store_name:'')+
+    plannerField('Data da compra','payment_date',payment&&payment.payment_date?payment.payment_date:new Date().toISOString().slice(0,10),'date')+
+    plannerSelect('Forma de pagamento','payment_method',['PIX','Cartão de crédito','Cartão de débito','Dinheiro','Transferência','Boleto','Outro'],payment&&payment.payment_method?payment.payment_method:'PIX')+
+    plannerTextarea('Observações','notes',payment&&payment.notes?payment.notes:'');
+
+  plannerModal(payment?'Editar compra':'Lançar compra',body,payment?'Salvar':'Lançar compra',async function(back){
+    const d=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const quantity=Math.max(1,Number(d.quantity||1));
+    const amount=Number(d.amount||0);
+
+    if(!d.item_id||amount<=0){
+      toast('Selecione o item e informe um valor válido.');
+      return false;
+    }
+
+    const payload={
+      wedding_id:state.wedding.id,
+      item_id:d.item_id,
+      quantity:quantity,
+      amount:amount,
+      store_name:String(d.store_name||'').trim()||null,
+      payment_date:d.payment_date||null,
+      payment_method:d.payment_method||null,
+      notes:String(d.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    const res=payment
+      ?await sb.from('home_item_payments').update(payload).eq('id',payment.id)
+      :await sb.from('home_item_payments').insert(payload);
+
+    if(res.error){
+      console.error(res.error);
+      toast('Não foi possível salvar a compra. Execute a migração V4.3 se necessário.');
+      return false;
+    }
+
+    await reloadPlannerClient();
+    state.homeTab='financeiro';
+    render();
+    toast(payment?'Compra atualizada.':'Compra lançada.');
+    return true;
+  });
+};
+
+deleteHomePayment=async function(id){
+  const purchase=(state.homePayments||[]).find(function(x){return x.id===id;});
+  if(!purchase||!confirm('Excluir esta compra?'))return;
+  const res=await sb.from('home_item_payments').delete().eq('id',id);
+  if(res.error){console.error(res.error);toast('Não foi possível excluir a compra.');return;}
+  await reloadPlannerClient();
+  state.homeTab='financeiro';
+  render();
+};
+
+homeFinanceView=function(){
+  const stats=mptHomeProgressStats();
+  const estimated=state.homeItems||[];
+  const purchases=[...(state.homePayments||[])].sort(function(a,b){
+    return String(b.payment_date||b.created_at||'').localeCompare(String(a.payment_date||a.created_at||''));
+  });
+
+  const estimatedRows=estimated.length?estimated.map(function(item){
+    const desired=Math.max(1,Number(item.quantity||1));
+    const owned=Math.max(0,Number(item.owned_quantity||0));
+    const purchased=mptHomePurchasedQty(item.id);
+    const remaining=mptHomeItemRemaining(item);
+    const unitValue=Math.max(0,Number(item.unit_value||0));
+    const totalValue=unitValue*desired;
+    const status=remaining===0?'Concluído':remaining<desired?'Em andamento':'A comprar';
+
+    return '<div class="home-estimate-row">'+
+      '<div class="home-estimate-main"><strong>'+esc(item.item_name)+'</strong><span>'+esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+'</span></div>'+
+      '<div><span class="home-estimate-label">Ideal</span><strong>'+desired+'</strong></div>'+
+      '<div><span class="home-estimate-label">Já tinha</span><strong>'+owned+'</strong></div>'+
+      '<div><span class="home-estimate-label">Comprado</span><strong>'+purchased+'</strong></div>'+
+      '<div><span class="home-estimate-label">Falta</span><strong class="'+(remaining?'home-estimate-missing':'')+'">'+remaining+'</strong></div>'+
+      '<div><span class="home-estimate-label">Estimado</span><strong>'+(totalValue?brl(totalValue):'A definir')+'</strong></div>'+
+      '<span class="badge '+(remaining===0?'success':remaining<desired?'info':'warning')+'">'+status+'</span>'+
+      '</div>';
+  }).join(''):emptyState('Lista estimada vazia','Monte sua lista ideal na aba “Lista de enxoval” ou use as sugestões.');
+
+  const purchaseRows=purchases.length?purchases.map(function(p){
+    const item=state.homeItems.find(function(x){return x.id===p.item_id;});
+    return '<div class="home-purchase-row">'+
+      '<div class="home-purchase-main"><strong>'+esc(item?item.item_name:'Item removido')+'</strong><span>'+esc(item?item.room:'')+(p.store_name?' • '+esc(p.store_name):'')+'</span></div>'+
+      '<div><span class="home-estimate-label">Quantidade</span><strong>'+Math.max(1,Number(p.quantity||1))+'</strong></div>'+
+      '<div><span class="home-estimate-label">Data</span><strong>'+(p.payment_date?dateBR(p.payment_date):'—')+'</strong></div>'+
+      '<div><span class="home-estimate-label">Forma</span><strong>'+esc(p.payment_method||'—')+'</strong></div>'+
+      '<div class="home-purchase-amount">'+brl(p.amount)+'</div>'+
+      '<div class="planner-row-actions"><button class="btn-secondary" data-edit-home-payment="'+p.id+'">Editar</button><button class="btn-danger" data-delete-home-payment="'+p.id+'">Excluir</button></div>'+
+      '</div>';
+  }).join(''):emptyState('Nenhuma compra lançada','Quando comprar um item da lista ideal, registre a compra aqui.');
+
+  return '<section class="home-tab-panel home-purchases-finance">'+
+    '<div class="home-list-tools"><div><h2>Compras da casa</h2><p>Compare sua lista ideal com o que já foi comprado e acompanhe quanto ainda falta.</p></div><button class="btn-primary" id="new-home-payment" '+(state.homeItems.length?'':'disabled')+'>+ Lançar compra</button></div>'+
+
+    '<div class="home-purchase-kpis">'+
+      '<div class="card money-card"><span>Total estimado</span><strong>'+brl(stats.planned)+'</strong><small>valor da lista ideal</small></div>'+
+      '<div class="card money-card"><span>Total comprado</span><strong>'+brl(stats.actual)+'</strong><small>compras lançadas</small></div>'+
+      '<div class="card money-card"><span>Estimativa restante</span><strong>'+brl(stats.remainingEstimated)+'</strong><small>'+stats.remainingUnits+' unidades ainda faltam</small></div>'+
+      '<div class="card money-card home-progress-money"><span>Progresso da lista</span><strong>'+stats.itemPct+'%</strong><small>'+stats.coveredUnits+' de '+stats.totalUnits+' unidades cobertas</small></div>'+
+    '</div>'+
+
+    '<div class="card card-pad home-buy-progress-card">'+
+      '<div class="home-buy-progress-head"><div><div class="eyebrow">LISTA IDEAL</div><h3>'+stats.itemPct+'% da lista já resolvida</h3><p>'+stats.remainingItems+' itens ainda possuem algo para comprar.</p></div><strong>'+stats.remainingUnits+'<small> unidades faltando</small></strong></div>'+
+      '<div class="progress-track home-buy-progress-track"><div class="progress-fill" style="width:'+stats.itemPct+'%"></div></div>'+
+      '<div class="home-buy-progress-meta"><span><b>'+stats.completeItems+'</b> itens concluídos</span><span><b>'+stats.remainingItems+'</b> itens pendentes</span><span><b>'+stats.valuePct+'%</b> do valor estimado já comprado</span></div>'+
+    '</div>'+
+
+    '<section class="home-finance-section">'+
+      '<div class="home-finance-section-head"><div><span class="eyebrow">PLANEJAMENTO</span><h3>Lista estimada</h3><p>O que vocês definiram como ideal para a casa, separado das compras reais.</p></div><a class="btn-secondary" href="#/organizacao-casa" data-home-go-list>Editar lista ideal</a></div>'+
+      '<div class="card home-estimate-list">'+estimatedRows+'</div>'+
+    '</section>'+
+
+    '<section class="home-finance-section">'+
+      '<div class="home-finance-section-head"><div><span class="eyebrow">REALIZADO</span><h3>Compras lançadas</h3><p>Histórico do que foi realmente comprado para a casa.</p></div></div>'+
+      '<div class="card home-purchase-list">'+purchaseRows+'</div>'+
+    '</section>'+
+  '</section>';
+};
+
 // CASA — LISTA DE PRESENTES
 function mptGiftShareUrl(code){
   if(!code)return '';
@@ -245,6 +452,7 @@ viewFor=function(r){
 const mptExperienceBaseBind=bind;
 bind=function(){
   mptExperienceBaseBind();
+  const homeGoList=document.querySelector('[data-home-go-list]');if(homeGoList)homeGoList.onclick=function(e){e.preventDefault();state.homeTab='lista';render();};
   document.querySelectorAll('[data-ceremony-template]').forEach(function(btn){btn.onclick=function(){mptApplyCeremonyTemplate(btn.dataset.ceremonyTemplate);};});
   document.querySelectorAll('[data-toggle-home-gift]').forEach(function(btn){btn.onclick=function(){mptToggleGiftItem(btn.dataset.toggleHomeGift);};});
   const newGiftItem=document.getElementById('new-home-gift-item');if(newGiftItem)newGiftItem.onclick=function(){mptOpenGiftItemEditor(null);};
