@@ -1,0 +1,20 @@
+:root{--green:#4c5030;--brown:#5c3f2c;--cream:#f7f1e7;--paper:#fffaf2;--line:rgba(92,63,44,.14);--muted:#81766b;--soft:#eee3d2}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:#332a22;font-family:"DM Sans",sans-serif}button,input{font:inherit}
+.gift-shell{max-width:980px;margin:0 auto;padding:22px}.gift-brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.gift-brand-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:var(--green);color:#fff;font-family:"Playfair Display",serif;font-size:20px}
+.gift-brand strong{display:block;color:var(--brown);font-size:13px}.gift-brand span{display:block;margin-top:2px;color:var(--muted);font-size:9px}
+.gift-hero{padding:28px;border-radius:22px;background:linear-gradient(135deg,#5b4636,#4c5030);color:#fff}.gift-eyebrow{display:block;color:#e7ddcc;font-size:8px;font-weight:800;letter-spacing:.13em}
+.gift-hero h1{margin:6px 0 5px;font-family:"Playfair Display",serif;font-size:34px;font-weight:500}.gift-hero p{margin:0;color:#e4ddd3;font-size:10px}
+.gift-intro{margin:13px 0;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--muted);font-size:10px;line-height:1.55}
+.gift-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gift-card{display:grid;gap:10px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
+.gift-card.reserved{opacity:.7}.gift-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.gift-card h2{margin:0;color:var(--brown);font-family:"Playfair Display",serif;font-size:18px;font-weight:500}.gift-card span{display:block;margin-top:3px;color:var(--muted);font-size:8.5px}
+.gift-badge{padding:5px 8px;border-radius:999px;background:#e5eddc;color:#4c6636;font-size:7.5px;font-weight:800;white-space:nowrap}.gift-card.reserved .gift-badge{background:#ece6dc;color:#806f5c}
+.gift-card button{border:0;border-radius:11px;padding:10px 12px;background:var(--green);color:#fff;font-size:9px;font-weight:700;cursor:pointer}.gift-card button:disabled{background:#b9b1a8;cursor:default}
+.gift-empty,.gift-loading,.gift-invalid{text-align:center;padding:60px 20px;color:var(--muted)}.gift-empty strong,.gift-invalid h1{display:block;color:var(--brown);font-family:"Playfair Display",serif;font-size:25px}
+.gift-footer{text-align:center;padding:20px 0 4px;color:#928578;font-size:8.5px}
+.gift-modal-backdrop{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(40,31,24,.48)}.gift-modal{width:min(420px,100%);padding:20px;border-radius:18px;background:var(--paper);box-shadow:0 20px 70px rgba(45,33,23,.22)}
+.gift-modal h3{margin:0;color:var(--brown);font-family:"Playfair Display",serif;font-size:22px}.gift-modal p{color:var(--muted);font-size:9.5px;line-height:1.5}
+.gift-modal input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#332a22}.gift-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}
+.gift-modal-actions button{border:0;border-radius:10px;padding:10px 12px;font-size:9px;font-weight:700;cursor:pointer}.gift-modal-actions .cancel{background:var(--soft);color:var(--brown)}.gift-modal-actions .confirm{background:var(--green);color:#fff}
+@media(max-width:650px){.gift-shell{padding:13px}.gift-hero{padding:21px}.gift-hero h1{font-size:29px}.gift-grid{grid-template-columns:1fr}}
