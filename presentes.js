@@ -35,7 +35,7 @@ function render(){
         esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+
         (item.quantity>1?' • '+item.quantity+' unidades':'')+
         (item.store_name?' • '+esc(item.store_name):'')+
-        '</span>'+(Number(item.unit_value||0)>0?'<strong class="gift-price">'+brlGift(item.unit_value)+'</strong>':'')+'</div><div class="gift-badge">'+(item.reserved?'Já escolhido':'Disponível')+'</div></div>'+
+        '</span>'+(Number(item.unit_value||0)>0?'<strong class="gift-price">'+brlGift(item.unit_value)+'</strong>':'<strong class="gift-price gift-price-missing">Valor a informar</strong>')+'</div><div class="gift-badge">'+(item.reserved?'Já escolhido':'Disponível')+'</div></div>'+
         (item.item_link?'<a class="gift-product-link" href="'+esc(item.item_link)+'" target="_blank" rel="noopener noreferrer">Ver presente no site ↗</a>':'')+
         '<button '+(item.reserved?'disabled':'')+' data-gift-item="'+item.id+'">'+
         (item.reserved?'Reservado por outro convidado':'Quero presentear')+
@@ -46,7 +46,7 @@ function render(){
   root.innerHTML='<div class="gift-shell">'+brand()+
     '<section class="gift-hero"><span class="gift-eyebrow">LISTA DE PRESENTES</span><h1>'+
     esc(w.couple_name||'Nosso casamento')+'</h1><p>'+esc(dateLong(w.wedding_date))+'</p></section>'+
-    '<div class="gift-intro">Escolha um item que gostaria de presentear. Ao reservar, ele fica marcado para evitar presentes repetidos. O valor do item e informações privadas do casal não são exibidos.</div>'+
+    '<div class="gift-intro">Escolha um item que gostaria de presentear. O valor exibido é uma referência e pode mudar no site da loja. Informações privadas do casal não são compartilhadas.</div>'+
     '<section class="gift-grid">'+cards+'</section>'+
     '<footer class="gift-footer">Magia Para Todos • Onde os sonhos se tornam alianças.</footer></div>';
 
