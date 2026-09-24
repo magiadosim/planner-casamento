@@ -1,4 +1,4 @@
-/* MAGIA PARA TODOS — planos editáveis, chat e chamados */
+/* MAGIA PARA TODOS — planos editáveis, WhatsApp e chamados */
 
 /* CATÁLOGO DE PLANOS */
 async function mptLoadAdminCatalog(){
@@ -98,147 +98,8 @@ async function mptSavePlan(id){
   btn.disabled=false;btn.textContent='Salvar plano';
 }
 
-/* CHAT */
-state.chatMessages=state.chatMessages||[];
-state.adminChatClientId=state.adminChatClientId||null;
-
-async function mptLoadChatMessages(){
-  if(!state.user)return;
-  let query=sb.from('client_chat_messages').select('*').order('created_at',{ascending:true}).limit(1000);
-  if(state.role!=='admin')query=query.eq('client_user_id',state.user.id);
-  const {data,error}=await query;
-  if(error){
-    console.warn('Chat ainda não disponível:',error);
-    state.chatMessages=[];
-    state.chatAvailable=false;
-    return;
-  }
-  state.chatMessages=data||[];
-  state.chatAvailable=true;
-}
-function mptChatClientName(id){
-  const c=(state.adminClients||[]).find(x=>x.id===id);
-  return c?.couple_name||c?.full_name||c?.email||'Cliente';
-}
-function mptChatClientList(){
-  const clients=[...(state.adminClients||[])];
-  clients.sort((a,b)=>{
-    const la=state.chatMessages.filter(m=>m.client_user_id===a.id).at(-1)?.created_at||'';
-    const lb=state.chatMessages.filter(m=>m.client_user_id===b.id).at(-1)?.created_at||'';
-    return lb.localeCompare(la)||String(a.full_name||'').localeCompare(String(b.full_name||''));
-  });
-  return clients;
-}
-function mptChatMessageHtml(m){
-  const mine=m.sender_user_id===state.user?.id;
-  const who=m.sender_role==='admin'?'Admin':'Cliente';
-  const d=new Date(m.created_at);
-  const time=Number.isNaN(d.getTime())?'':d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-  return `<div class="planner-chat-message ${mine?'mine':''}"><strong>${who}</strong><p>${esc(m.body)}</p><time>${esc(time)}</time></div>`;
-}
-function mptChatPanel(clientId){
-  const messages=state.chatMessages.filter(m=>m.client_user_id===clientId);
-  return `<section class="card planner-chat-panel">
-    <div class="planner-chat-head"><strong>${state.role==='admin'?esc(mptChatClientName(clientId)):'Fale com a administração'}</strong><span>Canal direto • Magia Para Todos</span></div>
-    <div class="planner-chat-thread" id="mpt-chat-thread">
-      ${messages.length?messages.map(mptChatMessageHtml).join(''):'<div class="planner-chat-empty"><div><strong>Nenhuma mensagem ainda.</strong><p>Envie a primeira mensagem para iniciar a conversa.</p></div></div>'}
-    </div>
-    <form class="planner-chat-compose" id="mpt-chat-form">
-      <textarea class="input planner-plain-input" id="mpt-chat-body" maxlength="3000" placeholder="Digite sua mensagem..." required></textarea>
-      <button class="btn-primary" type="submit">Enviar</button>
-    </form>
-  </section>`;
-}
-function mptChatView(){
-  if(state.chatAvailable===false){
-    return `<div class="page planner-chat-page"><div class="page-head"><div><h1>Mensagens</h1><p>Canal direto com clientes.</p></div></div><div class="card card-pad"><h2>Chat aguardando ativação</h2><p class="muted">A estrutura do chat precisa ser ativada no Supabase para começar a receber mensagens.</p></div></div>`;
-  }
-  if(state.role==='admin'){
-    const clients=mptChatClientList();
-    if(!state.adminChatClientId&&clients.length)state.adminChatClientId=clients[0].id;
-    const selected=state.adminChatClientId;
-    return `<div class="page planner-chat-page">
-      <div class="page-head"><div><h1>Mensagens</h1><p>Canal aberto de conversa com cada cliente.</p></div></div>
-      <div class="planner-chat-layout">
-        <aside class="card planner-chat-clients">
-          <div class="planner-chat-head"><strong>Clientes</strong><span>${clients.length} conversa(s)</span></div>
-          <div class="planner-chat-client-list">${clients.map(c=>{
-            const last=state.chatMessages.filter(m=>m.client_user_id===c.id).at(-1);
-            return `<button class="planner-chat-client ${selected===c.id?'active':''}" type="button" data-chat-client="${c.id}"><strong>${esc(c.couple_name||c.full_name||c.email||'Cliente')}</strong><span>${last?esc(last.body):'Nenhuma mensagem ainda'}</span></button>`;
-          }).join('')}</div>
-        </aside>
-        ${selected?mptChatPanel(selected):'<div class="card planner-chat-empty"><div><strong>Nenhum cliente encontrado.</strong></div></div>'}
-      </div>
-    </div>`;
-  }
-  return `<div class="page planner-chat-page"><div class="page-head"><div><h1>Fale com a gente</h1><p>Envie uma mensagem diretamente para a administração do Magia Para Todos.</p></div></div>${mptChatPanel(state.user.id)}</div>`;
-}
-async function mptSendChatMessage(){
-  const body=document.getElementById('mpt-chat-body')?.value.trim();
-  const clientId=state.role==='admin'?state.adminChatClientId:state.user?.id;
-  if(!body||!clientId)return;
-  const btn=document.querySelector('#mpt-chat-form button');
-  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
-  const {error}=await sb.from('client_chat_messages').insert({
-    client_user_id:clientId,
-    sender_user_id:state.user.id,
-    sender_role:state.role==='admin'?'admin':'client',
-    body
-  });
-  if(error){
-    console.error(error);
-    toast('Não foi possível enviar a mensagem.');
-    if(btn){btn.disabled=false;btn.textContent='Enviar';}
-    return;
-  }
-  await mptLoadChatMessages();
-  render();
-}
-function mptStopChatSync(){
-  if(window.__mptChatTimer){
-    clearInterval(window.__mptChatTimer);
-    window.__mptChatTimer=null;
-  }
-  if(window.__mptChatChannel){
-    try{sb.removeChannel(window.__mptChatChannel);}catch(error){console.warn(error);}
-    window.__mptChatChannel=null;
-  }
-}
-function mptStartChatSync(){
-  mptStopChatSync();
-  if(route()!=='mensagens'||!state.session)return;
-
-  const filter=state.role==='admin'
-    ?undefined
-    :`client_user_id=eq.${state.user.id}`;
-
-  try{
-    let channel=sb.channel(`mpt-chat-${state.user.id}-${Date.now()}`);
-    const config={event:'INSERT',schema:'public',table:'client_chat_messages'};
-    if(filter)config.filter=filter;
-    channel=channel.on('postgres_changes',config,async payload=>{
-      if(state.role!=='admin'&&payload?.new?.client_user_id!==state.user.id)return;
-      await mptLoadChatMessages();
-      if(route()==='mensagens')render();
-    });
-    window.__mptChatChannel=channel.subscribe(status=>{
-      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
-        console.warn('Realtime do chat indisponível; mantendo atualização periódica.');
-      }
-    });
-  }catch(error){
-    console.warn('Não foi possível iniciar o Realtime do chat:',error);
-  }
-
-  // Fallback para manter a conversa atualizada mesmo se o Realtime cair.
-  window.__mptChatTimer=setInterval(async()=>{
-    if(route()!=='mensagens'||!state.session)return;
-    const before=state.chatMessages.map(m=>m.id).join('|');
-    await mptLoadChatMessages();
-    const after=state.chatMessages.map(m=>m.id).join('|');
-    if(before!==after)render();
-  },20000);
-}
+/* WHATSAPP */
+const MPT_WHATSAPP_URL='https://wa.me/5521984629190?text=Ol%C3%A1%21%20Estou%20entrando%20em%20contato%20pelo%20meu%20Planner%20Magia%20Para%20Todos.';
 
 /* CHAMADOS */
 function mptTicketStatusLabel(status){return status==='Concluído'?'Encerrado':status;}
@@ -292,29 +153,22 @@ loadData=async function(){
   await mptBaseLoadData();
   if(!state.session)return;
   if(state.role==='admin')await mptLoadAdminCatalog();
-  await mptLoadChatMessages();
-};
-
-const mptBaseViewFor=viewFor;
-viewFor=function(r){
-  if(r==='mensagens')return mptChatView();
-  return mptBaseViewFor(r);
 };
 
 const mptBaseShellView=shellView;
 shellView=function(r,content){
   let html=mptBaseShellView(r,content);
-  const active=r==='mensagens'?' active':'';
-  if(state.role==='admin'){
-    html=html.replace('<nav class="nav">',`<nav class="nav"><a href="#/mensagens" class="nav-item${active}">${icons.meeting}<span>Mensagens</span></a>`);
-    html=html.replace('<nav class="mobile-nav mobile-nav-v2">',`<nav class="mobile-nav mobile-nav-v2"><a href="#/mensagens" class="${r==='mensagens'?'active':''}">${icons.meeting}<span>Chat</span></a>`);
-  }else{
-    html=html.replace('<nav class="nav">',`<nav class="nav"><a href="#/mensagens" class="nav-item${active}">${icons.meeting}<span>Fale com a gente</span></a>`);
+
+  if(state.role!=='admin'){
+    const whatsappLink=`<a href="${MPT_WHATSAPP_URL}" target="_blank" rel="noopener noreferrer" class="nav-item mpt-whatsapp-link">${icons.meeting}<span>Fale com a gente</span></a>`;
+    html=html.replace('<nav class="nav">',`<nav class="nav">${whatsappLink}`);
+
     html=html.replace(
       '<div class="mobile-more-section-title">Conta e ajuda</div>',
-      `<div class="mobile-more-section-title">Conta e ajuda</div><div class="mobile-more-grid"><a class="mobile-more-item ${r==='mensagens'?'active':''}" href="#/mensagens"><span class="mobile-more-icon">${icons.meeting}</span><span>Fale com a gente</span></a></div>`
+      `<div class="mobile-more-section-title">Conta e ajuda</div><div class="mobile-more-grid"><a class="mobile-more-item" href="${MPT_WHATSAPP_URL}" target="_blank" rel="noopener noreferrer"><span class="mobile-more-icon">${icons.meeting}</span><span>WhatsApp</span></a></div>`
     );
   }
+
   return html;
 };
 
@@ -325,16 +179,6 @@ bind=function(){
   const newPlan=document.getElementById('mpt-new-plan');
   if(newPlan)newPlan.onclick=mptOpenNewPlan;
   document.querySelectorAll('.admin-save-plan').forEach(btn=>btn.onclick=()=>mptSavePlan(btn.dataset.planId));
-
-  document.querySelectorAll('[data-chat-client]').forEach(btn=>btn.onclick=()=>{
-    state.adminChatClientId=btn.dataset.chatClient;
-    render();
-  });
-  const chatForm=document.getElementById('mpt-chat-form');
-  if(chatForm)chatForm.onsubmit=e=>{e.preventDefault();mptSendChatMessage();};
-  const thread=document.getElementById('mpt-chat-thread');
-  if(thread)requestAnimationFrame(()=>{thread.scrollTop=thread.scrollHeight;});
-  if(route()==='mensagens')mptStartChatSync();else mptStopChatSync();
 
   document.querySelectorAll('[data-close-ticket]').forEach(btn=>btn.onclick=()=>mptCloseTicket(btn.dataset.closeTicket));
 };
