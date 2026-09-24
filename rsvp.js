@@ -6,10 +6,11 @@ const sb=window.supabase.createClient(
 const app=document.getElementById('rsvp-app');
 const toastRoot=document.getElementById('rsvp-toast');
 const params=new URLSearchParams(location.search);
-const weddingCode=params.get('code')||'';
+const inviteCode=params.get('invite')||'';
 
 let wedding=null;
-let searchResults=[];
+let invite=null;
+let guests=[];
 
 function esc(v=''){
   return String(v??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -34,104 +35,66 @@ function brand(){
   return '<div class="rsvp-brand"><img src="magia-para-todos-logo.svg" alt="Magia Para Todos"><strong>Magia Para Todos</strong></div>';
 }
 function hero(){
-  return `<div class="rsvp-hero"><span class="rsvp-eyebrow">CONFIRMAÇÃO DE PRESENÇA</span><h1>${esc(wedding.couple_name)}</h1><p>${esc(dateLong(wedding.wedding_date))}${wedding.venue?' • '+esc(wedding.venue):''}</p></div>`;
+  return `<div class="rsvp-hero"><span class="rsvp-eyebrow">CONFIRMAÇÃO DE PRESENÇA</span><h1>${esc(wedding?.couple_name||'')}</h1><p>${esc(dateLong(wedding?.wedding_date))}${wedding?.venue?' • '+esc(wedding.venue):''}</p></div>`;
 }
 function renderInvalid(){
-  app.innerHTML=`${brand()}<div class="rsvp-invalid"><h2>Convite não encontrado</h2><p>Confira se você abriu o link correto enviado pelos noivos.</p></div>`;
+  app.innerHTML=`<div class="rsvp-shell">${brand()}<div class="rsvp-invalid"><h2>Convite não encontrado</h2><p>Confira se você abriu o link correto enviado pelos noivos.</p></div><p class="rsvp-privacy">Magia Para Todos • Onde os sonhos se tornam alianças.</p></div>`;
 }
-async function loadWedding(){
-  if(!validUuid(weddingCode)){renderInvalid();return;}
-  const {data,error}=await sb.rpc('rsvp_get_wedding',{wedding_code:weddingCode});
-  if(error){console.error(error);renderInvalid();return;}
-  wedding=Array.isArray(data)?data[0]:data;
-  if(!wedding){renderInvalid();return;}
-  renderSearch();
-}
-function renderSearch(message=''){
+function renderInvite(){
+  if(!wedding||!guests.length){renderInvalid();return;}
   app.innerHTML=`<div class="rsvp-shell">
     ${brand()}
     <section class="rsvp-card">
       ${hero()}
       <div class="rsvp-content">
-        <h2>Encontre seu convite ♡</h2>
-        <p>Digite seu nome para localizar o convite e confirmar quem estará presente.</p>
-        <form class="rsvp-search-form" id="rsvp-search-form">
-          <input class="rsvp-input" id="rsvp-search-input" autocomplete="name" placeholder="Digite seu nome completo ou parte dele" minlength="3" required>
-          <button class="rsvp-btn" type="submit">Pesquisar</button>
-        </form>
-        <p class="rsvp-hint">Digite pelo menos 3 letras. A lista completa de convidados não fica visível.</p>
-        ${message?`<div class="rsvp-message error">${esc(message)}</div>`:''}
-        <div id="rsvp-results"></div>
+        <h2>${esc(invite?.label||'Seu convite')} ♡</h2>
+        <p>Confirme abaixo quem estará presente neste convite.</p>
+        <div class="rsvp-results">
+          <section class="rsvp-group">
+            <div class="rsvp-group-head"><strong>${esc(invite?.label||'Convite')}</strong><span>${guests.length} pessoa(s)</span></div>
+            ${guests.map(guest=>`<div class="rsvp-person">
+              <div class="rsvp-person-name"><strong>${esc(guest.full_name)}</strong><span>${guest.age_group==='child'?'Criança':'Adulto'}</span></div>
+              <div class="rsvp-choice">
+                <label><input type="radio" name="status-${guest.id}" value="confirmed" ${guest.status==='confirmed'?'checked':''}><span>✓ Vou</span></label>
+                <label><input type="radio" name="status-${guest.id}" value="declined" ${guest.status==='declined'?'checked':''}><span>Não irei</span></label>
+              </div>
+            </div>`).join('')}
+          </section>
+          <div class="rsvp-submit-wrap"><button class="rsvp-btn" id="rsvp-submit">Confirmar resposta</button></div>
+        </div>
       </div>
     </section>
     <p class="rsvp-privacy">Sua resposta será usada somente para a organização deste evento.</p>
   </div>`;
-
-  const form=document.getElementById('rsvp-search-form');
-  const input=document.getElementById('rsvp-search-input');
-  form.onsubmit=async e=>{
-    e.preventDefault();
-    const query=input.value.trim();
-    if(query.length<3){toast('Digite pelo menos 3 letras.');return;}
-    const button=form.querySelector('button');
-    button.disabled=true;
-    button.textContent='Pesquisando...';
-    const {data,error}=await sb.rpc('rsvp_search_guests',{
-      wedding_code:weddingCode,
-      search_text:query
-    });
-    button.disabled=false;
-    button.textContent='Pesquisar';
-    if(error){console.error(error);toast('Não foi possível pesquisar agora.');return;}
-    searchResults=data||[];
-    renderResults(query);
-  };
-}
-function groupResults(){
-  const groups=new Map();
-  for(const guest of searchResults){
-    const key=guest.group_name?.trim()?guest.group_name.trim():`__${guest.id}`;
-    if(!groups.has(key)){
-      groups.set(key,{label:guest.group_name?.trim()||'Convite individual',guests:[]});
-    }
-    groups.get(key).guests.push(guest);
-  }
-  return [...groups.values()];
-}
-function renderResults(query){
-  const root=document.getElementById('rsvp-results');
-  if(!root)return;
-  if(!searchResults.length){
-    root.innerHTML=`<div class="rsvp-message error">Não encontramos um convite para “${esc(query)}”. Confira o nome e tente novamente.</div>`;
-    return;
-  }
-  const groups=groupResults();
-  root.innerHTML=`<div class="rsvp-results">
-    ${groups.map(group=>`<section class="rsvp-group">
-      <div class="rsvp-group-head"><strong>${esc(group.label)}</strong><span>${group.guests.length} pessoa(s)</span></div>
-      ${group.guests.map(guest=>`<div class="rsvp-person">
-        <div class="rsvp-person-name"><strong>${esc(guest.full_name)}</strong><span>${guest.age_group==='child'?'Criança':'Adulto'}</span></div>
-        <div class="rsvp-choice">
-          <label><input type="radio" name="status-${guest.id}" value="confirmed" ${guest.status==='confirmed'?'checked':''}><span>✓ Vou</span></label>
-          <label><input type="radio" name="status-${guest.id}" value="declined" ${guest.status==='declined'?'checked':''}><span>Não irei</span></label>
-        </div>
-      </div>`).join('')}
-    </section>`).join('')}
-    <div class="rsvp-submit-wrap"><button class="rsvp-btn" id="rsvp-submit">Confirmar resposta</button></div>
-  </div>`;
   document.getElementById('rsvp-submit').onclick=submitResponses;
+}
+async function loadInvite(){
+  if(!validUuid(inviteCode)){renderInvalid();return;}
+  const {data,error}=await sb.rpc('rsvp_invite_snapshot',{invite_code:inviteCode});
+  if(error){console.error(error);renderInvalid();return;}
+  if(!data||!data.wedding||!Array.isArray(data.guests)||!data.guests.length){renderInvalid();return;}
+  wedding=data.wedding;
+  invite=data.invite||{};
+  guests=data.guests||[];
+  renderInvite();
 }
 async function submitResponses(){
   const responses=[];
-  for(const guest of searchResults){
+  for(const guest of guests){
     const selected=document.querySelector(`input[name="status-${guest.id}"]:checked`);
     if(!selected){toast(`Informe a resposta de ${guest.full_name}.`);return;}
     responses.push({id:guest.id,status:selected.value});
   }
+
   const button=document.getElementById('rsvp-submit');
   button.disabled=true;
   button.textContent='Salvando...';
-  const {data,error}=await sb.rpc('rsvp_submit_responses',{wedding_code:weddingCode,responses});
+
+  const {data,error}=await sb.rpc('rsvp_invite_submit',{
+    invite_code:inviteCode,
+    responses
+  });
+
   if(error){
     console.error(error);
     button.disabled=false;
@@ -139,12 +102,14 @@ async function submitResponses(){
     toast('Não foi possível salvar sua resposta.');
     return;
   }
+
   if(!Number(data)){
     button.disabled=false;
     button.textContent='Confirmar resposta';
     toast('Nenhuma resposta foi atualizada.');
     return;
   }
+
   renderSuccess();
 }
 function renderSuccess(){
@@ -157,12 +122,13 @@ function renderSuccess(){
           <div class="heart">♡</div>
           <h2>Resposta registrada!</h2>
           <p>Obrigada por confirmar. Sua resposta já foi enviada para a organização do casamento.</p>
-          <button class="rsvp-secondary" id="rsvp-search-again">Alterar ou consultar outra resposta</button>
+          <button class="rsvp-secondary" id="rsvp-edit-answer">Consultar ou alterar resposta</button>
         </div>
       </div>
     </section>
     <p class="rsvp-privacy">Magia Para Todos • Onde os sonhos se tornam alianças.</p>
   </div>`;
-  document.getElementById('rsvp-search-again').onclick=()=>renderSearch();
+  document.getElementById('rsvp-edit-answer').onclick=loadInvite;
 }
-loadWedding();
+
+loadInvite();
