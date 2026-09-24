@@ -126,3 +126,142 @@
   .planner-chat-compose{grid-template-columns:1fr}
   .planner-chat-compose .btn-primary{width:100%}
 }
+
+
+/* =========================================================
+   UI FINAL — SIDEBAR VERDE + HOME COM CONTRASTE
+   Mantido neste arquivo por ser o último CSS carregado.
+   ========================================================= */
+
+@media(min-width:821px){
+  .client-app-shell .sidebar{
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb,var(--planner-theme-primary) 92%,#394025 8%) 0%,
+        color-mix(in srgb,var(--planner-theme-primary) 76%,#202516 24%) 100%
+      ) !important;
+    color:#fffaf2 !important;
+    border-right:0 !important;
+  }
+
+  .client-app-shell .sidebar-brand{
+    border-bottom-color:rgba(255,255,255,.10) !important;
+  }
+
+  .client-app-shell .sidebar-name{
+    color:#fffaf2 !important;
+  }
+
+  .client-app-shell .nav-item{
+    color:rgba(255,250,242,.82) !important;
+    background:transparent !important;
+    border:1px solid transparent !important;
+    box-shadow:none !important;
+  }
+
+  .client-app-shell .nav-item svg{
+    color:rgba(255,250,242,.78) !important;
+  }
+
+  .client-app-shell .nav-item:hover{
+    color:#fff !important;
+    background:rgba(255,255,255,.07) !important;
+  }
+
+  .client-app-shell .nav-item.active{
+    color:#fff !important;
+    background:rgba(255,255,255,.13) !important;
+    border-color:rgba(255,255,255,.05) !important;
+    box-shadow:inset 3px 0 0 rgba(225,207,166,.82) !important;
+  }
+
+  .client-app-shell .nav-module-entry,
+  .client-app-shell .nav-module-entry.locked{
+    color:#fffaf2 !important;
+    background:rgba(255,255,255,.035) !important;
+    border:1px solid rgba(255,255,255,.09) !important;
+    box-shadow:none !important;
+    opacity:1 !important;
+  }
+
+  .client-app-shell .nav-module-entry:hover{
+    background:rgba(255,255,255,.08) !important;
+    border-color:rgba(255,255,255,.13) !important;
+  }
+
+  .client-app-shell .nav-module-entry.active{
+    background:rgba(255,255,255,.11) !important;
+    border-color:rgba(255,255,255,.13) !important;
+    box-shadow:inset 3px 0 0 rgba(225,207,166,.82) !important;
+  }
+
+  .client-app-shell .nav-module-icon{
+    color:#eee6d4 !important;
+    background:rgba(255,255,255,.07) !important;
+    border-color:rgba(255,255,255,.08) !important;
+  }
+
+  .client-app-shell .nav-module-copy strong{
+    color:#fffaf2 !important;
+  }
+
+  .client-app-shell .nav-module-copy small,
+  .client-app-shell .nav-module-arrow{
+    color:rgba(255,250,242,.64) !important;
+  }
+
+  .client-app-shell .sidebar-bottom{
+    border-top-color:rgba(255,255,255,.10) !important;
+  }
+}
+
+/* Banner principal: a paleta continua definindo o degradê,
+   mas os textos permanecem legíveis em qualquer tema. */
+.client-app-shell .home-welcome-strip{
+  background:
+    radial-gradient(
+      circle at 87% 20%,
+      color-mix(in srgb,var(--planner-theme-accent) 22%,transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      108deg,
+      color-mix(in srgb,var(--planner-theme-secondary) 88%,#2d261f 12%) 0%,
+      color-mix(in srgb,var(--planner-theme-secondary) 62%,var(--planner-theme-primary) 38%) 48%,
+      color-mix(in srgb,var(--planner-theme-primary) 88%,#25291d 12%) 100%
+    ) !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+
+.client-app-shell .home-welcome-strip .eyebrow{
+  color:rgba(255,250,242,.70) !important;
+}
+
+.client-app-shell .home-welcome-strip h1{
+  color:#fffaf2 !important;
+  text-shadow:0 2px 14px rgba(25,20,16,.22) !important;
+}
+
+.client-app-shell .home-welcome-strip p{
+  color:rgba(255,250,242,.76) !important;
+}
+
+.client-app-shell .home-countdown-compact{
+  background:rgba(41,48,29,.58) !important;
+  color:#fffaf2 !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:
+    0 10px 24px rgba(26,23,18,.12),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter:blur(7px);
+}
+
+.client-app-shell .home-countdown-compact strong{
+  color:#fffaf2 !important;
+  text-shadow:0 2px 10px rgba(20,20,15,.18);
+}
+
+.client-app-shell .home-countdown-compact span{
+  color:rgba(255,250,242,.82) !important;
+}
