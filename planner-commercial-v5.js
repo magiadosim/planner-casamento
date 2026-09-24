@@ -16,6 +16,7 @@ function mptV5ClaimStatusLabel(status){
     awaiting_proof:'Aguardando comprovante',
     proof_sent:'Comprovante informado',
     auto_activated:'Liberado — em conferência',
+    manual_review:'Aguardando conferência manual',
     verified:'Pagamento confirmado',
     rejected:'Pagamento não confirmado',
     suspended:'Acesso suspenso'
@@ -59,6 +60,8 @@ function mptV5AccessPage(){
     action='<div class="mpt-v5-countdown"><span>Acesso completo em</span><strong id="mpt-activation-countdown">'+mptV5CountdownText(claim.activate_at)+'</strong><small>após o envio do comprovante</small></div>';
   }else if(status==='auto_activated'){
     action='<div class="mpt-v5-success-box"><strong>✓ Acesso completo liberado</strong><span>Seu pagamento está em conferência administrativa.</span></div>';
+  }else if(status==='manual_review'){
+    action='<div class="mpt-v5-warning"><strong>Comprovante recebido</strong><span>Por segurança, esta ativação está aguardando conferência manual da nossa equipe. Você não precisa enviar novamente.</span></div>';
   }
 
   const suspended=status==='suspended';
@@ -135,7 +138,7 @@ adminClientCard=function(c){
 };
 
 function mptV5AdminClaimsPanel(){
-  const pending=(state.purchaseClaims||[]).filter(c=>['awaiting_proof','proof_sent','auto_activated'].includes(c.status));
+  const pending=(state.purchaseClaims||[]).filter(c=>['awaiting_proof','proof_sent','auto_activated','manual_review'].includes(c.status));
   if(!pending.length)return '<section class="card card-pad mpt-v5-admin-alert empty"><strong>Nenhuma compra aguardando conferência.</strong></section>';
 
   return '<section class="mpt-v5-admin-purchases"><div class="mpt-v5-admin-purchases-head"><div><span>NOVAS COMPRAS</span><h2>'+pending.length+' aguardando sua atenção</h2></div><span class="badge warning">'+pending.length+'</span></div>'+
