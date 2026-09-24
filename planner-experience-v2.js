@@ -1,4 +1,22 @@
 /* MAGIA PARA TODOS — EXPERIÊNCIA V2 */
+if(typeof PREMIUM_PREVIEWS!=='undefined'){
+  if(PREMIUM_PREVIEWS.cerimonial){
+    PREMIUM_PREVIEWS.cerimonial.count='Modelos + 6 abas';
+    PREMIUM_PREVIEWS.cerimonial.description='Comece com um modelo pronto e personalize roteiro, agenda, cerimônia, momentos e financeiro.';
+    PREMIUM_PREVIEWS.cerimonial.items=['Modelos prontos de Cerimonial','Roteiro com checklist','Agenda do grande dia','Cerimônia em sequência','Momentos especiais','Financeiro do Cerimonial','Compartilhar em modo leitura'];
+  }
+  if(PREMIUM_PREVIEWS['organizacao-casa']){
+    PREMIUM_PREVIEWS['organizacao-casa'].count='Enxoval + presentes + financeiro';
+    PREMIUM_PREVIEWS['organizacao-casa'].description='Organize a casa, acompanhe compras e crie uma lista de presentes compartilhável sem expor seus valores privados.';
+    PREMIUM_PREVIEWS['organizacao-casa'].items=['Dashboard do enxoval','Lista setorizada','Sugestões por ambiente','Lista de Presentes compartilhável','Itens reservados por convidados','Financeiro da casa','Progresso por setor'];
+  }
+  if(PREMIUM_PREVIEWS['lua-de-mel']){
+    PREMIUM_PREVIEWS['lua-de-mel'].count='5 áreas integradas';
+    PREMIUM_PREVIEWS['lua-de-mel'].description='Planeje destino, roteiro, reservas, checklist e financeiro da viagem em um só lugar.';
+    PREMIUM_PREVIEWS['lua-de-mel'].items=['Visão geral da viagem','Destino e datas','Roteiro por dia e horário','Central de reservas e localizadores','Checklist sugerido e personalizado','Financeiro da Lua de Mel'];
+  }
+}
+
 state.homeGiftShare=state.homeGiftShare||null;
 state.homeGiftReservations=state.homeGiftReservations||[];
 
