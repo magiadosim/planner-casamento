@@ -2345,3 +2345,28 @@ body{
   .premium-payment-price strong{font-size:28px}
   .premium-whatsapp-proof{width:100%}
 }
+
+
+.premium-payment-description{
+  margin:0;
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1.6;
+}
+.premium-payment-warning{
+  display:grid;
+  gap:3px;
+  padding:11px 12px;
+  border-radius:12px;
+  background:#fff4df;
+  border:1px solid #ecd5a8;
+}
+.premium-payment-warning strong{
+  color:#7d5a2e;
+  font-size:10px;
+}
+.premium-payment-warning span{
+  color:#7a6955;
+  font-size:9.5px;
+  line-height:1.5;
+}
