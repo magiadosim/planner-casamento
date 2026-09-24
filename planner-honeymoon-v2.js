@@ -336,7 +336,7 @@ function mptHoneymoonView(){
   const p=state.honeymoonProfile||{};
   const tabs=MPT_HONEYMOON_TABS.map(function(row){return '<button type="button" class="'+(state.honeymoonTab===row[0]?'active':'')+'" data-honeymoon-tab="'+row[0]+'">'+row[1]+'</button>';}).join('');
   const content=state.honeymoonTab==='roteiro'?mptHoneyItineraryView():state.honeymoonTab==='reservas'?mptHoneyReservationsView():state.honeymoonTab==='checklist'?mptHoneyChecklistView():state.honeymoonTab==='financeiro'?mptHoneyFinanceView():mptHoneyDashboard();
-  return '<div class="page honeymoon-workspace"><div class="page-head honeymoon-main-head"><div><div class="eyebrow">GOLD / EXTRA LUA DE MEL</div><h1>Lua de Mel</h1><p>'+(p.destination?'Sua viagem para '+esc(p.destination)+' organizada em um só lugar.':'Planeje destino, roteiro, reservas, checklist e financeiro da viagem.')+'</p></div><div class="honeymoon-head-progress"><strong>'+mptHoneyProgress()+'%</strong><span>planejada</span></div></div><nav class="honeymoon-tabs">'+tabs+'</nav>'+mptHoneyActionBar()+content+'</div>';
+  return '<div class="page honeymoon-workspace"><div class="page-head honeymoon-main-head"><div><div class="eyebrow">ACESSO COMPLETO</div><h1>Lua de Mel</h1><p>'+(p.destination?'Sua viagem para '+esc(p.destination)+' organizada em um só lugar.':'Planeje destino, roteiro, reservas, checklist e financeiro da viagem.')+'</p></div><div class="honeymoon-head-progress"><strong>'+mptHoneyProgress()+'%</strong><span>planejada</span></div></div><nav class="honeymoon-tabs">'+tabs+'</nav>'+mptHoneyActionBar()+content+'</div>';
 }
 
 const mptHoneyBaseLoadData=loadData;
