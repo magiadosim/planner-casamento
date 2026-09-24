@@ -2120,6 +2120,7 @@ function premiumHubView(){
       <strong class="commerce-plan-price">${plan.price}</strong>
       <small>por semestre</small>
       <ul>${plan.items.map(item=>`<li>✓ ${esc(item)}</li>`).join('')}</ul>
+      <p class="commerce-release-notice">${esc(MPT_RELEASE_NOTICE)}</p>
       <div class="commerce-plan-action">${action}</div>
     </article>`;
   };
@@ -2132,7 +2133,7 @@ function premiumHubView(){
         ? `<button class="btn-secondary" type="button" data-buy-extra="${feature}">Adicionar por ${extra.price}</button>`
         : '<span class="commerce-extra-requirement">Disponível após ativar o Básico</span>';
     return `<article class="card commerce-extra-card">
-      <div><span class="commerce-extra-kicker">EXTRA AVULSO</span><h3>${esc(extra.name)}</h3><p>${esc(extra.description)}</p></div>
+      <div><span class="commerce-extra-kicker">EXTRA AVULSO</span><h3>${esc(extra.name)}</h3><p>${esc(extra.description)}</p><p class="commerce-release-notice">${esc(MPT_RELEASE_NOTICE)}</p></div>
       <div class="commerce-extra-bottom"><strong>${extra.price}</strong>${action}</div>
     </article>`;
   };
@@ -2140,7 +2141,7 @@ function premiumHubView(){
   const meetingUrl=`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent('agendar reunião de acessoria')}`;
 
   return `<div class="page commerce-page">
-    <div class="page-head"><div><div class="eyebrow">PLANOS E EXTRAS</div><h1>Escolha como quer organizar seu casamento</h1><p>Os planos têm validade semestral. A ativação é feita manualmente após a confirmação do pagamento.</p></div></div>
+    <div class="page-head"><div><div class="eyebrow">PLANOS E EXTRAS</div><h1>Escolha como quer organizar seu casamento</h1><p>Os planos têm validade semestral. A ativação é feita manualmente após a confirmação do pagamento, com prazo de até 24h para liberação.</p></div></div>
 
     <section class="commerce-section">
       <div class="commerce-section-head"><div><span>PLANOS SEMESTRAIS</span><h2>Do essencial ao planejamento completo</h2></div></div>
@@ -2164,7 +2165,7 @@ function premiumHubView(){
       <div>
         <span class="commerce-extra-kicker">ASSESSORIA ESPECIALIZADA</span>
         <h2>Reunião de 1 hora pelo Google Meet</h2>
-        <p>Uma assessora especializada ajuda a estruturar seu cronograma e organizar as próximas etapas do casamento.</p>
+        <p>Uma assessora especializada ajuda a estruturar seu cronograma e organizar as próximas etapas do casamento.</p><p class="commerce-release-notice">Retorno para confirmação do agendamento em até 24h após a solicitação.</p>
       </div>
       <div class="commerce-advisory-action"><strong>R$ 99,90</strong>
         ${basicActive?`<a class="btn-primary" href="${meetingUrl}" target="_blank" rel="noopener noreferrer">Agendar pelo WhatsApp</a>`:'<span class="commerce-extra-requirement">Disponível após ativar o Básico</span>'}
@@ -2172,6 +2173,7 @@ function premiumHubView(){
     </section>
   </div>`;
 }
+const MPT_RELEASE_NOTICE='Liberação em até 24h após a confirmação do pagamento.';
 const MPT_PIX_KEY='amagiadosim2026@gmail.com';
 const MPT_WHATSAPP_NUMBER='5521984629190';
 
@@ -2223,7 +2225,7 @@ function openCommercePayment(item,label='Pacote'){
         <strong id="premium-pix-key">${MPT_PIX_KEY}</strong>
         <button type="button" class="btn-secondary" id="copy-premium-pix">Copiar chave Pix</button>
       </div>
-      <p class="premium-payment-note">A liberação é feita manualmente pela administração após a conferência do pagamento.</p>
+      <p class="premium-payment-note"><strong>Prazo:</strong> ${esc(MPT_RELEASE_NOTICE)}</p>
       <a class="btn-primary premium-whatsapp-proof" id="premium-whatsapp-proof" href="#" target="_blank" rel="noopener noreferrer">Enviar comprovante pelo WhatsApp</a>
     </div>`;
 
@@ -2241,7 +2243,7 @@ function openCommercePayment(item,label='Pacote'){
   if(whatsapp){
     const couple=state.wedding?.couple_name||state.profile?.full_name||'Cliente';
     const email=state.user?.email||state.profile?.email||'';
-    const message=`Olá! Fiz o pagamento de ${item.price} referente a ${label.toLowerCase()} ${item.name} do Magia Para Todos e quero solicitar a liberação. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
+    const message=`Olá! Fiz o pagamento de ${item.price} referente a ${label.toLowerCase()} ${item.name} do Magia Para Todos e quero solicitar a liberação. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa. Estou ciente de que a liberação pode ocorrer em até 24h após a confirmação do pagamento.`;
     whatsapp.href=`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   }
 }
@@ -2249,12 +2251,12 @@ function openCommercePayment(item,label='Pacote'){
 function openUpgradeWhatsApp(packageKey){
   const plan=MPT_PACKAGES[packageKey];
   if(!plan)return;
-  const message=`Quero fazer upgrade do meu plano para o pacote ${plan.name}`;
+  const message=`Quero fazer upgrade do meu plano para o pacote ${plan.name}. Estou ciente de que a liberação pode ocorrer em até 24h após a confirmação do pagamento.`;
   window.open(`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,'_blank','noopener');
 }
 
 function openGoldUpgradeWhatsApp(){
-  const message='Quero fazer upgrade para o pacote Gold e liberar a planilha geral de todos os gastos';
+  const message='Quero fazer upgrade para o pacote Gold e liberar a planilha geral de todos os gastos. Estou ciente de que a liberação pode ocorrer em até 24h após a confirmação do pagamento.';
   window.open(`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,'_blank','noopener');
 }
 
@@ -2299,7 +2301,7 @@ function premiumPreviewView(slug){
       </article>`).join('')}
     </div>
     ${!unlocked?`<div class="card card-pad premium-upgrade-box">
-      <div><strong>${basicActive?'Quer adicionar este recurso?':'Escolha seu plano para começar'}</strong><p>${basicActive?'Os extras são liberados manualmente após o envio do comprovante.':'Básico, Essencial e Gold têm validade semestral.'}</p></div>
+      <div><strong>${basicActive?'Quer adicionar este recurso?':'Escolha seu plano para começar'}</strong><p>${basicActive?'Os extras são liberados manualmente após o envio do comprovante, em até 24h após a confirmação do pagamento.':'Básico, Essencial e Gold têm validade semestral. A liberação pode ocorrer em até 24h após a confirmação do pagamento.'}</p></div>
       <button class="btn-primary" data-unlock="${slug}">${basicActive&&extra?'Desbloquear '+extra.name:'Ver planos e preços'}</button>
     </div>`:''}
   </div>`;
