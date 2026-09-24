@@ -3,8 +3,8 @@ const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
 });
 
-const SITE_URL='https://magiadosim.github.io/planner-casamento/';
-const LOGO_URL='https://magiadosim.github.io/planner-casamento/magia-para-todos-logo.svg';
+const SITE_URL=new URL('./',window.location.href).href;
+const LOGO_URL=new URL('magia-para-todos-logo.svg',document.baseURI).href;
 const app=document.getElementById('app');
 
 const state={
