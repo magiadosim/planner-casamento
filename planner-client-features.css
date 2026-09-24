@@ -2660,3 +2660,16 @@ body{
   .commerce-advisory-action{justify-items:start}
   .commerce-advisory-action .btn-primary{width:100%;text-align:center}
 }
+
+
+.commerce-release-notice{
+  margin-top:10px !important;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(183,140,77,.10);
+  border:1px solid rgba(183,140,77,.18);
+  color:#765b32 !important;
+  font-size:8.5px !important;
+  font-weight:700;
+  line-height:1.45 !important;
+}
