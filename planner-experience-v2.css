@@ -307,3 +307,4 @@
   .gold-area-row{grid-template-columns:1fr}
   .gold-area-row>strong{text-align:left}
 }
+.home-gift-price{display:block!important;margin-top:4px!important;color:var(--olive)!important;font-size:10px!important;font-weight:800}.home-gift-product-link{display:inline-block;margin-top:4px;color:var(--olive);font-size:8.5px;font-weight:700;text-decoration:none}
