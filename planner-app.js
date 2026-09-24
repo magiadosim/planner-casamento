@@ -431,14 +431,16 @@ function shellView(r,content){
 
 function lockedView(feature){
   const name=moduleName(feature);
-  return `<div class="page"><div class="page-head"><div><h1>${esc(name)}</h1><p>Este recurso existe no Planner, mas não está liberado no plano atual.</p></div></div>
+  const premium=['cerimonial','organizacao-casa','lua-de-mel'].includes(feature);
+  const packageName=premium?'Premium':'Essencial';
+  return `<div class="page"><div class="page-head"><div><h1>${esc(name)}</h1><p>Este recurso ainda não está liberado na sua conta.</p></div></div>
     <div class="card card-pad planner-locked-card">
       <div class="planner-lock-icon">${icons.lock}</div>
       <div>
-        <div class="eyebrow">RECURSO BLOQUEADO</div>
+        <div class="eyebrow">PACOTE ${packageName.toUpperCase()}</div>
         <h2>${esc(name)}</h2>
-        <p class="muted">Faça upgrade do plano para desbloquear este módulo. A administração também pode liberar este recurso individualmente para sua conta.</p>
-        <button class="btn-primary" data-unlock="${esc(feature)}">Desbloquear</button>
+        <p class="muted">${premium?'Este recurso faz parte do adicional Premium.':'A Festa de Casamento completa faz parte do pacote Essencial, por R$ 89,90 a cada semestre.'} A liberação é feita pela administração após a confirmação do pagamento.</p>
+        <button class="btn-primary" data-unlock="${esc(feature)}">Desbloquear ${packageName}</button>
       </div>
     </div>
   </div>`;
