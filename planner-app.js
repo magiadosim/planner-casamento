@@ -367,7 +367,7 @@ function shellView(r,content){
 
   return `<div class="app-shell ${state.role==='client'?'client-app-shell':'admin-app-shell'}">
     <aside class="sidebar">
-      <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="Magia Para Todos"></div><div class="sidebar-name">A Magia<br>do Sim</div></div>
+      <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="Magia Para Todos"></div><div class="sidebar-name">Magia Para<br>Todos</div></div>
       <nav class="nav">${navHtml}</nav>
       <div class="sidebar-bottom">
         ${state.role==='client'?'<a href="#/suporte" class="nav-item '+(active==='suporte'?'active':'')+'">'+icons.meeting+'<span>Suporte / Chamados</span></a>':''}
