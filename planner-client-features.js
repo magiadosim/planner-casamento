@@ -558,6 +558,7 @@ function backupSnapshot(){
     lua_de_mel_roteiro:state.honeymoonItinerary||[],
     lua_de_mel_reservas:state.honeymoonReservations||[],
     lua_de_mel_checklist:state.honeymoonChecklist||[],
+    lua_de_mel_estimativas:state.honeymoonEstimates||[],
     lista_presentes_reservas:state.homeGiftReservations||[]
   };
 }
@@ -631,7 +632,8 @@ function downloadPlannerXlsx(){
     ['Viagem Lua de Mel',state.honeymoonProfile?[state.honeymoonProfile]:[]],
     ['Roteiro Lua de Mel',state.honeymoonItinerary||[]],
     ['Reservas Lua de Mel',state.honeymoonReservations||[]],
-    ['Checklist Lua de Mel',state.honeymoonChecklist||[]]
+    ['Checklist Lua de Mel',state.honeymoonChecklist||[]],
+    ['Estimativas Lua de Mel',state.honeymoonEstimates||[]]
   ];
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
