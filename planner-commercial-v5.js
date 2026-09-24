@@ -445,4 +445,17 @@ bind=function(){
       window.scrollTo({top:0,left:0,behavior:'auto'});
     };
   });
+
+  if(window.matchMedia('(max-width:820px)').matches){
+    requestAnimationFrame(()=>{
+      const activeContext=document.querySelector('.mpt-context-item.active');
+      if(activeContext){
+        activeContext.scrollIntoView({
+          behavior:'smooth',
+          block:'nearest',
+          inline:'center'
+        });
+      }
+    });
+  }
 };
