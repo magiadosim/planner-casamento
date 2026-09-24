@@ -2093,3 +2093,151 @@ body{
     border-radius:17px;
   }
 }
+
+
+/* =========================================================
+   AJUSTES VISUAIS — SIDEBAR CONTÍNUA + CONTRASTE DO BANNER
+   ========================================================= */
+
+@media(min-width:821px){
+  .client-app-shell{
+    position:relative;
+    min-height:100vh;
+    isolation:isolate;
+  }
+
+  /* Fundo verde acompanha toda a altura da página */
+  .client-app-shell::before{
+    content:"";
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    width:var(--sidebar);
+    background:linear-gradient(180deg,#505535 0%,#42472a 100%);
+    z-index:0;
+    pointer-events:none;
+  }
+
+  .client-app-shell .sidebar,
+  .client-app-shell .main{
+    position:relative;
+    z-index:1;
+  }
+
+  .client-app-shell .sidebar{
+    background:transparent;
+    color:#fbf7ef;
+    border-right:0;
+    box-shadow:none;
+  }
+
+  .client-app-shell .sidebar-brand{
+    border-bottom:1px solid rgba(255,255,255,.10);
+  }
+
+  .client-app-shell .sidebar-name{
+    color:#fffaf2;
+  }
+
+  .client-app-shell .nav-item{
+    color:rgba(255,250,242,.82);
+    border-color:transparent;
+  }
+
+  .client-app-shell .nav-item svg{
+    color:rgba(255,250,242,.78);
+  }
+
+  .client-app-shell .nav-item:hover{
+    color:#fff;
+    background:rgba(255,255,255,.07);
+    border-color:transparent;
+  }
+
+  .client-app-shell .nav-item.active{
+    color:#fff;
+    background:rgba(255,255,255,.13);
+    border-color:rgba(255,255,255,.06);
+    box-shadow:inset 3px 0 0 rgba(221,205,165,.72);
+  }
+
+  .client-app-shell .nav-module-entry{
+    color:#fffaf2;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.09);
+  }
+
+  .client-app-shell .nav-module-entry:hover{
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.13);
+  }
+
+  .client-app-shell .nav-module-entry.active{
+    color:#fff;
+    background:rgba(255,255,255,.11);
+    border-color:rgba(255,255,255,.13);
+    box-shadow:inset 3px 0 0 rgba(221,205,165,.72);
+  }
+
+  .client-app-shell .nav-module-icon{
+    color:#e7dec9;
+    background:rgba(255,255,255,.07);
+    border-color:rgba(255,255,255,.08);
+  }
+
+  .client-app-shell .nav-module-copy small,
+  .client-app-shell .nav-module-arrow{
+    color:rgba(255,250,242,.63);
+  }
+
+  .client-app-shell .sidebar-bottom{
+    border-top:1px solid rgba(255,255,255,.10);
+  }
+}
+
+/* Banner principal com contraste correto */
+.home-welcome-strip{
+  background:
+    radial-gradient(circle at 88% 18%,rgba(218,198,153,.14),transparent 27%),
+    linear-gradient(105deg,#65462f 0%,#5b4c32 46%,#505633 100%);
+  border:1px solid rgba(91,66,44,.18);
+  box-shadow:0 14px 34px rgba(53,43,33,.08);
+}
+
+.home-welcome-strip::before{
+  background:linear-gradient(180deg,#d3b77c,#9ea77a);
+}
+
+.home-welcome-strip .eyebrow{
+  color:rgba(255,248,237,.72);
+  font-weight:700;
+}
+
+.home-welcome-strip h1{
+  color:#fffaf2;
+  text-shadow:0 2px 12px rgba(28,22,18,.16);
+}
+
+.home-welcome-strip p{
+  color:rgba(255,248,237,.72);
+}
+
+.home-countdown-compact{
+  background:rgba(61,70,42,.70);
+  color:#fffaf2;
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:
+    0 8px 24px rgba(35,31,25,.10),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(5px);
+}
+
+.home-countdown-compact strong{
+  color:#fffaf2;
+  text-shadow:0 1px 8px rgba(20,20,15,.12);
+}
+
+.home-countdown-compact span{
+  color:rgba(255,250,242,.82);
+}
