@@ -15,12 +15,19 @@ async function mptLoadAdminCatalog(){
   state.plans=(plansRes.data||[]).map(p=>({...p,features:pf.filter(x=>x.plan_id===p.id).map(x=>x.feature_slug)}));
   state.features=featuresRes.data||[];
 }
+function mptPlanPriceLabel(slug){
+  return ({
+    basico:'R$ 89,90 / semestre',
+    essencial:'R$ 119,90 / semestre',
+    gold:'R$ 149,90 / semestre'
+  })[slug]||'';
+}
 function mptPlanCard(p){
   return `<article class="card card-pad admin-plan-card ${p.active?'':'inactive'}" data-admin-plan="${p.id}">
     <div class="admin-plan-card-head">
       <div>
         <div class="field" style="margin:0"><label>Nome do plano</label><input class="input planner-plain-input" name="plan_name" value="${esc(p.name)}"></div>
-        <div class="tiny muted" style="margin-top:6px">Identificador: ${esc(p.slug)}</div>
+        <div class="tiny muted" style="margin-top:6px">Identificador: ${esc(p.slug)}${mptPlanPriceLabel(p.slug)?' • '+esc(mptPlanPriceLabel(p.slug)):''}</div>
       </div>
       <label class="admin-plan-status"><input type="checkbox" name="plan_active" ${p.active?'checked':''}> Plano ativo</label>
     </div>
@@ -32,12 +39,15 @@ function mptPlanCard(p){
   </article>`;
 }
 plansView=function(){
+  const activePlans=state.plans.filter(p=>p.active);
+  const inactivePlans=state.plans.filter(p=>!p.active);
   return `<div class="page">
     <div class="page-head">
-      <div><h1>Planos e liberações</h1><p>Crie planos e escolha exatamente quais módulos cada um libera.</p></div>
+      <div><h1>Planos e liberações</h1><p>Controle manualmente os planos e os módulos liberados para cada cliente.</p></div>
       <div class="admin-plan-actions"><button class="btn-primary" id="mpt-new-plan">+ Novo plano</button></div>
     </div>
-    <div class="admin-plan-grid">${state.plans.map(mptPlanCard).join('')}</div>
+    <div class="admin-plan-grid">${activePlans.map(mptPlanCard).join('')}</div>
+    ${inactivePlans.length?`<details class="card card-pad admin-inactive-plans"><summary>Planos antigos / inativos (${inactivePlans.length})</summary><div class="admin-plan-grid">${inactivePlans.map(mptPlanCard).join('')}</div></details>`:''}
   </div>`;
 };
 function mptSlugify(value){
