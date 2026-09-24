@@ -2198,7 +2198,7 @@ function premiumPreviewView(slug){
 
 const plannerBaseViewFor=viewFor;
 viewFor=function(r){
-  if(r==='festa-casamento'&&state.role==='client')return festaHubView();
+  if(r==='festa-casamento'&&state.role==='client')return hasFeature('meu-casamento')?festaHubView():lockedView('meu-casamento');
   if(r==='premium'&&state.role==='client')return premiumHubView();
   if(r==='cerimonial'&&state.role==='client')return hasFeature('cerimonial')?ceremonyView():premiumPreviewView('cerimonial');
   if(r==='organizacao-casa'&&state.role==='client')return hasFeature('organizacao-casa')?homeOrganizationView():premiumPreviewView('organizacao-casa');
