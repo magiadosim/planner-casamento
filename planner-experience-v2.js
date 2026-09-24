@@ -372,7 +372,7 @@ homeOrganizationView=function(){
   const t=homeTotals();
   const tabs=MPT_HOME_TABS_V2.map(function(row){return '<button type="button" class="home-tab-btn '+(state.homeTab===row[0]?'active':'')+'" data-home-tab="'+row[0]+'">'+esc(row[1])+'</button>';}).join('');
   const content=state.homeTab==='lista'?homeListView():state.homeTab==='sugestoes'?homeSuggestionsView():state.homeTab==='presentes'?mptGiftListView():state.homeTab==='financeiro'?homeFinanceView():homeDashboardView();
-  return '<div class="page home-workspace"><div class="page-head home-main-head"><div><div class="eyebrow">GOLD</div><h1>Organização da casa</h1><p>Enxoval, compras, presentes e financeiro da nova casa em um só lugar.</p></div><div class="home-head-summary"><span><strong>'+state.homeItems.length+'</strong> itens</span><span><strong>'+t.resolved+'</strong> resolvidos</span><span><strong>'+brl(t.paid)+'</strong> pagos</span></div></div><nav class="home-tabs" aria-label="Áreas da Organização da Casa">'+tabs+'</nav>'+content+'</div>';
+  return '<div class="page home-workspace"><div class="page-head home-main-head"><div><div class="eyebrow">GOLD</div><h1>Organização da casa</h1><p>Enxoval, compras, presentes e financeiro da nova casa em um só lugar.</p></div><div class="home-head-summary"><span><strong>'+state.homeItems.length+'</strong> itens</span><span><strong>'+t.resolved+'</strong> resolvidos</span><span><strong>'+brl(t.paid)+'</strong> comprados</span></div></div><nav class="home-tabs" aria-label="Áreas da Organização da Casa">'+tabs+'</nav>'+content+'</div>';
 };
 
 // GOLD — FINANCEIRO GERAL
