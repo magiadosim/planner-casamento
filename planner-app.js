@@ -366,7 +366,7 @@ function shellView(r,content){
         .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
     : `
         <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
-        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>${hasFeature('meu-casamento')?'Festa':'Básico'}</span></a>
+        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>Casamento</span></a>
         <a href="#/cerimonial" class="${active==='cerimonial'?'active':''}">${icons.calendar}<span>Cerimonial</span></a>
         <a href="#/organizacao-casa" class="${active==='organizacao-casa'?'active':''}">${icons.home}<span>Casa</span></a>
         <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open">${icons.menu}<span>Mais</span></button>
