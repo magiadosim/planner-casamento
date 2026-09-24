@@ -290,7 +290,7 @@ function mptHoneyFinanceView(){
     '<div class="honey-finance-kpis">'+
       '<div class="card purchase-kpi"><span>Orçamento máximo</span><strong>'+(s.budget?brl(s.budget):'A definir')+'</strong><small>configurado na Visão Geral</small></div>'+
       '<div class="card purchase-kpi"><span>Total estimado</span><strong>'+brl(s.estimated)+'</strong><small>planejamento da viagem</small></div>'+
-      '<div class="card purchase-kpi paid"><span>Gastos reais</span><strong>'+brl(s.total)+'</strong><small>'+s.paid?brl(s.paid)+' já pagos':'nenhum valor pago'+'</small></div>'+
+      '<div class="card purchase-kpi paid"><span>Gastos reais</span><strong>'+brl(s.total)+'</strong><small>'+(s.paid?brl(s.paid)+' já pagos':'nenhum valor pago')+'</small></div>'+
       '<div class="card purchase-kpi"><span>Saldo do orçamento</span><strong>'+(s.budget?brl(s.balance):'—')+'</strong><small>'+(s.budget?s.budgetPct+'% do orçamento usado':'defina o orçamento máximo')+'</small></div>'+
     '</div>'+
 
@@ -316,11 +316,27 @@ function mptHoneyFinanceView(){
     '</section>'+
   '</section>';
 }
+function mptHoneyActionBar(){
+  if(state.honeymoonTab==='roteiro'){
+    return '<div class="honeymoon-action-bar"><div><span>ROTEIRO</span><strong>Monte os dias da viagem</strong></div><button class="btn-primary" id="action-honey-itinerary">+ Adicionar atividade</button></div>';
+  }
+  if(state.honeymoonTab==='reservas'){
+    return '<div class="honeymoon-action-bar"><div><span>RESERVAS</span><strong>Centralize tudo que já foi reservado</strong></div><button class="btn-primary" id="action-honey-reservation">+ Nova reserva</button></div>';
+  }
+  if(state.honeymoonTab==='checklist'){
+    return '<div class="honeymoon-action-bar"><div><span>CHECKLIST</span><strong>Não deixe nada para trás</strong></div><div class="action-row"><button class="btn-secondary" id="action-honey-template">Usar checklist sugerido</button><button class="btn-primary" id="action-honey-check">+ Novo item</button></div></div>';
+  }
+  if(state.honeymoonTab==='financeiro'){
+    return '<div class="honeymoon-action-bar"><div><span>FINANCEIRO</span><strong>Planeje antes e registre o realizado</strong></div><div class="action-row"><button class="btn-secondary" id="action-honey-estimate">+ Adicionar estimativa</button><button class="btn-primary" id="action-honey-expense">+ Novo gasto</button></div></div>';
+  }
+  return '<div class="honeymoon-action-bar"><div><span>VISÃO GERAL</span><strong>Comece definindo a viagem</strong></div><button class="btn-primary" id="action-honey-profile">'+((state.honeymoonProfile||{}).destination?'Editar viagem':'+ Configurar viagem')+'</button></div>';
+}
+
 function mptHoneymoonView(){
   const p=state.honeymoonProfile||{};
   const tabs=MPT_HONEYMOON_TABS.map(function(row){return '<button type="button" class="'+(state.honeymoonTab===row[0]?'active':'')+'" data-honeymoon-tab="'+row[0]+'">'+row[1]+'</button>';}).join('');
   const content=state.honeymoonTab==='roteiro'?mptHoneyItineraryView():state.honeymoonTab==='reservas'?mptHoneyReservationsView():state.honeymoonTab==='checklist'?mptHoneyChecklistView():state.honeymoonTab==='financeiro'?mptHoneyFinanceView():mptHoneyDashboard();
-  return '<div class="page honeymoon-workspace"><div class="page-head honeymoon-main-head"><div><div class="eyebrow">GOLD / EXTRA LUA DE MEL</div><h1>Lua de Mel</h1><p>'+(p.destination?'Sua viagem para '+esc(p.destination)+' organizada em um só lugar.':'Planeje destino, roteiro, reservas, checklist e financeiro da viagem.')+'</p></div><div class="honeymoon-head-progress"><strong>'+mptHoneyProgress()+'%</strong><span>planejada</span></div></div><nav class="honeymoon-tabs">'+tabs+'</nav>'+content+'</div>';
+  return '<div class="page honeymoon-workspace"><div class="page-head honeymoon-main-head"><div><div class="eyebrow">GOLD / EXTRA LUA DE MEL</div><h1>Lua de Mel</h1><p>'+(p.destination?'Sua viagem para '+esc(p.destination)+' organizada em um só lugar.':'Planeje destino, roteiro, reservas, checklist e financeiro da viagem.')+'</p></div><div class="honeymoon-head-progress"><strong>'+mptHoneyProgress()+'%</strong><span>planejada</span></div></div><nav class="honeymoon-tabs">'+tabs+'</nav>'+mptHoneyActionBar()+content+'</div>';
 }
 
 const mptHoneyBaseLoadData=loadData;
@@ -351,6 +367,13 @@ bind=function(){
   document.querySelectorAll('[data-honeymoon-tab]').forEach(function(btn){btn.onclick=function(){state.honeymoonTab=btn.dataset.honeymoonTab;render();};});
   document.querySelectorAll('[data-honeymoon-go]').forEach(function(btn){btn.onclick=function(){state.honeymoonTab=btn.dataset.honeymoonGo;render();};});
   const edit=document.getElementById('edit-honeymoon-profile');if(edit)edit.onclick=mptOpenHoneyProfile;
+  const actionProfile=document.getElementById('action-honey-profile');if(actionProfile)actionProfile.onclick=mptOpenHoneyProfile;
+  const actionItinerary=document.getElementById('action-honey-itinerary');if(actionItinerary)actionItinerary.onclick=function(){mptOpenHoneyItinerary(null);};
+  const actionReservation=document.getElementById('action-honey-reservation');if(actionReservation)actionReservation.onclick=function(){mptOpenHoneyReservation(null);};
+  const actionCheck=document.getElementById('action-honey-check');if(actionCheck)actionCheck.onclick=function(){mptOpenHoneyCheck(null);};
+  const actionTemplate=document.getElementById('action-honey-template');if(actionTemplate)actionTemplate.onclick=mptHoneyChecklistTemplate;
+  const actionEstimate=document.getElementById('action-honey-estimate');if(actionEstimate)actionEstimate.onclick=function(){mptOpenHoneyEstimate(null);};
+  const actionExpense=document.getElementById('action-honey-expense');if(actionExpense)actionExpense.onclick=function(){openPlannerPurchaseEditor(null,'honeymoon');};
   const newEstimate=document.getElementById('new-honey-estimate');if(newEstimate)newEstimate.onclick=function(){mptOpenHoneyEstimate(null);};
   const newEstimateSecondary=document.getElementById('new-honey-estimate-secondary');if(newEstimateSecondary)newEstimateSecondary.onclick=function(){mptOpenHoneyEstimate(null);};
   document.querySelectorAll('[data-edit-honey-estimate]').forEach(function(btn){btn.onclick=function(){mptOpenHoneyEstimate(state.honeymoonEstimates.find(function(x){return x.id===btn.dataset.editHoneyEstimate;}));};});
