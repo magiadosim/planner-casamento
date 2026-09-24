@@ -387,7 +387,7 @@ function mptGoldAreas(){
     {name:'Festa de Casamento',planned:festaPlanned,paid:festaPaid},
     {name:'Cerimonial',planned:ceremonyPlanned,paid:ceremonyPaid},
     {name:'Organização da Casa',planned:home.planned,paid:home.paid},
-    {name:'Lua de Mel',planned:honey.total,paid:honey.paid}
+    {name:'Lua de Mel',planned:Number(honey.estimated||honey.total||0),paid:honey.paid}
   ];
 }
 function mptGoldView(){
