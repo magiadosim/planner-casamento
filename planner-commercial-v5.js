@@ -326,10 +326,123 @@ bind=function(){
 };
 
 
+function mptContextSidebar(r){
+  if(state.role!=='client')return '';
+
+  const active=r.startsWith('fornecedores/')?'fornecedores':r;
+  const weddingRoutes=['festa-casamento',...weddingPartyNav.map(x=>x[0])];
+
+  let title='';
+  let eyebrow='ÁREA';
+  let items=[];
+
+  if(weddingRoutes.includes(active)){
+    title='Casamento';
+    eyebrow='ORGANIZAÇÃO';
+    items=weddingPartyNav.map(([key,label,icon,feature])=>({
+      key,label,icon,feature,type:'route',
+      active:active===key
+    }));
+  }else if(active==='cerimonial'){
+    title='Cerimonial';
+    eyebrow='GRANDE DIA';
+    items=[
+      ['roteiro','Roteiro'],
+      ['agenda','Agenda'],
+      ['cerimonia','Cerimônia'],
+      ['momentos','Momentos'],
+      ['financeiro','Financeiro'],
+      ['compartilhar','Compartilhar']
+    ].map(([key,label])=>({
+      key,label,type:'tab',area:'cerimonial',
+      active:state.ceremonyTab===key
+    }));
+  }else if(active==='organizacao-casa'){
+    title='Casa';
+    eyebrow='NOVA CASA';
+    items=[
+      ['dashboard','Visão geral'],
+      ['lista','Lista de enxoval'],
+      ['sugestoes','Sugestões'],
+      ['presentes','Lista de presentes'],
+      ['financeiro','Financeiro']
+    ].map(([key,label])=>({
+      key,label,type:'tab',area:'casa',
+      active:state.homeTab===key
+    }));
+  }else if(active==='lua-de-mel'){
+    title='Lua de Mel';
+    eyebrow='VIAGEM';
+    items=[
+      ['dashboard','Visão geral'],
+      ['roteiro','Roteiro'],
+      ['reservas','Reservas'],
+      ['checklist','Checklist'],
+      ['financeiro','Financeiro']
+    ].map(([key,label])=>({
+      key,label,type:'tab',area:'lua-de-mel',
+      active:state.honeymoonTab===key
+    }));
+  }else{
+    return '';
+  }
+
+  const rows=items.map(item=>{
+    const icon=item.icon&&icons[item.icon]?'<span class="mpt-context-icon">'+icons[item.icon]+'</span>':'<span class="mpt-context-dot"></span>';
+    const lock=item.feature&&!hasFeature(item.feature)?'<span class="mpt-context-lock">⌑</span>':'<span class="mpt-context-arrow">›</span>';
+    if(item.type==='route'){
+      return `<a href="#/${item.key}" class="mpt-context-item ${item.active?'active':''}">${icon}<span>${esc(item.label)}</span>${lock}</a>`;
+    }
+    return `<button type="button" class="mpt-context-item ${item.active?'active':''}" data-context-area="${item.area}" data-context-tab="${item.key}">${icon}<span>${esc(item.label)}</span><span class="mpt-context-arrow">›</span></button>`;
+  }).join('');
+
+  return `<aside class="mpt-context-sidebar" aria-label="Opções de ${esc(title)}">
+    <div class="mpt-context-head">
+      <span>${eyebrow}</span>
+      <strong>${esc(title)}</strong>
+      <small>Escolha o que deseja acessar</small>
+    </div>
+    <nav class="mpt-context-nav">${rows}</nav>
+  </aside>`;
+}
+
 const mptV5BaseShellView=shellView;
 shellView=function(r,content){
-  return mptV5BaseShellView(r,content)
+  let html=mptV5BaseShellView(r,content)
     .replaceAll('Planos e extras','Acesso completo')
     .replaceAll('PLANOS E EXTRAS','ACESSO COMPLETO')
-    .replaceAll('Plano Premium','Acesso Completo');
+    .replaceAll('Plano Premium','Acesso Completo')
+    .replace('<strong>Festa de Casamento</strong>','<strong>Casamento</strong>');
+
+  const context=mptContextSidebar(r);
+  if(context){
+    html=html.replace(
+      '<div class="app-shell client-app-shell">',
+      '<div class="app-shell client-app-shell mpt-context-shell">'
+    );
+    html=html.replace(
+      '</aside>\n    <main class="main">',
+      `</aside>${context}\n    <main class="main">`
+    );
+  }
+  return html;
+};
+
+const mptContextBaseBind=bind;
+bind=function(){
+  mptContextBaseBind();
+
+  document.querySelectorAll('[data-context-area][data-context-tab]').forEach(btn=>{
+    btn.onclick=()=>{
+      const area=btn.dataset.contextArea;
+      const tab=btn.dataset.contextTab;
+
+      if(area==='cerimonial')state.ceremonyTab=tab;
+      if(area==='casa')state.homeTab=tab;
+      if(area==='lua-de-mel')state.honeymoonTab=tab;
+
+      render();
+      window.scrollTo({top:0,left:0,behavior:'auto'});
+    };
+  });
 };
