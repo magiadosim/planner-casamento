@@ -283,3 +283,12 @@ bind=function(){
     }catch(error){console.warn(error);}
   }
 };
+
+
+const mptV5BaseShellView=shellView;
+shellView=function(r,content){
+  return mptV5BaseShellView(r,content)
+    .replaceAll('Planos e extras','Acesso completo')
+    .replaceAll('PLANOS E EXTRAS','ACESSO COMPLETO')
+    .replaceAll('Plano Premium','Acesso Completo');
+};
