@@ -500,3 +500,112 @@
   .home-estimate-row>div:nth-child(5){display:block}
   .home-purchase-row>div:nth-child(4){display:block}
 }
+
+
+/* Lua de Mel V3 — estimativas x gastos */
+.honey-finance-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.honey-finance-kpis .purchase-kpi{display:grid;gap:4px}
+.honey-finance-kpis .purchase-kpi small{color:var(--muted);font-size:8.5px}
+
+.honey-finance-progress{margin-top:2px}
+.honey-finance-progress-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:12px;
+}
+.honey-finance-progress-head h3{
+  margin:4px 0 3px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.honey-finance-progress-head p{margin:0;color:var(--muted);font-size:9px}
+.honey-finance-progress-head>strong{
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:23px;
+  font-weight:500;
+  text-align:right;
+}
+.honey-finance-progress-head>strong small{
+  display:block;
+  color:var(--muted);
+  font-family:"DM Sans",sans-serif;
+  font-size:8px;
+  font-weight:600;
+}
+
+.honey-finance-section{margin-top:18px}
+.honey-finance-section-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:9px;
+}
+.honey-finance-section-head h3{
+  margin:4px 0 2px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.honey-finance-section-head p{margin:0;color:var(--muted);font-size:9px}
+
+.honey-estimate-list{overflow:hidden}
+.honey-estimate-row{
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) 130px auto;
+  gap:12px;
+  align-items:center;
+  padding:13px 15px;
+  border-bottom:1px solid var(--line);
+}
+.honey-estimate-row:last-child{border-bottom:0}
+.honey-estimate-main strong{display:block;color:var(--brown);font-size:10.5px}
+.honey-estimate-main span{display:block;margin-top:3px;color:var(--muted);font-size:8.5px}
+.honey-estimate-value{
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:16px;
+  font-weight:500;
+  text-align:right;
+}
+
+.honey-category-list{display:grid;gap:12px}
+.honey-category-row{
+  display:grid;
+  grid-template-columns:minmax(145px,.8fr) minmax(180px,1.5fr) 165px;
+  gap:12px;
+  align-items:center;
+}
+.honey-category-name strong{display:block;color:var(--brown);font-size:9.5px}
+.honey-category-name span{display:block;margin-top:2px;color:var(--muted);font-size:7.5px}
+.honey-category-bars{display:grid;gap:4px}
+.honey-category-bar{height:6px;border-radius:999px;background:#eee7dc;overflow:hidden}
+.honey-category-bar i{display:block;height:100%;border-radius:999px}
+.honey-category-bar.estimated i{background:#c7b79c}
+.honey-category-bar.actual i{background:var(--olive)}
+.honey-category-values{text-align:right}
+.honey-category-values span{display:block;color:var(--muted);font-size:7.5px}
+.honey-category-values strong{display:block;margin-top:2px;color:var(--brown);font-size:9px}
+
+@media(max-width:950px){
+  .honey-finance-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .honey-finance-kpis{grid-template-columns:1fr 1fr}
+  .honey-finance-progress-head,.honey-finance-section-head{display:grid;align-items:start}
+  .honey-finance-progress-head>strong{text-align:left}
+  .honey-estimate-row{grid-template-columns:1fr auto}
+  .honey-estimate-row .planner-row-actions{grid-column:1/-1}
+  .honey-category-row{grid-template-columns:1fr}
+  .honey-category-values{text-align:left}
+}
