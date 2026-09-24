@@ -91,6 +91,43 @@ function dateLong(v){
   return new Date(y,m-1,d).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
 }
 function timeBR(v){return v?String(v).slice(0,5).replace(':','h'):'—';}
+function normalizeWhatsApp(v=''){
+  let d=String(v||'').replace(/\D/g,'');
+  if(d.length===10||d.length===11)d='55'+d;
+  return d;
+}
+function formatWhatsApp(v=''){
+  const d=normalizeWhatsApp(v);
+  if(!d)return '—';
+  const br=d.startsWith('55')?d.slice(2):d;
+  if(br.length===11)return `(${br.slice(0,2)}) ${br.slice(2,7)}-${br.slice(7)}`;
+  if(br.length===10)return `(${br.slice(0,2)}) ${br.slice(2,6)}-${br.slice(6)}`;
+  return '+'+d;
+}
+function usageTimeLabel(createdAt){
+  if(!createdAt)return 'Tempo de uso indisponível';
+  const start=new Date(createdAt);
+  const now=new Date();
+  if(Number.isNaN(start.getTime()))return 'Tempo de uso indisponível';
+  const days=Math.max(0,Math.floor((now-start)/86400000));
+  if(days===0)return 'Cadastrado hoje';
+  if(days===1)return 'Cadastrado há 1 dia';
+  if(days<30)return `Cadastrado há ${days} dias`;
+  const months=Math.floor(days/30.44);
+  if(months<12)return `Cadastrado há ${months} ${months===1?'mês':'meses'}`;
+  const years=Math.floor(days/365.25);
+  return `Cadastrado há ${years} ${years===1?'ano':'anos'}`;
+}
+function accessTimeLabel(expiresAt){
+  if(!expiresAt)return 'Validade não definida';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const end=new Date(String(expiresAt)+'T00:00:00');
+  if(Number.isNaN(end.getTime()))return 'Validade não definida';
+  const days=Math.ceil((end-today)/86400000);
+  if(days<0)return `Expirado há ${Math.abs(days)} dia${Math.abs(days)===1?'':'s'}`;
+  if(days===0)return 'Expira hoje';
+  return `${days} dia${days===1?'':'s'} restante${days===1?'':'s'}`;
+}
 function statusClass(status){
   if(['Contratado','Concluído','Pago'].includes(status))return 'success';
   if(status==='Em andamento')return 'warning';
@@ -115,6 +152,7 @@ function hasFeature(feature){
 function featureForRoute(r){
   if(r.startsWith('fornecedores/'))return 'fornecedores';
   return ({
+    'festa-casamento':'meu-casamento',
     'meu-casamento':'meu-casamento',
     fornecedores:'fornecedores',
     checklist:'checklist',
@@ -194,6 +232,7 @@ function signupFields(){
   </div>
   <div class="field"><label>Local / cidade</label><input class="input planner-plain-input" name="venue"></div>
   <div class="field"><label>Orçamento estimado</label><input class="input planner-plain-input" name="budget" type="number" min="0" step="0.01" value="0"></div>
+  <div class="field"><label>WhatsApp</label><input class="input planner-plain-input" name="whatsapp" type="tel" autocomplete="tel" placeholder="(21) 99999-9999" required></div>
   <div class="field"><label>E-mail</label><input class="input planner-plain-input" name="email" type="email" autocomplete="email" required></div>
   <div class="field"><label>Crie uma senha</label><input class="input planner-plain-input" name="password" type="password" minlength="8" autocomplete="new-password" required></div>
   <button class="login-btn" id="signup-submit" type="submit">Criar meu Planner</button>`;
@@ -291,10 +330,10 @@ function shellView(r,content){
     navHtml=
       itemHtml(['dashboard','Início','home',null],'nav-main-entry')+
       `<div class="nav-main-modules">
-        <a href="#/festa-casamento" class="nav-module-entry ${festaActive?'active':''}">
+        <a href="#/festa-casamento" class="nav-module-entry ${festaActive?'active':''} ${hasFeature('meu-casamento')?'':'locked'}">
           <span class="nav-module-icon">${icons.heart}</span>
-          <span class="nav-module-copy"><strong>Festa de Casamento</strong><small>Planejamento completo</small></span>
-          <span class="nav-module-arrow">›</span>
+          <span class="nav-module-copy"><strong>Festa de Casamento</strong><small>${hasFeature('meu-casamento')?'Planejamento completo':'Essencial'}</small></span>
+          <span class="nav-module-arrow">${hasFeature('meu-casamento')?'›':'⌑'}</span>
         </a>
 
         <a href="#/cerimonial" class="nav-module-entry ${active==='cerimonial'?'active':''} ${hasFeature('cerimonial')?'':'locked'}">
@@ -325,7 +364,7 @@ function shellView(r,content){
         .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
     : `
         <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
-        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>Festa</span></a>
+        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>${hasFeature('meu-casamento')?'Festa':'Essencial'}</span></a>
         <a href="#/cerimonial" class="${active==='cerimonial'?'active':''}">${icons.calendar}<span>Cerimonial</span></a>
         <a href="#/organizacao-casa" class="${active==='organizacao-casa'?'active':''}">${icons.home}<span>Casa</span></a>
         <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open">${icons.menu}<span>Mais</span></button>
@@ -449,8 +488,8 @@ function dashboardView(){
         'Festa de Casamento',
         'Todos os recursos atuais do planejamento: fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões, gastos e backup.',
         'heart',
-        null,
-        'PLANO INICIAL'
+        'meu-casamento',
+        'ESSENCIAL'
       )}
 
       ${moduleCard(
@@ -561,10 +600,16 @@ function adminView(){
   </div>`;
 }
 function adminClientCard(c){
+  const whatsapp=normalizeWhatsApp(c.whatsapp||'');
   return `<div class="card card-pad planner-admin-client" data-client-card="${c.id}">
     <div class="card-title"><div><h2>${esc(c.couple_name||c.full_name||'Cliente')}</h2><span class="sub">${esc(c.email||'')} ${c.wedding_date?'• '+dateBR(c.wedding_date):''}</span></div><span class="badge ${c.access_status==='active'?'success':'danger'}">${c.access_status==='active'?'Ativo':c.access_status==='paused'?'Pausado':'Expirado'}</span></div>
+    <div class="planner-admin-client-meta">
+      <div><span>WhatsApp</span><strong>${whatsapp?`<a href="https://wa.me/${whatsapp}" target="_blank" rel="noopener noreferrer">${esc(formatWhatsApp(whatsapp))}</a>`:'Não informado'}</strong></div>
+      <div><span>Tempo de uso</span><strong>${esc(usageTimeLabel(c.created_at))}</strong></div>
+      <div><span>Tempo de acesso</span><strong>${esc(accessTimeLabel(c.access_expires_at))}</strong></div>
+    </div>
     <div class="planner-admin-grid">
-      <div class="field"><label>Plano</label><select class="input planner-plain-input" name="plan_id">${state.plans.map(p=>`<option value="${p.id}" ${p.id===c.plan_id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Plano</label><select class="input planner-plain-input" name="plan_id"><option value="" ${!c.plan_id?'selected':''}>Cadastro gratuito / sem plano</option>${state.plans.map(p=>`<option value="${p.id}" ${p.id===c.plan_id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Status</label><select class="input planner-plain-input" name="access_status"><option value="active" ${c.access_status==='active'?'selected':''}>Ativo</option><option value="paused" ${c.access_status==='paused'?'selected':''}>Pausado</option><option value="expired" ${c.access_status==='expired'?'selected':''}>Expirado</option></select></div>
       <div class="field"><label>Validade</label><input class="input planner-plain-input" name="access_expires_at" type="date" value="${esc(c.access_expires_at||'')}"></div>
     </div>
@@ -681,7 +726,7 @@ async function loadData(){
 
   if(state.role==='admin'){
     const [profiles,weddings,access,notes,overrides]=await Promise.all([
-      safeQuery(sb.from('profiles').select('id,full_name,email,role').eq('role','client').order('created_at',{ascending:false})),
+      safeQuery(sb.from('profiles').select('id,full_name,email,whatsapp,role,created_at').eq('role','client').order('created_at',{ascending:false})),
       safeQuery(sb.from('weddings').select('*')),
       safeQuery(sb.from('customer_access').select('*')),
       safeQuery(sb.from('admin_customer_notes').select('*')),
@@ -695,9 +740,9 @@ async function loadData(){
     state.adminClients=profiles.map(p=>{
       const w=wm.get(p.id)||{},a=am.get(p.id)||{},n=nm.get(p.id)||{};
       return {
-        id:p.id,full_name:p.full_name,email:p.email,
+        id:p.id,full_name:p.full_name,email:p.email,whatsapp:p.whatsapp||'',created_at:p.created_at||null,
         couple_name:w.couple_name,wedding_date:w.wedding_date,venue:w.venue,guests:w.guests,budget:w.budget,
-        plan_id:a.plan_id||null,plan_name:a.plan_name||'Essencial',
+        plan_id:a.plan_id||null,plan_name:a.plan_name||'Cadastro gratuito',
         access_status:a.access_status||'active',access_expires_at:a.access_expires_at||'',
         admin_notes:n.notes||'',extra_features:om.get(p.id)||[]
       };
@@ -717,7 +762,7 @@ async function loadData(){
   if(oErr)console.error(oErr);
 
   state.wedding=wedding||null;
-  state.access=access||{plan_name:'Essencial',plan_id:state.plans.find(p=>p.slug==='essencial')?.id||null,access_status:'active',access_expires_at:null};
+  state.access=access||{plan_name:'Cadastro gratuito',plan_id:null,access_status:'active',access_expires_at:null};
 
   const plan=state.plans.find(p=>p.id===state.access.plan_id);
   const enabled=new Set(plan?.features||[]);
@@ -823,6 +868,7 @@ function bind(){
         emailRedirectTo:SITE_URL,
         data:{
           full_name:String(f.full_name||'').trim(),
+          whatsapp:normalizeWhatsApp(f.whatsapp||''),
           couple_name:partner2?`${partner1} & ${partner2}`:partner1,
           partner1_name:partner1,
           partner2_name:partner2,
@@ -888,7 +934,7 @@ function bind(){
     btn.disabled=true;btn.textContent='Salvando...';
 
     const [{error:aErr},{error:nErr}]=await Promise.all([
-      sb.from('customer_access').upsert({client_user_id:id,plan_id,plan_name:plan?.name||'Plano',access_status,access_expires_at},{onConflict:'client_user_id'}),
+      sb.from('customer_access').upsert({client_user_id:id,plan_id,plan_name:plan?.name||'Cadastro gratuito',access_status,access_expires_at},{onConflict:'client_user_id'}),
       sb.from('admin_customer_notes').upsert({client_user_id:id,notes},{onConflict:'client_user_id'})
     ]);
 
