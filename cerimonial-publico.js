@@ -47,7 +47,7 @@ function sectionItems(section){
 function brand(){
   return `<header class="public-brand">
     <div class="public-brand-mark">A</div>
-    <div><strong>A Magia do Sim</strong><span>Cerimonial • somente visualização</span></div>
+    <div><strong>Magia Para Todos</strong><span>Cerimonial • somente visualização</span></div>
   </header>`;
 }
 function empty(text){
@@ -123,7 +123,7 @@ function render(){
       ${[['agenda','Agenda'],['roteiro','Roteiro'],['cerimonia','Cerimônia'],['momentos','Momentos']].map(([key,label])=>`<button class="${activeTab===key?'active':''}" data-tab="${key}">${label}</button>`).join('')}
     </nav>
     ${tabContent()}
-    <footer class="public-footer">A Magia do Sim • Onde os sonhos se tornam alianças.</footer>
+    <footer class="public-footer">Magia Para Todos • Onde os sonhos se tornam alianças.</footer>
   </div>`;
   root.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{activeTab=btn.dataset.tab;render();window.scrollTo({top:0,behavior:'smooth'});});
 }
