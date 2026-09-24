@@ -211,7 +211,7 @@ function authView(){
             : '<button class="link-btn" type="button" id="forgot">Esqueci minha senha</button><button class="link-btn" type="button" data-auth-mode="signup">Criar minha conta</button>'
           }
         </div>
-        <div class="demo-box">${signup?'Seu cadastro cria uma área individual. O que ficará liberado depende do plano contratado.':'Acesso protegido. Cada cliente visualiza apenas o próprio casamento e os recursos liberados em seu plano.'}</div>
+        <div class="demo-box">${signup?'Seu cadastro cria uma área individual. O acesso completo custa R$ 99,90 por semestre e é ativado após o fluxo de pagamento.':'Acesso protegido. Cada cliente visualiza apenas o próprio casamento.'}</div>
         <div class="brand-signoff">Magia Para Todos<br><span class="small">Onde os sonhos se tornam alianças.</span></div>
       </form>
     </section>
@@ -235,6 +235,8 @@ function signupFields(){
   <div class="field"><label>WhatsApp</label><input class="input planner-plain-input" name="whatsapp" type="tel" autocomplete="tel" placeholder="(21) 99999-9999" required></div>
   <div class="field"><label>E-mail</label><input class="input planner-plain-input" name="email" type="email" autocomplete="email" required></div>
   <div class="field"><label>Crie uma senha</label><input class="input planner-plain-input" name="password" type="password" minlength="8" autocomplete="new-password" required></div>
+  <label class="signup-legal-consent"><input type="checkbox" name="legal_acceptance" value="yes" required><span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span></label>
+  ${cfg.captchaSiteKey?'<div class="planner-captcha-wrap"><div id="planner-hcaptcha"></div><small>Confirme que você não é um robô para criar a conta.</small></div>':''}
   <button class="login-btn" id="signup-submit" type="submit">Criar meu Planner</button>`;
 }
 function setAuthMessage(text,error=false){
@@ -883,6 +885,16 @@ function bind(){
     const f=Object.fromEntries(new FormData(signup).entries());
     const btn=document.getElementById('signup-submit');
     btn.disabled=true;btn.textContent='Criando...';
+    if(f.legal_acceptance!=='yes'){
+      setAuthMessage('Você precisa aceitar os Termos de Uso e a Política de Privacidade para criar a conta.',true);
+      btn.disabled=false;btn.textContent='Criar meu Planner';
+      return;
+    }
+    if(cfg.captchaSiteKey&&!window.PLANNER_CAPTCHA_TOKEN){
+      setAuthMessage('Confirme o “Não sou robô” antes de criar a conta.',true);
+      btn.disabled=false;btn.textContent='Criar meu Planner';
+      return;
+    }
     const partner1=String(f.partner1_name||'').trim();
     const partner2=String(f.partner2_name||'').trim();
     const {data,error}=await sb.auth.signUp({
@@ -890,7 +902,12 @@ function bind(){
       password:String(f.password||''),
       options:{
         emailRedirectTo:SITE_URL,
+        captchaToken:cfg.captchaSiteKey?(window.PLANNER_CAPTCHA_TOKEN||undefined):undefined,
         data:{
+          legal_accepted:true,
+          legal_accepted_at:new Date().toISOString(),
+          terms_version:'2026-09-24',
+          privacy_version:'2026-09-24',
           full_name:String(f.full_name||'').trim(),
           whatsapp:normalizeWhatsApp(f.whatsapp||''),
           couple_name:partner2?`${partner1} & ${partner2}`:partner1,
@@ -905,6 +922,10 @@ function bind(){
     });
     if(error){
       setAuthMessage(error.message||'Não foi possível criar a conta.',true);
+      if(cfg.captchaSiteKey&&window.hcaptcha){
+        try{window.hcaptcha.reset();}catch{}
+        window.PLANNER_CAPTCHA_TOKEN=null;
+      }
       btn.disabled=false;btn.textContent='Criar meu Planner';
       return;
     }
