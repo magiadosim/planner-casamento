@@ -728,7 +728,7 @@ async function loadData(){
 
   if(state.role==='admin'){
     const [profiles,weddings,access,notes,overrides]=await Promise.all([
-      safeQuery(sb.from('profiles').select('id,full_name,email,whatsapp,role,created_at').eq('role','client').order('created_at',{ascending:false})),
+      safeQuery(sb.from('profiles').select('*').eq('role','client').order('created_at',{ascending:false})),
       safeQuery(sb.from('weddings').select('*')),
       safeQuery(sb.from('customer_access').select('*')),
       safeQuery(sb.from('admin_customer_notes').select('*')),
