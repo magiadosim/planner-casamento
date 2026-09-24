@@ -641,7 +641,7 @@ function downloadPlannerXlsx(){
   XLSX.writeFile(wb,'Magia_Para_Todos_Todos_os_Gastos.xlsx');
 }
 myDataView=function(){
-  return `<div class="page"><div class="page-head"><div><div class="eyebrow">GOLD</div><h1>Planilha geral de gastos</h1><p>Consolide os gastos da festa, cerimonial, casa e lua de mel em um único arquivo.</p></div></div>
+  return `<div class="page"><div class="page-head"><div><div class="eyebrow">ACESSO COMPLETO</div><h1>Planilha geral de gastos</h1><p>Consolide os gastos da festa, cerimonial, casa e lua de mel em um único arquivo.</p></div></div>
     <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">VISÃO COMPLETA</span><h2>Todos os gastos em um só lugar</h2><p>O arquivo reúne fornecedores, pagamentos, outros gastos e, quando utilizados, os financeiros do Cerimonial, Organização da Casa e Lua de Mel. Também mantém as abas de backup dos demais dados.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar planilha (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
   </div>`;
 };
@@ -1920,7 +1920,7 @@ function homeOrganizationView(){
   return `<div class="page home-workspace">
     <div class="page-head home-main-head">
       <div>
-        <div class="eyebrow">GOLD</div>
+        <div class="eyebrow">ACESSO COMPLETO</div>
         <h1>Organização da casa</h1>
         <p>Lista de enxoval setorizada, acompanhamento de compras e financeiro próprio da nova casa.</p>
       </div>
