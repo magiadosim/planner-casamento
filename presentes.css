@@ -1,7 +1,7 @@
 :root{--green:#4c5030;--brown:#5c3f2c;--cream:#f7f1e7;--paper:#fffaf2;--line:rgba(92,63,44,.14);--muted:#81766b;--soft:#eee3d2}
 *{box-sizing:border-box}body{margin:0;background:var(--cream);color:#332a22;font-family:"DM Sans",sans-serif}button,input{font:inherit}
 .gift-shell{max-width:980px;margin:0 auto;padding:22px}.gift-brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
-.gift-brand-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:var(--green);color:#fff;font-family:"Playfair Display",serif;font-size:20px}
+.gift-brand-mark{width:52px;height:52px;display:grid;place-items:center;border-radius:13px;background:#fff;border:1px solid var(--line);overflow:hidden}.gift-brand-mark img{width:100%;height:100%;object-fit:contain;padding:4px}
 .gift-brand strong{display:block;color:var(--brown);font-size:13px}.gift-brand span{display:block;margin-top:2px;color:var(--muted);font-size:9px}
 .gift-hero{padding:28px;border-radius:22px;background:linear-gradient(135deg,#5b4636,#4c5030);color:#fff}.gift-eyebrow{display:block;color:#e7ddcc;font-size:8px;font-weight:800;letter-spacing:.13em}
 .gift-hero h1{margin:6px 0 5px;font-family:"Playfair Display",serif;font-size:34px;font-weight:500}.gift-hero p{margin:0;color:#e4ddd3;font-size:10px}
