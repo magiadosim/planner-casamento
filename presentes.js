@@ -33,7 +33,9 @@ function render(){
         '<div class="gift-card-top"><div><h2>'+esc(item.item_name)+'</h2><span>'+
         esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+
         (item.quantity>1?' • '+item.quantity+' unidades':'')+
+        (item.store_name?' • '+esc(item.store_name):'')+
         '</span></div><div class="gift-badge">'+(item.reserved?'Já escolhido':'Disponível')+'</div></div>'+
+        (item.item_link?'<a class="gift-product-link" href="'+esc(item.item_link)+'" target="_blank" rel="noopener noreferrer">Ver presente no site ↗</a>':'')+
         '<button '+(item.reserved?'disabled':'')+' data-gift-item="'+item.id+'">'+
         (item.reserved?'Reservado por outro convidado':'Quero presentear')+
         '</button></article>';
