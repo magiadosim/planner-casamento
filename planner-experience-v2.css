@@ -1,0 +1,309 @@
+/* MAGIA PARA TODOS — EXPERIÊNCIA V2 */
+
+/* Cerimonial: modelos */
+.ceremony-template-strip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:0 0 14px;
+  padding:15px 16px;
+  border:1px solid rgba(183,140,77,.18);
+  border-radius:15px;
+  background:linear-gradient(135deg,rgba(255,250,242,.95),rgba(238,227,210,.6));
+}
+.ceremony-template-strip>div:first-child{min-width:0}
+.ceremony-template-strip span{
+  display:block;
+  color:var(--gold);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.11em;
+}
+.ceremony-template-strip strong{
+  display:block;
+  margin-top:4px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:17px;
+  font-weight:500;
+}
+.ceremony-template-strip small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:9px;
+}
+.ceremony-template-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+
+/* Lua de Mel */
+.honeymoon-workspace{max-width:1320px}
+.honeymoon-main-head{align-items:center}
+.honeymoon-head-progress{
+  min-width:92px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--paper);
+  text-align:center;
+}
+.honeymoon-head-progress strong{
+  display:block;
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:25px;
+  font-weight:500;
+}
+.honeymoon-head-progress span{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.07em}
+.honeymoon-tabs{
+  display:flex;
+  gap:7px;
+  margin-bottom:16px;
+  padding:4px;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,250,242,.7);
+}
+.honeymoon-tabs button{
+  flex:0 0 auto;
+  border:0;
+  border-radius:10px;
+  padding:9px 13px;
+  background:transparent;
+  color:var(--muted);
+  font-size:9.5px;
+  font-weight:700;
+}
+.honeymoon-tabs button.active{background:var(--olive);color:#fff}
+.honeymoon-panel{display:grid;gap:14px}
+.honeymoon-hero-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:22px;
+  background:
+    radial-gradient(circle at 90% 20%,rgba(230,216,181,.16),transparent 30%),
+    linear-gradient(135deg,#544333,#4c5030);
+  color:#fff;
+}
+.honeymoon-kicker{
+  display:block;
+  color:#e7ddcc;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+.honeymoon-hero-card h2{
+  margin:5px 0 5px;
+  font-family:"Playfair Display",serif;
+  font-size:29px;
+  font-weight:500;
+}
+.honeymoon-hero-card p{margin:0;color:#e5dfd5;font-size:10px}
+.honeymoon-hero-card .btn-secondary{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
+.honeymoon-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.honeymoon-kpis .card{display:grid;gap:4px}
+.honeymoon-kpis span{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.honeymoon-kpis strong{color:var(--brown);font-family:"Playfair Display",serif;font-size:22px;font-weight:500}
+.honeymoon-kpis small{color:var(--muted);font-size:8.5px}
+.honeymoon-next-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.honeymoon-next-card h3{margin:4px 0 0;color:var(--brown);font-size:14px}
+.honeymoon-quick-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.honeymoon-panel-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+}
+.honeymoon-panel-head h2{margin:0;color:var(--brown);font-family:"Playfair Display",serif;font-size:22px;font-weight:500}
+.honeymoon-panel-head p{margin:4px 0 0;color:var(--muted);font-size:9.5px;line-height:1.5}
+.honeymoon-itinerary-list{overflow:hidden}
+.honeymoon-itinerary-row{
+  display:grid;
+  grid-template-columns:130px minmax(0,1fr) auto;
+  gap:15px;
+  align-items:center;
+  padding:15px 16px;
+  border-bottom:1px solid var(--line);
+}
+.honeymoon-itinerary-row:last-child{border-bottom:0}
+.honeymoon-itinerary-date strong{display:block;color:var(--olive);font-size:10px}
+.honeymoon-itinerary-date span{display:block;margin-top:3px;color:var(--muted);font-size:8.5px}
+.honeymoon-mini-tag{
+  display:inline-block;
+  padding:4px 7px;
+  border-radius:999px;
+  background:var(--olive-soft);
+  color:var(--olive);
+  font-size:7.5px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.honeymoon-itinerary-copy h3{margin:5px 0 3px;color:var(--brown);font-size:12px}
+.honeymoon-itinerary-copy p{margin:0;color:var(--muted);font-size:9px;line-height:1.45}
+.honeymoon-itinerary-copy a{display:inline-block;margin-top:5px;color:var(--olive);font-size:8.5px;text-decoration:none}
+.honeymoon-check-progress{
+  display:grid;
+  grid-template-columns:auto auto minmax(140px,1fr);
+  align-items:center;
+  gap:8px;
+  padding:11px 13px;
+  border-radius:12px;
+  background:rgba(255,250,242,.7);
+  border:1px solid var(--line);
+}
+.honeymoon-check-progress strong{color:var(--olive);font-size:13px}
+.honeymoon-check-progress span{color:var(--muted);font-size:9px}
+.honeymoon-check-list{overflow:hidden}
+.honeymoon-check-row{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  gap:11px;
+  align-items:center;
+  padding:13px 15px;
+  border-bottom:1px solid var(--line);
+}
+.honeymoon-check-row:last-child{border-bottom:0}
+.honeymoon-check-row.done{opacity:.58}
+.honeymoon-check-row strong{display:block;color:var(--brown);font-size:10.5px}
+.honeymoon-check-row span,.honeymoon-check-row small{display:block;margin-top:3px;color:var(--muted);font-size:8.5px}
+.honeymoon-reservation-row{grid-template-columns:minmax(190px,1.5fr) .6fr .55fr .55fr auto!important}
+
+/* Casa: presentes */
+.home-gift-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.home-gift-summary>div{
+  padding:10px 11px;
+  border-radius:11px;
+  background:rgba(238,227,210,.45);
+}
+.home-gift-summary span{display:block;color:var(--muted);font-size:8px}
+.home-gift-summary strong{display:block;margin-top:4px;color:var(--brown);font-size:15px}
+.home-gift-share-box{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.home-gift-share-box>div:first-child{min-width:0}
+.home-gift-share-box>div:first-child>strong{
+  display:block;
+  margin-top:4px;
+  overflow:hidden;
+  color:var(--olive);
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.home-gift-share-box p{margin:4px 0 0;color:var(--muted);font-size:8.5px}
+.home-gift-list{overflow:hidden}
+.home-gift-row{
+  display:grid;
+  grid-template-columns:35px minmax(150px,1fr) .55fr .8fr auto;
+  gap:10px;
+  align-items:center;
+  padding:12px 14px;
+  border-bottom:1px solid var(--line);
+}
+.home-gift-row:last-child{border-bottom:0}
+.home-gift-row>div:nth-child(2)>strong{display:block;color:var(--brown);font-size:10px}
+.home-gift-row>div:nth-child(2)>span{display:block;margin-top:3px;color:var(--muted);font-size:8.5px}
+.home-gift-toggle{
+  width:29px;height:29px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--paper);
+  color:var(--olive);
+  font-weight:800;
+}
+.home-gift-toggle.on{background:var(--olive);border-color:var(--olive);color:#fff}
+.home-gift-reserved span{display:block;color:var(--muted);font-size:7.5px}
+.home-gift-reserved strong{display:block;margin-top:2px;color:var(--brown);font-size:9px}
+
+/* Gold */
+.gold-finance-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.gold-finance-kpis span{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.gold-finance-kpis strong{display:block;margin-top:5px;color:var(--brown);font-family:"Playfair Display",serif;font-size:22px;font-weight:500}
+.gold-area-card{margin-bottom:14px}
+.gold-area-list{display:grid;gap:13px;margin-top:12px}
+.gold-area-row{
+  display:grid;
+  grid-template-columns:minmax(170px,.9fr) minmax(180px,1.5fr) 110px;
+  gap:12px;
+  align-items:center;
+}
+.gold-area-row>div:first-child strong{display:block;color:var(--brown);font-size:10px}
+.gold-area-row>div:first-child span{display:block;margin-top:3px;color:var(--muted);font-size:8px}
+.gold-area-row>strong{text-align:right;color:var(--olive);font-size:10px}
+.gold-area-bar{height:8px;border-radius:999px;background:#eee7dc;overflow:hidden}
+.gold-area-bar i{display:block;height:100%;border-radius:999px;background:var(--olive)}
+.profile-plan-link{display:inline-flex;margin-top:13px;text-decoration:none}
+
+/* Home: progresso */
+.home-progress-overview{margin-bottom:16px}
+.home-progress-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+}
+.home-progress-head h2{
+  margin:4px 0 0;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.home-progress-head>span{color:var(--muted);font-size:8.5px}
+.home-progress-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.home-progress-item{
+  padding:11px 12px;
+  border-radius:12px;
+  background:rgba(238,227,210,.38);
+}
+.home-progress-item>div:first-child{display:flex;justify-content:space-between;gap:8px;margin-bottom:7px}
+.home-progress-item strong{color:var(--brown);font-size:9.5px}
+.home-progress-item span{color:var(--olive);font-size:9px;font-weight:800}
+
+@media(max-width:980px){
+  .honeymoon-kpis,.home-gift-summary,.gold-finance-kpis,.home-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .honeymoon-reservation-row{grid-template-columns:minmax(180px,1fr) .7fr .6fr!important}
+}
+@media(max-width:700px){
+  .ceremony-template-strip,.honeymoon-hero-card,.honeymoon-next-card,.honeymoon-panel-head,.home-gift-share-box,.home-progress-head{display:grid;align-items:start}
+  .ceremony-template-actions,.honeymoon-quick-actions{justify-content:flex-start}
+  .honeymoon-kpis,.home-gift-summary,.gold-finance-kpis,.home-progress-grid{grid-template-columns:1fr}
+  .honeymoon-itinerary-row{grid-template-columns:1fr}
+  .honeymoon-check-progress{grid-template-columns:auto 1fr}
+  .honeymoon-check-progress .progress-track{grid-column:1/-1}
+  .honeymoon-check-row{grid-template-columns:34px minmax(0,1fr)}
+  .honeymoon-check-row .planner-row-actions{grid-column:2}
+  .home-gift-row{grid-template-columns:34px minmax(0,1fr) auto}
+  .home-gift-row>.home-gift-reserved,.home-gift-row>button:last-child{grid-column:2/-1}
+  .gold-area-row{grid-template-columns:1fr}
+  .gold-area-row>strong{text-align:left}
+}
