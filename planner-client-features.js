@@ -557,7 +557,7 @@ function backupSnapshot(){
   };
 }
 function downloadPlannerJson(){
-  const blob=new Blob([JSON.stringify({generated_at:new Date().toISOString(),system:'A Magia do Sim Planner',data:backupSnapshot()},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({generated_at:new Date().toISOString(),system:'Magia Para Todos Planner',data:backupSnapshot()},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='A_Magia_do_Sim_Meus_Dados.json';a.click();URL.revokeObjectURL(url);
 }
@@ -622,19 +622,19 @@ function openSupportTicket(){
     });
     if(error){console.error(error);toast('Não foi possível abrir o chamado.');return false;}
     await reloadPlannerClient();
-    toast('Chamado enviado para a A Magia do Sim.');
+    toast('Chamado enviado para a Magia Para Todos.');
     return true;
   });
 }
 function supportView(){
   return `<div class="page support-page">
     <div class="page-head"><div><h1>Suporte e chamados</h1><p>Encontrou um problema, precisa de ajuda ou quer solicitar uma funcionalidade? Fale diretamente com a administração.</p></div><button class="btn-primary" id="new-support-ticket">+ Abrir chamado</button></div>
-    <div class="card card-pad support-intro"><strong>Como funciona</strong><p class="muted">Seu chamado fica vinculado à sua conta. Quando houver retorno da A Magia do Sim, a resposta aparecerá aqui.</p></div>
+    <div class="card card-pad support-intro"><strong>Como funciona</strong><p class="muted">Seu chamado fica vinculado à sua conta. Quando houver retorno da Magia Para Todos, a resposta aparecerá aqui.</p></div>
     <div class="support-ticket-list">${state.tickets.length?state.tickets.map(t=>`<article class="card card-pad support-ticket">
       <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(t.category)}${t.feature_slug?' • '+esc(moduleName(t.feature_slug)):''} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(t.status)}</span></div>
       <p class="support-description">${esc(t.description)}</p>
       <div class="support-meta"><span>Prioridade: <strong>${esc(t.priority)}</strong></span></div>
-      ${t.admin_response?`<div class="support-response"><strong>Resposta da A Magia do Sim</strong><p>${esc(t.admin_response)}</p></div>`:''}
+      ${t.admin_response?`<div class="support-response"><strong>Resposta da Magia Para Todos</strong><p>${esc(t.admin_response)}</p></div>`:''}
     </article>`).join(''):emptyState('Nenhum chamado aberto','Use “Abrir chamado” quando precisar de suporte ou quiser sugerir uma funcionalidade.')}</div>
   </div>`;
 }
@@ -797,7 +797,7 @@ profileView=function(){
   const client=state.role==='client';
   return `<div class="page"><div class="page-head"><div><h1>Perfil</h1><p>Seus dados e preferências de acesso.</p></div></div>
     ${client?`<div class="card card-pad planner-photo-card"><div class="card-title"><h2>Foto do casal</h2></div><div class="planner-photo-row"><div id="planner-photo-preview" class="planner-photo-preview">♡</div><div class="planner-photo-actions"><div class="field"><label>Escolher foto</label><input class="input planner-plain-input" id="planner-couple-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div><button class="btn-primary" id="planner-upload-couple-photo">Atualizar foto do casal</button></div></div></div>`:''}
-    <div class="grid grid-2" style="margin-top:${client?'14px':'0'}"><div class="card card-pad"><div class="card-title"><h2>Dados pessoais</h2></div><div class="field"><label>Nome</label><input class="input planner-plain-input" id="planner-profile-name" value="${esc(state.profile?.full_name||'')}" ${client?'':'disabled'}></div><div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div>${client?'<button class="btn-primary" id="planner-save-profile">Salvar nome</button>':''}</div><div class="card card-pad"><div class="card-title"><h2>${client?'Seu plano':'Acesso administrativo'}</h2></div><div class="contract-lines"><div class="contract-line"><span>Perfil</span><strong>${client?'Cliente':'Administrador'}</strong></div><div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div><div class="contract-line"><span>Assessoria</span><strong>A Magia do Sim</strong></div></div></div></div>
+    <div class="grid grid-2" style="margin-top:${client?'14px':'0'}"><div class="card card-pad"><div class="card-title"><h2>Dados pessoais</h2></div><div class="field"><label>Nome</label><input class="input planner-plain-input" id="planner-profile-name" value="${esc(state.profile?.full_name||'')}" ${client?'':'disabled'}></div><div class="field"><label>E-mail</label><input class="input planner-plain-input" value="${esc(state.user?.email||state.profile?.email||'')}" disabled></div>${client?'<button class="btn-primary" id="planner-save-profile">Salvar nome</button>':''}</div><div class="card card-pad"><div class="card-title"><h2>${client?'Seu plano':'Acesso administrativo'}</h2></div><div class="contract-lines"><div class="contract-line"><span>Perfil</span><strong>${client?'Cliente':'Administrador'}</strong></div><div class="contract-line"><span>Plano</span><strong>${esc(state.access?.plan_name||'—')}</strong></div><div class="contract-line"><span>Assessoria</span><strong>Magia Para Todos</strong></div></div></div></div>
   </div>`;
 };
 
