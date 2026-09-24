@@ -22,7 +22,7 @@ function dateLong(v){
   });
 }
 function brand(){
-  return '<header class="gift-brand"><div class="gift-brand-mark">M</div><div><strong>Magia Para Todos</strong><span>Lista de Presentes</span></div></header>';
+  return '<header class="gift-brand"><div class="gift-brand-mark"><img src="magia-para-todos-logo.svg" alt="Magia Para Todos"></div><div><strong>Magia Para Todos</strong><span>Lista de Presentes</span></div></header>';
 }
 function render(){
   const w=snapshot&&snapshot.wedding?snapshot.wedding:{};
