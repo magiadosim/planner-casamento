@@ -308,3 +308,195 @@
   .gold-area-row>strong{text-align:left}
 }
 .home-gift-price{display:block!important;margin-top:4px!important;color:var(--olive)!important;font-size:10px!important;font-weight:800}.home-gift-product-link{display:inline-block;margin-top:4px;color:var(--olive);font-size:8.5px;font-weight:700;text-decoration:none}
+
+
+/* Casa V3 — lista estimada x compras */
+.home-purchase-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.home-purchase-kpis .money-card{
+  display:grid;
+  gap:4px;
+  padding:18px;
+}
+.home-purchase-kpis .money-card span{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.home-purchase-kpis .money-card strong{
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:25px;
+  font-weight:500;
+}
+.home-purchase-kpis .money-card small{
+  color:var(--muted);
+  font-size:8.5px;
+}
+.home-progress-money strong{color:var(--olive)!important}
+
+.home-buy-progress-card{margin-top:14px}
+.home-buy-progress-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+.home-buy-progress-head h3{
+  margin:4px 0 3px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.home-buy-progress-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:9px;
+}
+.home-buy-progress-head>strong{
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:26px;
+  font-weight:500;
+  text-align:right;
+}
+.home-buy-progress-head>strong small{
+  display:block;
+  margin-top:1px;
+  color:var(--muted);
+  font-family:"DM Sans",sans-serif;
+  font-size:8px;
+  font-weight:600;
+}
+.home-buy-progress-track{margin-top:13px;height:10px}
+.home-buy-progress-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  margin-top:10px;
+}
+.home-buy-progress-meta span{
+  color:var(--muted);
+  font-size:8.5px;
+}
+.home-buy-progress-meta b{color:var(--brown)}
+
+.home-finance-section{margin-top:20px}
+.home-finance-section-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:9px;
+}
+.home-finance-section-head h3{
+  margin:4px 0 2px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:20px;
+  font-weight:500;
+}
+.home-finance-section-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:9px;
+}
+.home-finance-section-head a{text-decoration:none}
+
+.home-estimate-list,.home-purchase-list{overflow:hidden}
+.home-estimate-row{
+  display:grid;
+  grid-template-columns:minmax(180px,1.6fr) repeat(4,.52fr) .8fr .7fr;
+  gap:10px;
+  align-items:center;
+  padding:12px 14px;
+  border-bottom:1px solid var(--line);
+}
+.home-estimate-row:last-child{border-bottom:0}
+.home-estimate-main strong{
+  display:block;
+  color:var(--brown);
+  font-size:10px;
+}
+.home-estimate-main span{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:8px;
+}
+.home-estimate-label{
+  display:block;
+  margin-bottom:3px;
+  color:var(--muted);
+  font-size:7px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.home-estimate-row>div:not(.home-estimate-main)>strong{
+  color:var(--brown);
+  font-size:9.5px;
+}
+.home-estimate-missing{color:#9a5a37!important}
+
+.home-purchase-row{
+  display:grid;
+  grid-template-columns:minmax(190px,1.5fr) .5fr .65fr .75fr .65fr auto;
+  gap:10px;
+  align-items:center;
+  padding:12px 14px;
+  border-bottom:1px solid var(--line);
+}
+.home-purchase-row:last-child{border-bottom:0}
+.home-purchase-main strong{
+  display:block;
+  color:var(--brown);
+  font-size:10px;
+}
+.home-purchase-main span{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:8px;
+}
+.home-purchase-row>div:not(.home-purchase-main):not(.planner-row-actions)>strong{
+  color:var(--brown);
+  font-size:9px;
+}
+.home-purchase-amount{
+  color:var(--olive);
+  font-family:"Playfair Display",serif;
+  font-size:15px;
+  font-weight:500;
+}
+
+@media(max-width:1050px){
+  .home-purchase-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home-estimate-row{
+    grid-template-columns:minmax(170px,1.4fr) repeat(3,.55fr) .8fr;
+  }
+  .home-estimate-row>div:nth-child(5),
+  .home-estimate-row>.badge{display:none}
+  .home-purchase-row{
+    grid-template-columns:minmax(170px,1.3fr) .5fr .65fr .65fr auto;
+  }
+  .home-purchase-row>div:nth-child(4){display:none}
+}
+@media(max-width:700px){
+  .home-purchase-kpis{grid-template-columns:1fr 1fr}
+  .home-buy-progress-head,.home-finance-section-head{display:grid;align-items:start}
+  .home-buy-progress-head>strong{text-align:left}
+  .home-estimate-row,.home-purchase-row{
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+  }
+  .home-estimate-main,.home-purchase-main{grid-column:1/-1}
+  .home-estimate-row>.badge,.home-purchase-row>.planner-row-actions{grid-column:1/-1;display:flex!important}
+  .home-estimate-row>div:nth-child(5){display:block}
+  .home-purchase-row>div:nth-child(4){display:block}
+}
