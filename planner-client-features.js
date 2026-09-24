@@ -564,6 +564,52 @@ function downloadPlannerJson(){
 function downloadPlannerXlsx(){
   if(!window.XLSX){toast('O recurso de Excel não carregou. Atualize a página.');return;}
   const wb=XLSX.utils.book_new();
+
+  const expenseRows=[];
+  (state.vendors||[]).forEach(v=>expenseRows.push({
+    Área:'Festa de Casamento',
+    Categoria:v.category||'Fornecedor',
+    Descrição:v.name||'Fornecedor',
+    'Valor previsto':Number(v.amount||0),
+    'Valor pago':Number(v.paid||0),
+    'Saldo pendente':Math.max(0,Number(v.amount||0)-Number(v.paid||0))
+  }));
+  (state.purchases||[]).forEach(p=>{
+    const amount=Number(p.amount||0);
+    const paid=p.status==='Pago'?amount:0;
+    expenseRows.push({
+      Área:p.expense_group==='honeymoon'?'Lua de Mel':'Outros gastos',
+      Categoria:p.category||'Outros',
+      Descrição:p.description||'Gasto',
+      'Valor previsto':amount,
+      'Valor pago':paid,
+      'Saldo pendente':Math.max(0,amount-paid)
+    });
+  });
+  (state.moduleFinance||[]).forEach(row=>expenseRows.push({
+    Área:row.module_slug==='cerimonial'?'Cerimonial':row.module_slug==='lua-de-mel'?'Lua de Mel':'Módulo extra',
+    Categoria:row.category||'Financeiro',
+    Descrição:row.description||'Lançamento',
+    'Valor previsto':Number(row.amount||0),
+    'Valor pago':Number(row.paid_amount||0),
+    'Saldo pendente':Math.max(0,Number(row.amount||0)-Number(row.paid_amount||0))
+  }));
+  (state.homeItems||[]).forEach(item=>{
+    const planned=homeExpectedValue(item);
+    const paid=homePaidForItem(item.id);
+    expenseRows.push({
+      Área:'Organização da Casa',
+      Categoria:item.room||'Casa',
+      Descrição:item.item_name||'Item',
+      'Valor previsto':planned,
+      'Valor pago':paid,
+      'Saldo pendente':Math.max(0,planned-paid)
+    });
+  });
+
+  const expenseSheet=XLSX.utils.json_to_sheet(expenseRows.length?expenseRows:[{Informação:'Nenhum gasto registrado'}]);
+  XLSX.utils.book_append_sheet(wb,expenseSheet,'Todos os Gastos');
+
   const sections=[
     ['Meu Cadastro',state.profile?[state.profile]:[]],
     ['Meu Casamento',state.wedding?[state.wedding]:[]],
@@ -581,7 +627,7 @@ function downloadPlannerXlsx(){
   sections.forEach(([name,rows])=>{
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(safeRows(rows).length?safeRows(rows):[{Informação:'Sem registros'}]),name.slice(0,31));
   });
-  XLSX.writeFile(wb,'A_Magia_do_Sim_Meus_Dados.xlsx');
+  XLSX.writeFile(wb,'Magia_Para_Todos_Todos_os_Gastos.xlsx');
 }
 myDataView=function(){
   return `<div class="page"><div class="page-head"><div><div class="eyebrow">GOLD</div><h1>Planilha geral de gastos</h1><p>Consolide os gastos da festa, cerimonial, casa e lua de mel em um único arquivo.</p></div></div>
