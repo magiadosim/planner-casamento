@@ -15,6 +15,7 @@ function esc(v){
 function validUuid(v){
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 }
+function brlGift(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));}
 function dateLong(v){
   if(!v)return 'Data a definir';
   return new Date(v+'T12:00:00').toLocaleDateString('pt-BR',{
@@ -34,7 +35,7 @@ function render(){
         esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+
         (item.quantity>1?' • '+item.quantity+' unidades':'')+
         (item.store_name?' • '+esc(item.store_name):'')+
-        '</span></div><div class="gift-badge">'+(item.reserved?'Já escolhido':'Disponível')+'</div></div>'+
+        '</span>'+(Number(item.unit_value||0)>0?'<strong class="gift-price">'+brlGift(item.unit_value)+'</strong>':'')+'</div><div class="gift-badge">'+(item.reserved?'Já escolhido':'Disponível')+'</div></div>'+
         (item.item_link?'<a class="gift-product-link" href="'+esc(item.item_link)+'" target="_blank" rel="noopener noreferrer">Ver presente no site ↗</a>':'')+
         '<button '+(item.reserved?'disabled':'')+' data-gift-item="'+item.id+'">'+
         (item.reserved?'Reservado por outro convidado':'Quero presentear')+
