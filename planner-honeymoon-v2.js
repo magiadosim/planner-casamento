@@ -3,7 +3,10 @@ state.honeymoonProfile=state.honeymoonProfile||null;
 state.honeymoonItinerary=state.honeymoonItinerary||[];
 state.honeymoonReservations=state.honeymoonReservations||[];
 state.honeymoonChecklist=state.honeymoonChecklist||[];
+state.honeymoonEstimates=state.honeymoonEstimates||[];
 state.honeymoonTab=state.honeymoonTab||'dashboard';
+
+const MPT_HONEYMOON_FINANCE_CATEGORIES=['Passagens','Hospedagem','Passeios','Alimentação','Transporte','Seguro viagem','Documentos e vistos','Compras','Taxas','Reserva de emergência','Outros'];
 
 const MPT_HONEYMOON_TABS=[
   ['dashboard','Visão Geral'],['roteiro','Roteiro'],['reservas','Reservas'],
@@ -15,8 +18,22 @@ function mptHoneySummary(){
   const rows=mptHoneyExpenses();
   const total=rows.reduce(function(s,p){return s+Number(p.amount||0);},0);
   const paid=rows.filter(function(p){return p.status==='Pago';}).reduce(function(s,p){return s+Number(p.amount||0);},0);
+  const estimates=state.honeymoonEstimates||[];
+  const estimated=estimates.reduce(function(s,row){return s+Number(row.estimated_amount||0);},0);
   const budget=Number((state.honeymoonProfile||{}).budget||0);
-  return {rows:rows,total:total,paid:paid,pending:Math.max(0,total-paid),budget:budget,balance:budget?budget-total:0};
+  return {
+    rows:rows,
+    estimates:estimates,
+    total:total,
+    paid:paid,
+    pending:Math.max(0,total-paid),
+    estimated:estimated,
+    budget:budget,
+    balance:budget?budget-total:0,
+    estimateBalance:estimated-total,
+    budgetPct:budget?Math.min(100,Math.round((total/budget)*100)):0,
+    estimatePct:estimated?Math.min(100,Math.round((total/estimated)*100)):0
+  };
 }
 function mptHoneyDays(){
   const p=state.honeymoonProfile||{};
@@ -175,12 +192,129 @@ function mptHoneyChecklistView(){
   }).join(''):emptyState('Checklist vazio','Use o checklist sugerido ou crie seus próprios itens.');
   return '<section class="honeymoon-panel"><div class="honeymoon-panel-head"><div><h2>Checklist da viagem</h2><p>Documentos, mala, saúde, reservas, dinheiro e tudo que não pode ser esquecido.</p></div><div class="action-row"><button class="btn-secondary" id="honeymoon-checklist-template">Adicionar checklist sugerido</button><button class="btn-primary" id="new-honeymoon-checklist">+ Novo item</button></div></div><div class="honeymoon-check-progress"><strong>'+done+'/'+rows.length+'</strong><span>concluídos</span><div class="progress-track"><div class="progress-fill" style="width:'+(rows.length?Math.round(done/rows.length*100):0)+'%"></div></div></div><div class="card honeymoon-check-list">'+content+'</div></section>';
 }
+
+function mptOpenHoneyEstimate(item){
+  const body=
+    plannerSelect('Categoria','category',MPT_HONEYMOON_FINANCE_CATEGORIES,item&&item.category?item.category:'Passagens')+
+    plannerField('Descrição da estimativa','description',item&&item.description?item.description:'','text','required')+
+    plannerField('Valor estimado','estimated_amount',item?Number(item.estimated_amount||0):'','number','min="0.01" step="0.01" required')+
+    plannerTextarea('Observações','notes',item&&item.notes?item.notes:'');
+
+  plannerModal(item?'Editar estimativa':'Adicionar estimativa',body,item?'Salvar':'Adicionar',async function(back){
+    const d=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const description=String(d.description||'').trim();
+    const amount=Number(d.estimated_amount||0);
+    if(!description||amount<=0){toast('Informe a descrição e um valor estimado válido.');return false;}
+
+    const payload={
+      wedding_id:state.wedding.id,
+      category:d.category||'Outros',
+      description:description,
+      estimated_amount:amount,
+      notes:String(d.notes||'').trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    const res=item
+      ?await sb.from('honeymoon_budget_estimates').update(payload).eq('id',item.id)
+      :await sb.from('honeymoon_budget_estimates').insert(payload);
+
+    if(res.error){console.error(res.error);toast('Não foi possível salvar a estimativa. Execute a migração V4.4 se necessário.');return false;}
+    await reloadPlannerClient();
+    state.honeymoonTab='financeiro';
+    render();
+    toast(item?'Estimativa atualizada.':'Estimativa adicionada.');
+    return true;
+  });
+}
+async function mptDeleteHoneyEstimate(id){
+  if(!confirm('Excluir esta estimativa?'))return;
+  const res=await sb.from('honeymoon_budget_estimates').delete().eq('id',id);
+  if(res.error){console.error(res.error);toast('Não foi possível excluir a estimativa.');return;}
+  await reloadPlannerClient();
+  state.honeymoonTab='financeiro';
+  render();
+}
+function mptHoneyCategoryRows(){
+  const estimates=state.honeymoonEstimates||[];
+  const expenses=mptHoneyExpenses();
+  return MPT_HONEYMOON_FINANCE_CATEGORIES.map(function(category){
+    const estimated=estimates.filter(function(x){return x.category===category;}).reduce(function(s,x){return s+Number(x.estimated_amount||0);},0);
+    const actual=expenses.filter(function(x){return x.category===category;}).reduce(function(s,x){return s+Number(x.amount||0);},0);
+    return {category:category,estimated:estimated,actual:actual,difference:estimated-actual};
+  }).filter(function(x){return x.estimated>0||x.actual>0;});
+}
+
 function mptHoneyFinanceView(){
-  const all=mptHoneyExpenses(),items=all.filter(function(p){return state.purchaseFilter==='Todos'||p.status===state.purchaseFilter;}),s=mptHoneySummary();
-  const content=items.length?items.map(function(p){
+  const all=mptHoneyExpenses();
+  const filtered=all.filter(function(p){return state.purchaseFilter==='Todos'||p.status===state.purchaseFilter;});
+  const estimates=[...(state.honeymoonEstimates||[])].sort(function(a,b){
+    return String(a.category||'').localeCompare(String(b.category||''))||String(a.description||'').localeCompare(String(b.description||''));
+  });
+  const s=mptHoneySummary();
+  const categories=mptHoneyCategoryRows();
+
+  const estimateRows=estimates.length?estimates.map(function(row){
+    const actual=all.filter(function(p){return p.category===row.category;}).reduce(function(sum,p){return sum+Number(p.amount||0);},0);
+    return '<div class="honey-estimate-row">'+
+      '<div class="honey-estimate-main"><strong>'+esc(row.description)+'</strong><span>'+esc(row.category)+(row.notes?' • '+esc(row.notes):'')+'</span></div>'+
+      '<strong class="honey-estimate-value">'+brl(row.estimated_amount)+'</strong>'+
+      '<div class="planner-row-actions"><button class="btn-secondary" data-edit-honey-estimate="'+row.id+'">Editar</button><button class="btn-danger" data-delete-honey-estimate="'+row.id+'">Excluir</button></div>'+
+      '</div>';
+  }).join(''):emptyState('Nenhuma estimativa cadastrada','Monte primeiro uma previsão de quanto pretende gastar em cada parte da viagem.');
+
+  const expenseRows=filtered.length?filtered.map(function(p){
     return '<div class="purchase-row"><div class="purchase-row-main"><strong>'+esc(p.description)+'</strong><span>'+esc(p.category||'Outros')+(p.store_name?' • '+esc(p.store_name):'')+'</span></div><div class="purchase-date">'+dateBR(p.purchase_date)+'</div><span class="badge '+(p.status==='Pago'?'success':'warning')+'">'+esc(p.status)+'</span><strong class="purchase-amount">'+brl(p.amount)+'</strong><div class="purchase-actions"><button class="btn-secondary" data-edit-purchase-client="'+p.id+'">Editar</button><button class="btn-danger" data-delete-purchase-client="'+p.id+'">Excluir</button></div></div>';
-  }).join(''):emptyState('Nenhum gasto registrado','Cadastre os custos previstos ou já pagos da viagem.');
-  return '<section class="honeymoon-panel"><div class="honeymoon-panel-head"><div><h2>Financeiro da Lua de Mel</h2><p>Controle passagens, hospedagem, alimentação, passeios, transporte e demais gastos.</p></div><button class="btn-primary" data-new-purchase-client="honeymoon">+ Novo gasto</button></div><div class="purchase-kpis"><div class="card purchase-kpi"><span>Total registrado</span><strong>'+brl(s.total)+'</strong></div><div class="card purchase-kpi paid"><span>Pago</span><strong>'+brl(s.paid)+'</strong></div><div class="card purchase-kpi pending"><span>Pendente</span><strong>'+brl(s.pending)+'</strong></div><div class="card purchase-kpi"><span>Saldo do orçamento</span><strong>'+(s.budget?brl(s.balance):'—')+'</strong></div></div><div class="filters">'+['Todos','Pago','Pendente'].map(function(v){return '<button class="filter-btn '+(state.purchaseFilter===v?'active':'')+'" data-purchase-filter-client="'+v+'">'+v+'</button>';}).join('')+'</div><div class="card purchase-list">'+content+'</div></section>';
+  }).join(''):emptyState('Nenhum gasto real registrado','Quando fechar uma passagem, hotel, passeio ou outro custo, lance o gasto aqui.');
+
+  const maxCategory=Math.max.apply(null,[1].concat(categories.map(function(x){return Math.max(x.estimated,x.actual);})));
+  const categoryRows=categories.length?categories.map(function(row){
+    const over=row.actual>row.estimated&&row.estimated>0;
+    return '<div class="honey-category-row">'+
+      '<div class="honey-category-name"><strong>'+esc(row.category)+'</strong><span>'+(over?'Acima da estimativa':row.estimated?'Dentro do planejado':'Sem estimativa')+'</span></div>'+
+      '<div class="honey-category-bars">'+
+        '<div class="honey-category-bar estimated"><i style="width:'+Math.round(row.estimated/maxCategory*100)+'%"></i></div>'+
+        '<div class="honey-category-bar actual"><i style="width:'+Math.round(row.actual/maxCategory*100)+'%"></i></div>'+
+      '</div>'+
+      '<div class="honey-category-values"><span>Estimado '+brl(row.estimated)+'</span><strong>Real '+brl(row.actual)+'</strong></div>'+
+      '</div>';
+  }).join(''):emptyState('Comparativo ainda vazio','Adicione estimativas ou gastos para visualizar a comparação por categoria.');
+
+  const estimateStatus=s.estimated
+    ?(s.estimateBalance>=0?'Ainda restam '+brl(s.estimateBalance)+' dentro das estimativas.':'Os gastos estão '+brl(Math.abs(s.estimateBalance))+' acima das estimativas.')
+    :'Adicione estimativas para comparar planejamento e realidade.';
+
+  return '<section class="honeymoon-panel honeymoon-finance-v3">'+
+    '<div class="honeymoon-panel-head"><div><h2>Financeiro da Lua de Mel</h2><p>Planeje primeiro, registre os gastos reais depois e compare tudo por categoria.</p></div><div class="action-row"><button class="btn-secondary" id="new-honey-estimate">+ Adicionar estimativa</button><button class="btn-primary" data-new-purchase-client="honeymoon">+ Novo gasto</button></div></div>'+
+
+    '<div class="honey-finance-kpis">'+
+      '<div class="card purchase-kpi"><span>Orçamento máximo</span><strong>'+(s.budget?brl(s.budget):'A definir')+'</strong><small>configurado na Visão Geral</small></div>'+
+      '<div class="card purchase-kpi"><span>Total estimado</span><strong>'+brl(s.estimated)+'</strong><small>planejamento da viagem</small></div>'+
+      '<div class="card purchase-kpi paid"><span>Gastos reais</span><strong>'+brl(s.total)+'</strong><small>'+s.paid?brl(s.paid)+' já pagos':'nenhum valor pago'+'</small></div>'+
+      '<div class="card purchase-kpi"><span>Saldo do orçamento</span><strong>'+(s.budget?brl(s.balance):'—')+'</strong><small>'+(s.budget?s.budgetPct+'% do orçamento usado':'defina o orçamento máximo')+'</small></div>'+
+    '</div>'+
+
+    '<div class="card card-pad honey-finance-progress">'+
+      '<div class="honey-finance-progress-head"><div><span class="honeymoon-kicker">PLANEJAMENTO × REALIDADE</span><h3>'+(s.estimated?s.estimatePct+'% das estimativas já comprometidas':'Monte suas estimativas')+'</h3><p>'+estimateStatus+'</p></div><strong>'+brl(s.total)+'<small> realizados</small></strong></div>'+
+      '<div class="progress-track"><div class="progress-fill" style="width:'+s.estimatePct+'%"></div></div>'+
+    '</div>'+
+
+    '<section class="honey-finance-section">'+
+      '<div class="honey-finance-section-head"><div><div class="eyebrow">PLANEJAMENTO</div><h3>Estimativas da viagem</h3><p>Crie sua previsão antes de fechar passagens, hospedagem, alimentação, passeios e outros custos.</p></div><button class="btn-secondary" id="new-honey-estimate-secondary">+ Estimativa</button></div>'+
+      '<div class="card honey-estimate-list">'+estimateRows+'</div>'+
+    '</section>'+
+
+    '<section class="honey-finance-section">'+
+      '<div class="honey-finance-section-head"><div><div class="eyebrow">COMPARATIVO</div><h3>Estimado × realizado por categoria</h3><p>Veja rapidamente onde a viagem está acima ou abaixo do planejado.</p></div></div>'+
+      '<div class="card card-pad honey-category-list">'+categoryRows+'</div>'+
+    '</section>'+
+
+    '<section class="honey-finance-section">'+
+      '<div class="honey-finance-section-head"><div><div class="eyebrow">REALIZADO</div><h3>Gastos reais</h3><p>Valores já fechados ou previstos para pagamento.</p></div><button class="btn-primary" data-new-purchase-client="honeymoon">+ Novo gasto</button></div>'+
+      '<div class="filters">'+['Todos','Pago','Pendente'].map(function(v){return '<button class="filter-btn '+(state.purchaseFilter===v?'active':'')+'" data-purchase-filter-client="'+v+'">'+v+'</button>';}).join('')+'</div>'+
+      '<div class="card purchase-list">'+expenseRows+'</div>'+
+    '</section>'+
+  '</section>';
 }
 function mptHoneymoonView(){
   const p=state.honeymoonProfile||{};
@@ -193,15 +327,16 @@ const mptHoneyBaseLoadData=loadData;
 loadData=async function(){
   await mptHoneyBaseLoadData();
   if(!state.session||state.role==='admin'||!state.wedding)return;
-  if(!hasFeature('lua-de-mel')){state.honeymoonProfile=null;state.honeymoonItinerary=[];state.honeymoonReservations=[];state.honeymoonChecklist=[];return;}
+  if(!hasFeature('lua-de-mel')){state.honeymoonProfile=null;state.honeymoonItinerary=[];state.honeymoonReservations=[];state.honeymoonChecklist=[];state.honeymoonEstimates=[];return;}
   const id=state.wedding.id;
   const results=await Promise.all([
     safeQuery(sb.from('honeymoon_trip_profiles').select('*').eq('wedding_id',id)),
     safeQuery(sb.from('honeymoon_itinerary').select('*').eq('wedding_id',id).order('activity_date',{ascending:true}).order('start_time',{ascending:true})),
     safeQuery(sb.from('honeymoon_reservations').select('*').eq('wedding_id',id).order('start_date',{ascending:true})),
-    safeQuery(sb.from('honeymoon_checklist').select('*').eq('wedding_id',id).order('completed',{ascending:true}).order('due_date',{ascending:true}))
+    safeQuery(sb.from('honeymoon_checklist').select('*').eq('wedding_id',id).order('completed',{ascending:true}).order('due_date',{ascending:true})),
+    safeQuery(sb.from('honeymoon_budget_estimates').select('*').eq('wedding_id',id).order('category',{ascending:true}).order('order_index',{ascending:true}))
   ]);
-  state.honeymoonProfile=results[0][0]||null;state.honeymoonItinerary=results[1];state.honeymoonReservations=results[2];state.honeymoonChecklist=results[3];
+  state.honeymoonProfile=results[0][0]||null;state.honeymoonItinerary=results[1];state.honeymoonReservations=results[2];state.honeymoonChecklist=results[3];state.honeymoonEstimates=results[4];
 };
 
 const mptHoneyBaseViewFor=viewFor;
@@ -216,6 +351,10 @@ bind=function(){
   document.querySelectorAll('[data-honeymoon-tab]').forEach(function(btn){btn.onclick=function(){state.honeymoonTab=btn.dataset.honeymoonTab;render();};});
   document.querySelectorAll('[data-honeymoon-go]').forEach(function(btn){btn.onclick=function(){state.honeymoonTab=btn.dataset.honeymoonGo;render();};});
   const edit=document.getElementById('edit-honeymoon-profile');if(edit)edit.onclick=mptOpenHoneyProfile;
+  const newEstimate=document.getElementById('new-honey-estimate');if(newEstimate)newEstimate.onclick=function(){mptOpenHoneyEstimate(null);};
+  const newEstimateSecondary=document.getElementById('new-honey-estimate-secondary');if(newEstimateSecondary)newEstimateSecondary.onclick=function(){mptOpenHoneyEstimate(null);};
+  document.querySelectorAll('[data-edit-honey-estimate]').forEach(function(btn){btn.onclick=function(){mptOpenHoneyEstimate(state.honeymoonEstimates.find(function(x){return x.id===btn.dataset.editHoneyEstimate;}));};});
+  document.querySelectorAll('[data-delete-honey-estimate]').forEach(function(btn){btn.onclick=function(){mptDeleteHoneyEstimate(btn.dataset.deleteHoneyEstimate);};});
   const ni=document.getElementById('new-honeymoon-itinerary');if(ni)ni.onclick=function(){mptOpenHoneyItinerary(null);};
   document.querySelectorAll('[data-edit-honeymoon-itinerary]').forEach(function(btn){btn.onclick=function(){mptOpenHoneyItinerary(state.honeymoonItinerary.find(function(x){return x.id===btn.dataset.editHoneymoonItinerary;}));};});
   document.querySelectorAll('[data-delete-honeymoon-itinerary]').forEach(function(btn){btn.onclick=function(){mptDeleteHoneyItinerary(btn.dataset.deleteHoneymoonItinerary);};});
