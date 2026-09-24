@@ -2241,3 +2241,107 @@ body{
 .home-countdown-compact span{
   color:rgba(255,250,242,.82);
 }
+
+
+/* Premium — pagamento manual por Pix */
+.premium-payment-box{
+  display:grid;
+  gap:16px;
+}
+.premium-payment-price{
+  padding:18px;
+  border-radius:16px;
+  text-align:center;
+  background:linear-gradient(135deg,#f4ecde,#eee3d2);
+  border:1px solid rgba(92,63,44,.10);
+}
+.premium-payment-price span{
+  display:block;
+  color:#7c654f;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.premium-payment-price strong{
+  display:block;
+  margin:5px 0 3px;
+  color:var(--brown);
+  font-family:"Playfair Display",serif;
+  font-size:32px;
+  font-weight:500;
+}
+.premium-payment-price small{
+  color:var(--muted);
+  font-size:10px;
+}
+.premium-payment-steps{
+  display:grid;
+  gap:8px;
+}
+.premium-payment-steps>div{
+  display:grid;
+  grid-template-columns:28px 1fr;
+  gap:9px;
+  align-items:center;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.52);
+}
+.premium-payment-steps b{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--olive);
+  color:#fff;
+  font-size:10px;
+}
+.premium-payment-steps span{
+  color:var(--ink);
+  font-size:11px;
+  line-height:1.45;
+}
+.premium-pix-card{
+  display:grid;
+  gap:7px;
+  padding:14px;
+  border-radius:14px;
+  background:#fffaf2;
+  border:1px dashed rgba(92,63,44,.25);
+}
+.premium-pix-card>span{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.premium-pix-card>strong{
+  color:var(--brown);
+  font-size:13px;
+  word-break:break-all;
+}
+.premium-pix-card .btn-secondary{
+  justify-self:start;
+  margin-top:3px;
+}
+.premium-payment-note{
+  margin:0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.55;
+}
+.premium-whatsapp-proof{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  text-decoration:none;
+}
+@media(max-width:560px){
+  .premium-payment-price strong{font-size:28px}
+  .premium-whatsapp-proof{width:100%}
+}
