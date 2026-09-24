@@ -68,6 +68,56 @@ function mptGiftShareUrl(code){
   if(!code)return '';
   const url=new URL('presentes.html',location.href);url.hash='';url.search='';url.searchParams.set('code',code);return url.toString();
 }
+
+function mptOpenGiftItemEditor(item){
+  if(!requireWedding())return;
+  const body=
+    plannerField('Nome do presente','item_name',item&&item.item_name?item.item_name:'','text','required')+
+    plannerSelect('Categoria / ambiente','room',homeRooms,item&&item.room?item.room:'Cozinha')+
+    plannerField('Quantidade desejada','quantity',item&&item.quantity?item.quantity:1,'number','min="1"')+
+    plannerField('Tamanho / modelo','item_size',item&&item.item_size?item.item_size:'')+
+    plannerField('Link do produto / site','item_link',item&&item.item_link?item.item_link:'','url','placeholder="https://..."')+
+    plannerField('Loja / site','store_name',item&&item.store_name?item.store_name:'')+
+    plannerSelect('Prioridade','priority',['Essencial','Importante','Desejo'],item&&item.priority?item.priority:'Importante')+
+    plannerTextarea('Observações internas','notes',item&&item.notes?item.notes:'');
+
+  plannerModal(item?'Editar presente':'Adicionar presente',body,item?'Salvar':'Adicionar',async function(back){
+    const d=Object.fromEntries(new FormData(back.querySelector('.modal')).entries());
+    const name=String(d.item_name||'').trim();
+    if(!name){toast('Informe o nome do presente.');return false;}
+    const link=String(d.item_link||'').trim();
+    if(link&&!/^https?:\/\//i.test(link)){toast('O link precisa começar com http:// ou https://');return false;}
+
+    const payload={
+      wedding_id:state.wedding.id,
+      room:d.room||'Cozinha',
+      item_name:name,
+      quantity:Math.max(1,Number(d.quantity||1)),
+      owned_quantity:item?Number(item.owned_quantity||0):0,
+      item_size:String(d.item_size||'').trim()||null,
+      priority:d.priority||'Importante',
+      acquisition_status:'Falta',
+      unit_value:item?Number(item.unit_value||0):0,
+      store_name:String(d.store_name||'').trim()||null,
+      item_link:link||null,
+      notes:String(d.notes||'').trim()||null,
+      gift_list_enabled:true,
+      updated_at:new Date().toISOString()
+    };
+
+    const res=item
+      ?await sb.from('home_organization_items').update(payload).eq('id',item.id)
+      :await sb.from('home_organization_items').insert(payload);
+
+    if(res.error){console.error(res.error);toast('Não foi possível salvar o presente.');return false;}
+    await reloadPlannerClient();
+    state.homeTab='presentes';
+    render();
+    toast(item?'Presente atualizado.':'Presente adicionado à lista.');
+    return true;
+  });
+}
+
 async function mptToggleGiftItem(id){
   const item=state.homeItems.find(function(x){return x.id===id;});if(!item)return;
   const res=await sb.from('home_organization_items').update({gift_list_enabled:!item.gift_list_enabled,updated_at:new Date().toISOString()}).eq('id',id);
@@ -103,10 +153,10 @@ function mptGiftListView(){
   if(rows.length){
     list=rows.map(function(item){
       const reservation=reservations.get(item.id);
-      return '<div class="home-gift-row"><button class="home-gift-toggle '+(item.gift_list_enabled?'on':'')+'" data-toggle-home-gift="'+item.id+'">'+(item.gift_list_enabled?'✓':'+')+'</button><div><strong>'+esc(item.item_name)+'</strong><span>'+esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+'</span></div><span class="badge '+(reservation?'info':item.gift_list_enabled?'success':'warning')+'">'+(reservation?'Reservado':item.gift_list_enabled?'Na lista':'Oculto')+'</span>'+(reservation?'<div class="home-gift-reserved"><span>Reservado por</span><strong>'+esc(reservation.reserved_by)+'</strong></div>':'<span></span>')+(reservation?'<button class="btn-secondary" data-clear-home-gift="'+item.id+'">Liberar</button>':'<span></span>')+'</div>';
+      return '<div class="home-gift-row"><button class="home-gift-toggle '+(item.gift_list_enabled?'on':'')+'" data-toggle-home-gift="'+item.id+'">'+(item.gift_list_enabled?'✓':'+')+'</button><div><strong>'+esc(item.item_name)+'</strong><span>'+esc(item.room)+(item.item_size?' • '+esc(item.item_size):'')+(item.store_name?' • '+esc(item.store_name):'')+'</span>'+(item.item_link?'<a class="home-gift-product-link" href="'+esc(item.item_link)+'" target="_blank" rel="noopener noreferrer">Abrir produto ↗</a>':'')+'</div><span class="badge '+(reservation?'info':item.gift_list_enabled?'success':'warning')+'">'+(reservation?'Reservado':item.gift_list_enabled?'Na lista':'Oculto')+'</span>'+(reservation?'<div class="home-gift-reserved"><span>Reservado por</span><strong>'+esc(reservation.reserved_by)+'</strong></div>':'<span></span>')+'<div class="planner-row-actions"><button class="btn-secondary" data-edit-home-gift="'+item.id+'">Editar</button>'+(reservation?'<button class="btn-secondary" data-clear-home-gift="'+item.id+'">Liberar</button>':'')+'</div></div>';
     }).join('');
   }else list=emptyState('Nenhum item disponível','Adicione itens à lista de enxoval para montar sua lista de presentes.');
-  return '<section class="home-tab-panel"><div class="home-list-tools"><div><h2>Lista de Presentes</h2><p>Escolha quais itens do enxoval podem aparecer para familiares e amigos. Valores, lojas e informações privadas não são compartilhados.</p></div>'+(link?'<div class="action-row"><button class="btn-secondary" id="copy-home-gift-link">Copiar link</button><button class="btn-secondary" id="open-home-gift-link">Visualizar</button></div>':'<button class="btn-primary" id="create-home-gift-share">Criar link da lista</button>')+'</div><div class="home-gift-summary card card-pad"><div><span>Itens disponíveis</span><strong>'+rows.length+'</strong></div><div><span>Na lista pública</span><strong>'+enabled+'</strong></div><div><span>Reservados</span><strong>'+state.homeGiftReservations.length+'</strong></div><div><span>Link público</span><strong>'+(state.homeGiftShare&&state.homeGiftShare.active===false?'Pausado':link?'Ativo':'Não criado')+'</strong></div></div>'+(link?'<div class="card card-pad home-gift-share-box"><div><span class="small muted">LINK COMPARTILHÁVEL</span><strong>'+esc(link)+'</strong><p>Quando alguém escolhe um presente, ele aparece como reservado para os demais convidados.</p></div><div class="action-row"><button class="btn-secondary" id="regenerate-home-gift-link">Gerar novo link</button><button class="btn-secondary" id="toggle-home-gift-link">'+(state.homeGiftShare.active===false?'Reativar link':'Pausar link')+'</button></div></div>':'')+'<div class="card home-gift-list">'+list+'</div></section>';
+  return '<section class="home-tab-panel"><div class="home-list-tools"><div><h2>Lista de Presentes</h2><p>Cadastre presentes diretamente aqui e, se quiser, adicione o link exato do produto para facilitar a compra do convidado.</p></div><div class="action-row"><button class="btn-primary" id="new-home-gift-item">+ Adicionar presente</button>'+(link?'<button class="btn-secondary" id="copy-home-gift-link">Copiar link</button><button class="btn-secondary" id="open-home-gift-link">Visualizar</button>':'<button class="btn-secondary" id="create-home-gift-share">Criar link da lista</button>')+'</div></div><div class="home-gift-summary card card-pad"><div><span>Itens disponíveis</span><strong>'+rows.length+'</strong></div><div><span>Na lista pública</span><strong>'+enabled+'</strong></div><div><span>Reservados</span><strong>'+state.homeGiftReservations.length+'</strong></div><div><span>Link público</span><strong>'+(state.homeGiftShare&&state.homeGiftShare.active===false?'Pausado':link?'Ativo':'Não criado')+'</strong></div></div>'+(link?'<div class="card card-pad home-gift-share-box"><div><span class="small muted">LINK COMPARTILHÁVEL</span><strong>'+esc(link)+'</strong><p>Quando alguém escolhe um presente, ele aparece como reservado para os demais convidados.</p></div><div class="action-row"><button class="btn-secondary" id="regenerate-home-gift-link">Gerar novo link</button><button class="btn-secondary" id="toggle-home-gift-link">'+(state.homeGiftShare.active===false?'Reativar link':'Pausar link')+'</button></div></div>':'')+'<div class="card home-gift-list">'+list+'</div></section>';
 }
 homeOrganizationView=function(){
   const t=homeTotals();
@@ -194,6 +244,8 @@ bind=function(){
   mptExperienceBaseBind();
   document.querySelectorAll('[data-ceremony-template]').forEach(function(btn){btn.onclick=function(){mptApplyCeremonyTemplate(btn.dataset.ceremonyTemplate);};});
   document.querySelectorAll('[data-toggle-home-gift]').forEach(function(btn){btn.onclick=function(){mptToggleGiftItem(btn.dataset.toggleHomeGift);};});
+  const newGiftItem=document.getElementById('new-home-gift-item');if(newGiftItem)newGiftItem.onclick=function(){mptOpenGiftItemEditor(null);};
+  document.querySelectorAll('[data-edit-home-gift]').forEach(function(btn){btn.onclick=function(){mptOpenGiftItemEditor(state.homeItems.find(function(x){return x.id===btn.dataset.editHomeGift;}));};});
   document.querySelectorAll('[data-clear-home-gift]').forEach(function(btn){btn.onclick=function(){mptClearGiftReservation(btn.dataset.clearHomeGift);};});
   const create=document.getElementById('create-home-gift-share');if(create)create.onclick=mptCreateGiftLink;
   const copy=document.getElementById('copy-home-gift-link');if(copy)copy.onclick=async function(){const url=mptGiftShareUrl(state.homeGiftShare&&state.homeGiftShare.share_code);try{await navigator.clipboard.writeText(url);toast('Link copiado.');}catch{prompt('Copie o link:',url);}};
