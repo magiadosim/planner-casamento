@@ -2073,6 +2073,61 @@ function premiumHubView(){
   </div>`;
 }
 
+
+const PREMIUM_PRICE='R$ 29,90';
+const PREMIUM_PIX_KEY='amagiadosim2026@gmail.com';
+const PREMIUM_WHATSAPP='5521984629190';
+
+function openPremiumPaymentModal(){
+  const body=`
+    <div class="premium-payment-box">
+      <div class="premium-payment-price">
+        <span>Premium</span>
+        <strong>${PREMIUM_PRICE}</strong>
+        <small>Liberação do pacote Premium</small>
+      </div>
+
+      <div class="premium-payment-steps">
+        <div><b>1</b><span>Copie a chave Pix abaixo.</span></div>
+        <div><b>2</b><span>Faça o pagamento de ${PREMIUM_PRICE}.</span></div>
+        <div><b>3</b><span>Envie o comprovante pelo WhatsApp para solicitar a liberação.</span></div>
+      </div>
+
+      <div class="premium-pix-card">
+        <span>Chave Pix • E-mail</span>
+        <strong id="premium-pix-key">${PREMIUM_PIX_KEY}</strong>
+        <button type="button" class="btn-secondary" id="copy-premium-pix">Copiar chave Pix</button>
+      </div>
+
+      <p class="premium-payment-note">Após a confirmação do pagamento, o Premium será liberado pela administração do Magia Para Todos.</p>
+
+      <a class="btn-primary premium-whatsapp-proof" id="premium-whatsapp-proof" href="#" target="_blank" rel="noopener noreferrer">Enviar comprovante pelo WhatsApp</a>
+    </div>
+  `;
+
+  plannerModal('Desbloquear Premium',body,'Fechar',async()=>true);
+
+  const modal=document.querySelector('.modal-backdrop:last-of-type')||document.querySelector('.modal-backdrop');
+  const copyBtn=modal?.querySelector('#copy-premium-pix');
+  if(copyBtn)copyBtn.onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText(PREMIUM_PIX_KEY);
+      copyBtn.textContent='Chave copiada ✓';
+      toast('Chave Pix copiada.');
+    }catch{
+      prompt('Copie a chave Pix:',PREMIUM_PIX_KEY);
+    }
+  };
+
+  const whatsapp=modal?.querySelector('#premium-whatsapp-proof');
+  if(whatsapp){
+    const couple=state.wedding?.couple_name||state.profile?.full_name||'Cliente';
+    const email=state.user?.email||state.profile?.email||'';
+    const message=`Olá! Fiz o pagamento de ${PREMIUM_PRICE} do Premium do Magia Para Todos e quero solicitar a liberação do meu plano. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
+    whatsapp.href=`https://wa.me/${PREMIUM_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  }
+}
+
 function premiumPreviewView(slug){
   const item=PREMIUM_PREVIEWS[slug];
   if(!item)return premiumHubView();
@@ -2136,6 +2191,8 @@ render=function(){
 const plannerBaseBind=bind;
 bind=function(){
   plannerBaseBind();
+
+  document.querySelectorAll('[data-unlock]').forEach(btn=>btn.onclick=openPremiumPaymentModal);
 
   const editWedding=document.getElementById('edit-wedding-client');
   if(editWedding)editWedding.onclick=openPlannerWeddingEditor;
