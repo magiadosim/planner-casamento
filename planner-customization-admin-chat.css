@@ -1,4 +1,4 @@
-/* MAGIA PARA TODOS — personalização, planos e chat */
+/* MAGIA PARA TODOS — identidade fixa, planos e chat */
 :root{
   --planner-theme-primary:var(--olive);
   --planner-theme-secondary:var(--brown);
@@ -49,20 +49,6 @@
 .client-app-shell .page{
   --cream:var(--planner-theme-background);
 }
-
-/* Perfil / paleta */
-.planner-theme-card{margin-top:14px}
-.planner-theme-intro{margin:-2px 0 16px;color:var(--muted);font-size:12px;line-height:1.6}
-.planner-theme-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
-.planner-theme-preset{border:1px solid var(--line);background:rgba(255,255,255,.55);border-radius:14px;padding:10px;text-align:left}
-.planner-theme-preset.active{border-color:var(--planner-theme-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--planner-theme-primary) 15%, transparent)}
-.planner-theme-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
-.planner-theme-swatches i{height:24px;border-radius:7px;border:1px solid rgba(0,0,0,.06)}
-.planner-theme-preset strong{font-size:11px;color:var(--ink)}
-.planner-theme-custom-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.planner-theme-color{display:grid;gap:7px;font-size:10px;font-weight:700;color:var(--muted)}
-.planner-theme-color input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:11px;padding:4px;background:#fff;cursor:pointer}
-.planner-theme-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 
 /* Gestão de planos */
 .admin-plan-actions{display:flex;gap:8px;align-items:center}
