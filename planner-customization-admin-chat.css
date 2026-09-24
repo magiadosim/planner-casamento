@@ -96,8 +96,6 @@
 .ticket-closed-note{font-size:10px;color:var(--success);font-weight:700}
 
 @media(max-width:900px){
-  .planner-theme-presets{grid-template-columns:repeat(2,1fr)}
-  .planner-theme-custom-grid{grid-template-columns:repeat(2,1fr)}
   .admin-plan-grid{grid-template-columns:1fr}
   .planner-chat-layout{grid-template-columns:1fr;min-height:0}
   .planner-chat-clients{max-height:220px}
@@ -105,8 +103,6 @@
   .planner-chat-panel{min-height:540px}
 }
 @media(max-width:560px){
-  .planner-theme-presets{grid-template-columns:1fr 1fr}
-  .planner-theme-custom-grid{grid-template-columns:1fr 1fr}
   .admin-plan-feature-grid{grid-template-columns:1fr}
   .planner-chat-message{max-width:88%}
   .planner-chat-compose{grid-template-columns:1fr}
