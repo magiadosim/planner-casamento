@@ -60,7 +60,7 @@ const weddingPartyNav=[
   ['financeiro','Financeiro','money','financeiro'],
   ['reunioes','Reuniões','meeting','reunioes'],
   ['outros-gastos','Outros gastos','money','outros-gastos'],
-  ['meus-dados','Meus dados','file','meus-dados']
+  ['meus-dados','Planilha geral de gastos','file','meus-dados']
 ];
 
 const premiumNav=[
@@ -183,7 +183,7 @@ function moduleName(feature){
     'lua-de-mel':'Lua de mel',
     cerimonial:'Cerimonial',
     'organizacao-casa':'Organização da casa',
-    'meus-dados':'Meus dados / Backup'
+    'meus-dados':'Planilha geral de gastos'
   })[feature]||'Recurso';
 }
 function loadingView(){
@@ -332,39 +332,39 @@ function shellView(r,content){
       `<div class="nav-main-modules">
         <a href="#/festa-casamento" class="nav-module-entry ${festaActive?'active':''} ${hasFeature('meu-casamento')?'':'locked'}">
           <span class="nav-module-icon">${icons.heart}</span>
-          <span class="nav-module-copy"><strong>Festa de Casamento</strong><small>${hasFeature('meu-casamento')?'Planejamento completo':'Essencial'}</small></span>
+          <span class="nav-module-copy"><strong>Festa de Casamento</strong><small>${hasFeature('meu-casamento')?'Planejamento completo':'Pacote Básico'}</small></span>
           <span class="nav-module-arrow">${hasFeature('meu-casamento')?'›':'⌑'}</span>
         </a>
 
         <a href="#/cerimonial" class="nav-module-entry ${active==='cerimonial'?'active':''} ${hasFeature('cerimonial')?'':'locked'}">
           <span class="nav-module-icon">${icons.calendar}</span>
-          <span class="nav-module-copy"><strong>Cerimonial</strong><small>${hasFeature('cerimonial')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-copy"><strong>Cerimonial</strong><small>${hasFeature('cerimonial')?'Acessar módulo':'Essencial ou extra'}</small></span>
           <span class="nav-module-arrow">${hasFeature('cerimonial')?'›':'⌑'}</span>
         </a>
 
         <a href="#/organizacao-casa" class="nav-module-entry ${active==='organizacao-casa'?'active':''} ${hasFeature('organizacao-casa')?'':'locked'}">
           <span class="nav-module-icon">${icons.home}</span>
-          <span class="nav-module-copy"><strong>Organização da Casa</strong><small>${hasFeature('organizacao-casa')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-copy"><strong>Organização da Casa</strong><small>${hasFeature('organizacao-casa')?'Acessar módulo':'Gold ou extra'}</small></span>
           <span class="nav-module-arrow">${hasFeature('organizacao-casa')?'›':'⌑'}</span>
         </a>
 
         <a href="#/lua-de-mel" class="nav-module-entry ${active==='lua-de-mel'?'active':''} ${hasFeature('lua-de-mel')?'':'locked'}">
           <span class="nav-module-icon">${icons.heart}</span>
-          <span class="nav-module-copy"><strong>Lua de Mel</strong><small>${hasFeature('lua-de-mel')?'Acessar módulo':'Premium'}</small></span>
+          <span class="nav-module-copy"><strong>Lua de Mel</strong><small>${hasFeature('lua-de-mel')?'Acessar módulo':'Gold ou extra'}</small></span>
           <span class="nav-module-arrow">${hasFeature('lua-de-mel')?'›':'⌑'}</span>
         </a>
       </div>`;
   }
 
   const festaMobileActive=['festa-casamento',...weddingPartyNav.map(x=>x[0])].includes(active);
-  const moreMobileActive=['lua-de-mel','suporte','perfil'].includes(active);
+  const moreMobileActive=['lua-de-mel','premium','suporte','perfil'].includes(active);
 
   const mobileNavHtml=state.role==='admin'
     ? [['admin','Clientes','admin'],['planos','Planos','check'],['perfil','Perfil','user']]
         .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
     : `
         <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
-        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>${hasFeature('meu-casamento')?'Festa':'Essencial'}</span></a>
+        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>${hasFeature('meu-casamento')?'Festa':'Básico'}</span></a>
         <a href="#/cerimonial" class="${active==='cerimonial'?'active':''}">${icons.calendar}<span>Cerimonial</span></a>
         <a href="#/organizacao-casa" class="${active==='organizacao-casa'?'active':''}">${icons.home}<span>Casa</span></a>
         <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open">${icons.menu}<span>Mais</span></button>
@@ -380,8 +380,11 @@ function shellView(r,content){
         </div>
         <div class="mobile-more-scroll">
           <div class="mobile-more-section">
-            <div class="mobile-more-section-title">Premium</div>
+            <div class="mobile-more-section-title">Planos e extras</div>
             <div class="mobile-more-grid">
+              <a class="mobile-more-item ${active==='premium'?'active':''}" href="#/premium">
+                <span class="mobile-more-icon">${icons.check}</span><span>Planos e extras</span>
+              </a>
               <a class="mobile-more-item ${active==='lua-de-mel'?'active':''}" href="#/lua-de-mel">
                 <span class="mobile-more-icon">${icons.heart}</span><span>Lua de Mel</span>
               </a>
@@ -409,7 +412,7 @@ function shellView(r,content){
       <div class="sidebar-brand"><div class="sidebar-logo"><img src="${LOGO_URL}" alt="Magia Para Todos"></div><div class="sidebar-name">Magia Para<br>Todos</div></div>
       <nav class="nav">${navHtml}</nav>
       <div class="sidebar-bottom">
-        ${state.role==='client'?'<a href="#/suporte" class="nav-item '+(active==='suporte'?'active':'')+'">'+icons.meeting+'<span>Suporte / Chamados</span></a>':''}
+        ${state.role==='client'?'<a href="#/premium" class="nav-item '+(active==='premium'?'active':'')+'">'+icons.check+'<span>Planos e extras</span></a><a href="#/suporte" class="nav-item '+(active==='suporte'?'active':'')+'">'+icons.meeting+'<span>Suporte / Chamados</span></a>':''}
         <a href="#/perfil" class="nav-item ${active==='perfil'?'active':''}">${icons.user}<span>Perfil</span></a>
         <button class="nav-item" id="logout-side" style="border:0;background:none;text-align:left;width:100%">${icons.logout}<span>Sair</span></button>
       </div>
@@ -431,16 +434,26 @@ function shellView(r,content){
 
 function lockedView(feature){
   const name=moduleName(feature);
-  const premium=['cerimonial','organizacao-casa','lua-de-mel'].includes(feature);
-  const packageName=premium?'Premium':'Essencial';
+  const basicFeature=!['cerimonial','organizacao-casa','lua-de-mel','meus-dados'].includes(feature);
+  const label=basicFeature?'PACOTE BÁSICO':
+    feature==='cerimonial'?'ESSENCIAL OU EXTRA':
+    feature==='meus-dados'?'PACOTE GOLD':
+    'GOLD OU EXTRA';
+  const description=basicFeature
+    ? 'Este recurso faz parte do pacote Básico, por R$ 89,90 por semestre.'
+    : feature==='cerimonial'
+      ? 'O Cerimonial está incluído no Essencial e no Gold. Quem já possui o Básico também pode contratar o Cerimonial como extra.'
+      : feature==='meus-dados'
+        ? 'A planilha geral de todos os gastos e o backup completo fazem parte do pacote Gold.'
+        : 'Este recurso está incluído no Gold e também pode ser contratado como extra por clientes com o Básico ativo.';
   return `<div class="page"><div class="page-head"><div><h1>${esc(name)}</h1><p>Este recurso ainda não está liberado na sua conta.</p></div></div>
     <div class="card card-pad planner-locked-card">
       <div class="planner-lock-icon">${icons.lock}</div>
       <div>
-        <div class="eyebrow">PACOTE ${packageName.toUpperCase()}</div>
+        <div class="eyebrow">${label}</div>
         <h2>${esc(name)}</h2>
-        <p class="muted">${premium?'Este recurso faz parte do adicional Premium.':'A Festa de Casamento completa faz parte do pacote Essencial, por R$ 89,90 a cada semestre.'} A liberação é feita pela administração após a confirmação do pagamento.</p>
-        <button class="btn-primary" data-unlock="${esc(feature)}">Desbloquear ${packageName}</button>
+        <p class="muted">${description} A liberação é feita manualmente após a confirmação do pagamento.</p>
+        <button class="btn-primary" data-unlock="${esc(feature)}">Ver opções de desbloqueio</button>
       </div>
     </div>
   </div>`;
@@ -463,7 +476,7 @@ function dashboardView(){
         <p>${esc(description)}</p>
       </div>
       <div class="home-module-footer">
-        <span>${unlocked?'Abrir módulo':'Conhecer Premium'}</span>
+        <span>${unlocked?'Abrir módulo':'Ver opções'}</span>
         <strong>${unlocked?'›':'⌑'}</strong>
       </div>
     </a>`;
@@ -488,10 +501,10 @@ function dashboardView(){
       ${moduleCard(
         'festa-casamento',
         'Festa de Casamento',
-        'Todos os recursos atuais do planejamento: fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões, gastos e backup.',
+        'Planejamento completo da festa: fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões e outros gastos.',
         'heart',
         'meu-casamento',
-        'ESSENCIAL'
+        'BÁSICO'
       )}
 
       ${moduleCard(
@@ -500,7 +513,7 @@ function dashboardView(){
         'Roteiro do grande dia, cortejo, músicas, horários, responsáveis, fornecedores envolvidos e financeiro próprio.',
         'calendar',
         'cerimonial',
-        'PREMIUM'
+        'ESSENCIAL'
       )}
 
       ${moduleCard(
@@ -509,7 +522,7 @@ function dashboardView(){
         'Lista por ambientes, itens, prioridades, presentes, compras e financeiro próprio da nova casa.',
         'home',
         'organizacao-casa',
-        'PREMIUM'
+        'GOLD'
       )}
 
       ${moduleCard(
@@ -518,8 +531,17 @@ function dashboardView(){
         'Planejamento da viagem, passagens, hospedagem, passeios, documentos e financeiro exclusivo da lua de mel.',
         'heart',
         'lua-de-mel',
-        'PREMIUM'
+        'GOLD'
       )}
+    </section>
+
+    <section class="card card-pad home-plans-cta">
+      <div>
+        <div class="eyebrow">PLANOS E EXTRAS</div>
+        <h2>Escolha o acesso que combina com seu momento</h2>
+        <p>Compare Básico, Essencial e Gold, veja os extras avulsos e agende uma reunião de assessoria.</p>
+      </div>
+      <a class="btn-secondary" href="#/premium">Ver planos e extras</a>
     </section>
   </div>`;
 }
