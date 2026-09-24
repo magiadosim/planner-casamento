@@ -318,15 +318,50 @@ async function mptSendChatMessage(){
   await mptLoadChatMessages();
   render();
 }
-function mptStartChatPolling(){
-  if(window.__mptChatTimer)clearInterval(window.__mptChatTimer);
+function mptStopChatSync(){
+  if(window.__mptChatTimer){
+    clearInterval(window.__mptChatTimer);
+    window.__mptChatTimer=null;
+  }
+  if(window.__mptChatChannel){
+    try{sb.removeChannel(window.__mptChatChannel);}catch(error){console.warn(error);}
+    window.__mptChatChannel=null;
+  }
+}
+function mptStartChatSync(){
+  mptStopChatSync();
+  if(route()!=='mensagens'||!state.session)return;
+
+  const filter=state.role==='admin'
+    ?undefined
+    :`client_user_id=eq.${state.user.id}`;
+
+  try{
+    let channel=sb.channel(`mpt-chat-${state.user.id}-${Date.now()}`);
+    const config={event:'INSERT',schema:'public',table:'client_chat_messages'};
+    if(filter)config.filter=filter;
+    channel=channel.on('postgres_changes',config,async payload=>{
+      if(state.role!=='admin'&&payload?.new?.client_user_id!==state.user.id)return;
+      await mptLoadChatMessages();
+      if(route()==='mensagens')render();
+    });
+    window.__mptChatChannel=channel.subscribe(status=>{
+      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+        console.warn('Realtime do chat indisponível; mantendo atualização periódica.');
+      }
+    });
+  }catch(error){
+    console.warn('Não foi possível iniciar o Realtime do chat:',error);
+  }
+
+  // Fallback para manter a conversa atualizada mesmo se o Realtime cair.
   window.__mptChatTimer=setInterval(async()=>{
     if(route()!=='mensagens'||!state.session)return;
-    const before=state.chatMessages.at(-1)?.id||'';
+    const before=state.chatMessages.map(m=>m.id).join('|');
     await mptLoadChatMessages();
-    const after=state.chatMessages.at(-1)?.id||'';
+    const after=state.chatMessages.map(m=>m.id).join('|');
     if(before!==after)render();
-  },8000);
+  },20000);
 }
 
 /* CHAMADOS */
@@ -345,14 +380,13 @@ adminTicketsView=function(){
         <div class="card-title"><div><h2>${esc(t.subject)}</h2><span class="sub">${esc(client?.couple_name||client?.full_name||client?.email||'Cliente')} • ${esc(t.category)}${t.feature_slug?' • '+esc(moduleName(t.feature_slug)):''} • ${new Date(t.created_at).toLocaleString('pt-BR')}</span></div><span class="badge ${ticketStatusClass(t.status)}">${esc(mptTicketStatusLabel(t.status))}</span></div>
         <p class="support-description">${esc(t.description)}</p>
         <div class="planner-admin-grid support-admin-grid">
-          <div class="field"><label>Status</label><select class="input planner-plain-input" name="ticket_status"><option value="Aberto" ${t.status==='Aberto'?'selected':''}>Aberto</option><option value="Em análise" ${t.status==='Em análise'?'selected':''}>Em análise</option><option value="Respondido" ${t.status==='Respondido'?'selected':''}>Respondido</option><option value="Concluído" ${t.status==='Concluído'?'selected':''}>Encerrado</option></select></div>
-          <div class="field"><label>Prioridade</label><select class="input planner-plain-input" name="ticket_priority"><option value="Baixa" ${t.priority==='Baixa'?'selected':''}>Baixa</option><option value="Normal" ${t.priority==='Normal'?'selected':''}>Normal</option><option value="Alta" ${t.priority==='Alta'?'selected':''}>Alta</option></select></div>
+          <div class="field"><label>Status</label><select class="input planner-plain-input" name="ticket_status" ${closed?'disabled':''}><option value="Aberto" ${t.status==='Aberto'?'selected':''}>Aberto</option><option value="Em análise" ${t.status==='Em análise'?'selected':''}>Em análise</option><option value="Respondido" ${t.status==='Respondido'?'selected':''}>Respondido</option><option value="Concluído" ${t.status==='Concluído'?'selected':''}>Encerrado</option></select></div>
+          <div class="field"><label>Prioridade</label><select class="input planner-plain-input" name="ticket_priority" ${closed?'disabled':''}><option value="Baixa" ${t.priority==='Baixa'?'selected':''}>Baixa</option><option value="Normal" ${t.priority==='Normal'?'selected':''}>Normal</option><option value="Alta" ${t.priority==='Alta'?'selected':''}>Alta</option></select></div>
         </div>
-        <div class="field"><label>Resposta ao cliente</label><textarea class="input planner-plain-input planner-admin-notes" name="ticket_response">${esc(t.admin_response||'')}</textarea></div>
+        <div class="field"><label>Resposta ao cliente</label><textarea class="input planner-plain-input planner-admin-notes" name="ticket_response" ${closed?'disabled':''}>${esc(t.admin_response||'')}</textarea></div>
         <div class="ticket-admin-actions">
           <span class="small muted ticket-save-status"></span>
-          <button class="btn-primary admin-save-ticket" data-ticket-id="${t.id}">Salvar resposta</button>
-          ${closed?'<span class="ticket-closed-note">Chamado encerrado ✓</span>':`<button class="btn-close-ticket" type="button" data-close-ticket="${t.id}">Encerrar chamado</button>`}
+          ${closed?'<span class="ticket-closed-note">Chamado encerrado ✓</span>':`<button class="btn-primary admin-save-ticket" data-ticket-id="${t.id}">Salvar resposta</button><button class="btn-close-ticket" type="button" data-close-ticket="${t.id}">Encerrar chamado</button>`}
         </div>
       </article>`;
     }).join(''):emptyState('Nenhum chamado','Os chamados enviados pelos clientes aparecerão aqui.')}</div>
@@ -456,7 +490,7 @@ bind=function(){
   if(chatForm)chatForm.onsubmit=e=>{e.preventDefault();mptSendChatMessage();};
   const thread=document.getElementById('mpt-chat-thread');
   if(thread)requestAnimationFrame(()=>{thread.scrollTop=thread.scrollHeight;});
-  if(route()==='mensagens')mptStartChatPolling();
+  if(route()==='mensagens')mptStartChatSync();else mptStopChatSync();
 
   document.querySelectorAll('[data-close-ticket]').forEach(btn=>btn.onclick=()=>mptCloseTicket(btn.dataset.closeTicket));
 };
