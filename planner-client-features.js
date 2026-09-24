@@ -2506,3 +2506,127 @@ bind=function(){
     btn.disabled=false;btn.textContent='Salvar resposta';
   });
 };
+
+
+// =========================================================
+// MAGIA PARA TODOS — RSVP SEGURO V5.3 FRONTEND
+// =========================================================
+state.rsvpInvites=state.rsvpInvites||[];
+
+function secureRsvpUrl(inviteCode){
+  if(!inviteCode)return '';
+  const url=new URL('rsvp.html',location.href);
+  url.hash='';
+  url.search='';
+  url.searchParams.set('invite',inviteCode);
+  return url.toString();
+}
+
+const secureRsvpBaseLoadData=loadData;
+loadData=async function(){
+  await secureRsvpBaseLoadData();
+  state.rsvpInvites=[];
+  if(!state.session||state.role==='admin'||!state.wedding?.id)return;
+
+  const {data,error}=await sb
+    .from('rsvp_invites')
+    .select('id,wedding_id,invite_code,group_key,label,active,created_at,updated_at')
+    .eq('wedding_id',state.wedding.id)
+    .eq('active',true)
+    .order('label',{ascending:true});
+
+  if(error){
+    console.warn('Não foi possível carregar os links RSVP seguros.',error);
+    return;
+  }
+  state.rsvpInvites=data||[];
+};
+
+function activeSecureRsvpInvites(){
+  return (state.rsvpInvites||[])
+    .map(invite=>({
+      ...invite,
+      guestCount:(state.guests||[]).filter(g=>g.rsvp_invite_id===invite.id).length
+    }))
+    .filter(invite=>invite.guestCount>0);
+}
+
+async function copySecureRsvpUrl(inviteCode){
+  const url=secureRsvpUrl(inviteCode);
+  if(!url){toast('Link RSVP indisponível.');return;}
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('Link RSVP copiado.');
+  }catch{
+    prompt('Copie o link RSVP:',url);
+  }
+}
+
+function openSecureRsvpLinks(){
+  const invites=activeSecureRsvpInvites();
+  if(!invites.length){
+    toast('Adicione convidados para gerar os links RSVP.');
+    return;
+  }
+
+  const body=`
+    <div class="small muted" style="margin-bottom:14px">
+      Cada família ou convite individual possui um link exclusivo. Envie somente o link correspondente ao convidado.
+    </div>
+    <div class="card list-card" style="box-shadow:none;padding:0">
+      ${invites.map(invite=>`
+        <div class="list-row" style="grid-template-columns:minmax(0,1fr) auto">
+          <div class="vendor-name">
+            <strong>${esc(invite.label||'Convite')}</strong>
+            <span>${invite.guestCount} pessoa(s) neste convite</span>
+          </div>
+          <div class="planner-row-actions">
+            <button type="button" class="btn-secondary" data-copy-secure-rsvp="${invite.id}">Copiar link</button>
+            <button type="button" class="btn-secondary" data-open-secure-rsvp="${invite.id}">Abrir</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="small muted" style="margin-top:12px">
+      Se um link for compartilhado com a pessoa errada, podemos gerar outro link para aquele convite.
+    </div>
+  `;
+
+  const back=plannerModal('Links RSVP por família',body,'Fechar',async()=>true);
+
+  back.querySelectorAll('[data-copy-secure-rsvp]').forEach(btn=>{
+    btn.onclick=()=>{
+      const row=invites.find(x=>x.id===btn.dataset.copySecureRsvp);
+      if(row)copySecureRsvpUrl(row.invite_code);
+    };
+  });
+
+  back.querySelectorAll('[data-open-secure-rsvp]').forEach(btn=>{
+    btn.onclick=()=>{
+      const row=invites.find(x=>x.id===btn.dataset.openSecureRsvp);
+      const url=secureRsvpUrl(row?.invite_code);
+      if(url)window.open(url,'_blank','noopener');
+    };
+  });
+}
+
+const secureRsvpBaseGuestsView=guestsView;
+guestsView=function(){
+  let html=secureRsvpBaseGuestsView();
+  html=html.replace(
+    '<button class="btn-secondary" id="copy-rsvp-client">Copiar link RSVP</button>',
+    '<button class="btn-secondary" id="manage-rsvp-invites">Links RSVP</button>'
+  );
+  html=html.replace(
+    '<button class="btn-secondary" id="open-rsvp-client">Abrir RSVP</button>',
+    ''
+  );
+  return html;
+};
+
+const secureRsvpBaseBind=bind;
+bind=function(){
+  secureRsvpBaseBind();
+  const manage=document.getElementById('manage-rsvp-invites');
+  if(manage)manage.onclick=openSecureRsvpLinks;
+};
