@@ -248,6 +248,43 @@ function mptV5StartTimer(){
   window.MPT_V5_TIMER=setInterval(tick,1000);
 }
 
+
+function mptV5StartVerificationTimer(){
+  if(window.MPT_V5_VERIFICATION_TIMER){
+    clearTimeout(window.MPT_V5_VERIFICATION_TIMER);
+    window.MPT_V5_VERIFICATION_TIMER=null;
+  }
+
+  const claim=state.latestPurchaseClaim;
+  if(state.role==='admin'||claim?.status!=='auto_activated'||!claim.verification_deadline)return;
+
+  const diff=new Date(claim.verification_deadline).getTime()-Date.now();
+  const refreshAtDeadline=async()=>{
+    try{
+      const res=await sb.rpc('refresh_planner_purchase');
+      if(!res.error&&res.data?.changed)await mptV5Reload();
+    }catch(error){console.warn(error);}
+  };
+
+  if(diff<=0){
+    refreshAtDeadline();
+    return;
+  }
+
+  window.MPT_V5_VERIFICATION_TIMER=setTimeout(refreshAtDeadline,Math.min(diff+1000,2147483000));
+}
+
+if(!window.MPT_V5_VISIBILITY_BOUND){
+  window.MPT_V5_VISIBILITY_BOUND=true;
+  document.addEventListener('visibilitychange',async()=>{
+    if(document.visibilityState!=='visible'||!state.session||state.role==='admin')return;
+    try{
+      const res=await sb.rpc('refresh_planner_purchase');
+      if(!res.error&&res.data?.changed)await mptV5Reload();
+    }catch(error){console.warn(error);}
+  });
+}
+
 const mptV5BaseDashboard=dashboardView;
 dashboardView=function(){
   const base=mptV5BaseDashboard();
@@ -272,6 +309,7 @@ bind=function(){
   document.querySelectorAll('[data-v5-suspend]').forEach(btn=>btn.onclick=()=>mptV5SuspendClaim(btn.dataset.v5Suspend));
 
   mptV5StartTimer();
+  mptV5StartVerificationTimer();
 
   if(cfg.captchaSiteKey&&document.getElementById('planner-hcaptcha')&&window.hcaptcha&&!document.getElementById('planner-hcaptcha').dataset.rendered){
     try{
