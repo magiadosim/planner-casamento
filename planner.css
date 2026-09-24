@@ -203,3 +203,41 @@ linear-gradient(145deg,#5e6547 0%,#454b35 100%);color:#fff}
 @media(max-width:760px){
   .feature-grid{grid-template-columns:1fr}
 }
+
+
+/* Admin — contato e tempo de uso */
+.planner-admin-client-meta{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:4px 0 16px;
+}
+.planner-admin-client-meta>div{
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.42);
+}
+.planner-admin-client-meta span{
+  display:block;
+  margin-bottom:4px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.planner-admin-client-meta strong{
+  display:block;
+  color:var(--brown);
+  font-size:10px;
+  line-height:1.45;
+}
+.planner-admin-client-meta a{
+  color:var(--olive);
+  text-decoration:none;
+}
+.planner-admin-client-meta a:hover{text-decoration:underline}
+@media(max-width:760px){
+  .planner-admin-client-meta{grid-template-columns:1fr}
+}
