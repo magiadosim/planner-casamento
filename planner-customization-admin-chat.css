@@ -1,0 +1,128 @@
+/* MAGIA PARA TODOS — personalização, planos e chat */
+:root{
+  --planner-theme-primary:var(--olive);
+  --planner-theme-secondary:var(--brown);
+  --planner-theme-accent:var(--gold);
+  --planner-theme-background:var(--cream);
+}
+.client-app-shell .sidebar{
+  background:linear-gradient(180deg,var(--planner-theme-primary),color-mix(in srgb,var(--planner-theme-primary) 78%, #111 22%));
+}
+.client-app-shell .mobile-nav{
+  background:color-mix(in srgb,var(--planner-theme-primary) 94%, #111 6%);
+}
+.client-app-shell .btn-primary,
+.client-app-shell .login-btn{
+  background:var(--planner-theme-primary);
+}
+.client-app-shell .btn-primary:hover,
+.client-app-shell .login-btn:hover{
+  background:color-mix(in srgb,var(--planner-theme-primary) 82%, #111 18%);
+}
+.client-app-shell .home-welcome-strip,
+.client-app-shell .hero-main{
+  background:
+    radial-gradient(circle at 86% 40%,color-mix(in srgb,var(--planner-theme-accent) 28%, transparent),transparent 30%),
+    linear-gradient(115deg,var(--planner-theme-secondary),var(--planner-theme-primary));
+}
+.client-app-shell .home-module-icon,
+.client-app-shell .avatar,
+.client-app-shell .state-icon{
+  color:var(--planner-theme-primary);
+}
+.client-app-shell .filter-btn.active,
+.client-app-shell .module-action.unlock{
+  background:var(--planner-theme-primary);
+  border-color:var(--planner-theme-primary);
+}
+.client-app-shell .checkbox.checked,
+.client-app-shell .mini-progress>div{
+  background:var(--planner-theme-primary);
+  border-color:var(--planner-theme-primary);
+}
+.client-app-shell .page-head h1,
+.client-app-shell .card-title h2,
+.client-app-shell .card-title h3,
+.client-app-shell .couple-name{
+  color:var(--planner-theme-secondary);
+}
+.client-app-shell .page{
+  --cream:var(--planner-theme-background);
+}
+
+/* Perfil / paleta */
+.planner-theme-card{margin-top:14px}
+.planner-theme-intro{margin:-2px 0 16px;color:var(--muted);font-size:12px;line-height:1.6}
+.planner-theme-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.planner-theme-preset{border:1px solid var(--line);background:rgba(255,255,255,.55);border-radius:14px;padding:10px;text-align:left}
+.planner-theme-preset.active{border-color:var(--planner-theme-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--planner-theme-primary) 15%, transparent)}
+.planner-theme-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+.planner-theme-swatches i{height:24px;border-radius:7px;border:1px solid rgba(0,0,0,.06)}
+.planner-theme-preset strong{font-size:11px;color:var(--ink)}
+.planner-theme-custom-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.planner-theme-color{display:grid;gap:7px;font-size:10px;font-weight:700;color:var(--muted)}
+.planner-theme-color input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:11px;padding:4px;background:#fff;cursor:pointer}
+.planner-theme-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+
+/* Gestão de planos */
+.admin-plan-actions{display:flex;gap:8px;align-items:center}
+.admin-plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.admin-plan-card{position:relative}
+.admin-plan-card.inactive{opacity:.72}
+.admin-plan-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.admin-plan-card-head h2{margin:0;font-family:"Playfair Display",serif;font-size:22px;color:var(--brown)}
+.admin-plan-status{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:700;color:var(--muted)}
+.admin-plan-status input{accent-color:var(--olive)}
+.admin-plan-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+.admin-plan-feature{display:flex;gap:8px;align-items:flex-start;padding:9px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.48);font-size:10px}
+.admin-plan-feature input{margin-top:2px;accent-color:var(--olive)}
+.admin-plan-save-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+
+/* Chat */
+.planner-chat-page{max-width:1320px}
+.planner-chat-layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:14px;min-height:620px}
+.planner-chat-clients{overflow:hidden}
+.planner-chat-client-list{max-height:560px;overflow:auto}
+.planner-chat-client{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;padding:12px 14px;color:inherit}
+.planner-chat-client:hover,.planner-chat-client.active{background:rgba(76,80,48,.07)}
+.planner-chat-client strong{display:block;font-size:12px}
+.planner-chat-client span{display:block;margin-top:3px;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.planner-chat-panel{display:flex;flex-direction:column;min-height:620px;overflow:hidden}
+.planner-chat-head{padding:15px 17px;border-bottom:1px solid var(--line)}
+.planner-chat-head strong{display:block;font-family:"Playfair Display",serif;font-size:18px;color:var(--brown)}
+.planner-chat-head span{font-size:10px;color:var(--muted)}
+.planner-chat-thread{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.22)}
+.planner-chat-message{max-width:min(76%,620px);padding:10px 12px;border-radius:14px 14px 14px 4px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-soft)}
+.planner-chat-message.mine{align-self:flex-end;border-radius:14px 14px 4px 14px;background:color-mix(in srgb,var(--planner-theme-primary) 10%, #fff)}
+.admin-app-shell .planner-chat-message.mine{background:#eef0e6}
+.planner-chat-message strong{display:block;font-size:9px;color:var(--muted);margin-bottom:4px}
+.planner-chat-message p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.5}
+.planner-chat-message time{display:block;margin-top:5px;font-size:8px;color:var(--muted);text-align:right}
+.planner-chat-compose{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;border-top:1px solid var(--line);background:rgba(255,250,242,.9)}
+.planner-chat-compose textarea{min-height:48px;max-height:120px;resize:vertical;padding-left:13px}
+.planner-chat-empty{display:grid;place-items:center;min-height:440px;text-align:center;color:var(--muted);padding:30px}
+.planner-chat-nav-count{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#fff;color:var(--olive);display:grid;place-items:center;font-size:9px;font-weight:800}
+
+/* Chamados */
+.ticket-admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;align-items:center}
+.btn-close-ticket{border:1px solid #8b5d4b;background:#fff7f2;color:#8b5d4b;border-radius:12px;padding:10px 14px;font-weight:700;font-size:11px}
+.btn-close-ticket:hover{background:#f8e8df}
+.ticket-closed-note{font-size:10px;color:var(--success);font-weight:700}
+
+@media(max-width:900px){
+  .planner-theme-presets{grid-template-columns:repeat(2,1fr)}
+  .planner-theme-custom-grid{grid-template-columns:repeat(2,1fr)}
+  .admin-plan-grid{grid-template-columns:1fr}
+  .planner-chat-layout{grid-template-columns:1fr;min-height:0}
+  .planner-chat-clients{max-height:220px}
+  .planner-chat-client-list{max-height:160px}
+  .planner-chat-panel{min-height:540px}
+}
+@media(max-width:560px){
+  .planner-theme-presets{grid-template-columns:1fr 1fr}
+  .planner-theme-custom-grid{grid-template-columns:1fr 1fr}
+  .admin-plan-feature-grid{grid-template-columns:1fr}
+  .planner-chat-message{max-width:88%}
+  .planner-chat-compose{grid-template-columns:1fr}
+  .planner-chat-compose .btn-primary{width:100%}
+}
