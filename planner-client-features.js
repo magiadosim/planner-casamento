@@ -584,8 +584,8 @@ function downloadPlannerXlsx(){
   XLSX.writeFile(wb,'A_Magia_do_Sim_Meus_Dados.xlsx');
 }
 myDataView=function(){
-  return `<div class="page"><div class="page-head"><div><h1>Meus dados</h1><p>Baixe uma cópia das informações do seu casamento sempre que quiser.</p></div></div>
-    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">CÓPIA COMPLETA</span><h2>Baixar todos os meus dados</h2><p>Inclui cadastro, casamento, convidados, fornecedores, financeiro, checklist, reuniões, documentos e, quando disponíveis no plano, os recursos Premium. Sua senha nunca é exportada.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar tudo (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
+  return `<div class="page"><div class="page-head"><div><div class="eyebrow">GOLD</div><h1>Planilha geral de gastos</h1><p>Consolide os gastos da festa, cerimonial, casa e lua de mel em um único arquivo.</p></div></div>
+    <div class="card card-pad client-backup-main-card"><div class="client-backup-main-copy"><span class="client-backup-kicker">VISÃO COMPLETA</span><h2>Todos os gastos em um só lugar</h2><p>O arquivo reúne fornecedores, pagamentos, outros gastos e, quando utilizados, os financeiros do Cerimonial, Organização da Casa e Lua de Mel. Também mantém as abas de backup dos demais dados.</p></div><div class="client-backup-main-actions"><button class="btn-primary" id="export-planner-xlsx">Baixar planilha (.xlsx)</button><button class="btn-secondary" id="export-planner-json">Cópia técnica (.json)</button></div></div>
   </div>`;
 };
 
@@ -1301,7 +1301,7 @@ function ceremonyView(){
 
   return `<div class="page ceremony-workspace">
     <div class="page-head ceremony-main-head">
-      <div><div class="eyebrow">PREMIUM</div><h1>Cerimonial</h1><p>Um conjunto completo de ferramentas para organizar o grande dia — cada parte em sua própria aba.</p></div>
+      <div><div class="eyebrow">ESSENCIAL / GOLD</div><h1>Cerimonial</h1><p>Um conjunto completo de ferramentas para organizar o grande dia — cada parte em sua própria aba.</p></div>
       <div class="ceremony-head-stats"><span><strong>${total}</strong> itens</span><span><strong>${timed}</strong> na agenda</span><span><strong>${completed}</strong> concluídos</span></div>
     </div>
 
@@ -1863,7 +1863,7 @@ function homeOrganizationView(){
   return `<div class="page home-workspace">
     <div class="page-head home-main-head">
       <div>
-        <div class="eyebrow">PREMIUM</div>
+        <div class="eyebrow">GOLD</div>
         <h1>Organização da casa</h1>
         <p>Lista de enxoval setorizada, acompanhamento de compras e financeiro próprio da nova casa.</p>
       </div>
@@ -2057,130 +2057,194 @@ function festaHubView(){
 }
 
 function premiumHubView(){
-  return `<div class="page">
-    <div class="page-head"><div><div class="eyebrow">EXPERIÊNCIA PREMIUM</div><h1>Recursos Premium</h1><p>Veja tudo que você pode adicionar ao seu planejamento.</p></div></div>
-    <div class="premium-preview-grid">
-      ${Object.entries(PREMIUM_PREVIEWS).map(([slug,item])=>`
-        <a href="#/${slug}" class="card premium-preview-card ${hasFeature(slug)?'premium-open':'premium-locked'}">
-          <div class="premium-card-top"><span class="premium-tag">PREMIUM</span>${hasFeature(slug)?'<span class="premium-status">Liberado</span>':'<span class="premium-status locked">Bloqueado</span>'}</div>
-          <h2>${esc(item.title)}</h2>
-          <strong class="premium-count">${esc(item.count)}</strong>
-          <p>${esc(item.description)}</p>
-          <span class="premium-card-cta">${hasFeature(slug)?'Abrir recurso':'Ver o que está incluído'} ›</span>
-        </a>
-      `).join('')}
-    </div>
+  const basicActive=hasFeature('meu-casamento');
+  const currentName=String(state.access?.plan_name||'Cadastro gratuito');
+  const currentRank=planRank(currentName);
+  const packageCard=(key,plan)=>{
+    const rank=plan.rank;
+    const active=currentRank===rank;
+    const included=currentRank>rank;
+    let action='';
+    if(active)action='<span class="commerce-current-badge">Plano atual</span>';
+    else if(included)action='<span class="commerce-current-badge subtle">Incluído no seu plano</span>';
+    else if(currentRank===0)action=`<button class="btn-primary" type="button" data-buy-package="${key}">Assinar ${plan.name}</button>`;
+    else action=`<button class="btn-secondary" type="button" data-upgrade-package="${key}">Solicitar upgrade</button>`;
+    return `<article class="card commerce-plan-card ${key==='gold'?'featured':''}">
+      <div class="commerce-plan-head"><span>${plan.name}</span>${key==='gold'?'<b>MAIS COMPLETO</b>':''}</div>
+      <strong class="commerce-plan-price">${plan.price}</strong>
+      <small>por semestre</small>
+      <ul>${plan.items.map(item=>`<li>✓ ${esc(item)}</li>`).join('')}</ul>
+      <div class="commerce-plan-action">${action}</div>
+    </article>`;
+  };
+
+  const extraCard=(feature,extra)=>{
+    const unlocked=hasFeature(feature);
+    const action=unlocked
+      ? '<span class="commerce-current-badge">Liberado</span>'
+      : basicActive
+        ? `<button class="btn-secondary" type="button" data-buy-extra="${feature}">Adicionar por ${extra.price}</button>`
+        : '<span class="commerce-extra-requirement">Disponível após ativar o Básico</span>';
+    return `<article class="card commerce-extra-card">
+      <div><span class="commerce-extra-kicker">EXTRA AVULSO</span><h3>${esc(extra.name)}</h3><p>${esc(extra.description)}</p></div>
+      <div class="commerce-extra-bottom"><strong>${extra.price}</strong>${action}</div>
+    </article>`;
+  };
+
+  const meetingUrl=`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent('agendar reunião de acessoria')}`;
+
+  return `<div class="page commerce-page">
+    <div class="page-head"><div><div class="eyebrow">PLANOS E EXTRAS</div><h1>Escolha como quer organizar seu casamento</h1><p>Os planos têm validade semestral. A ativação é feita manualmente após a confirmação do pagamento.</p></div></div>
+
+    <section class="commerce-section">
+      <div class="commerce-section-head"><div><span>PLANOS SEMESTRAIS</span><h2>Do essencial ao planejamento completo</h2></div></div>
+      <div class="commerce-plan-grid">
+        ${packageCard('basico',MPT_PACKAGES.basico)}
+        ${packageCard('essencial',MPT_PACKAGES.essencial)}
+        ${packageCard('gold',MPT_PACKAGES.gold)}
+      </div>
+    </section>
+
+    <section class="commerce-section">
+      <div class="commerce-section-head"><div><span>EXTRAS</span><h2>Complete seu plano sem precisar trocar de pacote</h2></div><p>Extras disponíveis somente para clientes com pelo menos o Básico ativo.</p></div>
+      <div class="commerce-extra-grid">
+        ${extraCard('lua-de-mel',MPT_EXTRAS['lua-de-mel'])}
+        ${extraCard('cerimonial',MPT_EXTRAS.cerimonial)}
+        ${extraCard('organizacao-casa',MPT_EXTRAS['organizacao-casa'])}
+      </div>
+    </section>
+
+    <section class="card commerce-advisory-card">
+      <div>
+        <span class="commerce-extra-kicker">ASSESSORIA ESPECIALIZADA</span>
+        <h2>Reunião de 1 hora pelo Google Meet</h2>
+        <p>Uma assessora especializada ajuda a estruturar seu cronograma e organizar as próximas etapas do casamento.</p>
+      </div>
+      <div class="commerce-advisory-action"><strong>R$ 99,90</strong>
+        ${basicActive?`<a class="btn-primary" href="${meetingUrl}" target="_blank" rel="noopener noreferrer">Agendar pelo WhatsApp</a>`:'<span class="commerce-extra-requirement">Disponível após ativar o Básico</span>'}
+      </div>
+    </section>
   </div>`;
 }
+const MPT_PIX_KEY='amagiadosim2026@gmail.com';
+const MPT_WHATSAPP_NUMBER='5521984629190';
 
-
-const ESSENTIAL_PRICE='R$ 89,90';
-const ESSENTIAL_PERIOD='por semestre';
-const PREMIUM_PRICE='R$ 29,90';
-const PREMIUM_PIX_KEY='amagiadosim2026@gmail.com';
-const PREMIUM_WHATSAPP='5521984629190';
-
-function paymentPlanForFeature(feature){
-  const premiumFeatures=['cerimonial','organizacao-casa','lua-de-mel'];
-  if(premiumFeatures.includes(feature)){
-    return {
-      name:'Premium',
-      price:PREMIUM_PRICE,
-      period:'adicional ao Essencial',
-      description:'Libera Cerimonial, Organização da Casa e Lua de Mel.',
-      premium:true
-    };
+const MPT_PACKAGES={
+  basico:{
+    name:'Básico',price:'R$ 89,90',rank:1,
+    items:['Festa de Casamento completa','Fornecedores e checklist','Cronograma e convidados','Documentos e financeiro','Reuniões e outros gastos']
+  },
+  essencial:{
+    name:'Essencial',price:'R$ 119,90',rank:2,
+    items:['Tudo do Básico','Cerimonial completo','Agenda do grande dia','Roteiro, cerimônia e momentos','Financeiro do Cerimonial']
+  },
+  gold:{
+    name:'Gold',price:'R$ 149,90',rank:3,
+    items:['Tudo do Essencial','Organização da Casa','Lua de Mel','Planilha geral de todos os gastos','Backup completo dos dados']
   }
-  return {
-    name:'Essencial',
-    price:ESSENTIAL_PRICE,
-    period:ESSENTIAL_PERIOD,
-    description:'Libera toda a área Festa de Casamento, incluindo fornecedores, checklist, cronograma, convidados, documentos, financeiro, reuniões, gastos e backup.',
-    premium:false
-  };
+};
+
+const MPT_EXTRAS={
+  'lua-de-mel':{name:'Lua de Mel',price:'R$ 19,90',description:'Planejamento da viagem, reservas, documentos e gastos da lua de mel.'},
+  cerimonial:{name:'Agenda Cerimonial',price:'R$ 29,90',description:'Roteiro, agenda do grande dia, cerimônia, momentos especiais e financeiro próprio.'},
+  'organizacao-casa':{name:'Organização da Casa',price:'R$ 29,90',description:'Enxoval por ambientes, compras, presentes e financeiro da nova casa.'}
+};
+
+function planRank(name){
+  const n=String(name||'').toLocaleLowerCase('pt-BR');
+  if(n.includes('gold'))return 3;
+  if(n.includes('essencial'))return 2;
+  if(n.includes('básico')||n.includes('basico'))return 1;
+  return 0;
 }
 
-function openPlanPaymentModal(feature){
-  const plan=paymentPlanForFeature(feature);
-  const essentialActive=hasFeature('meu-casamento');
-  const premiumWarning=plan.premium&&!essentialActive
-    ? '<div class="premium-payment-warning"><strong>Importante</strong><span>O Premium é um adicional. Para usar os recursos Premium, o pacote Essencial também precisa estar ativo.</span></div>'
-    : '';
-
+function openCommercePayment(item,label='Pacote'){
   const body=`
     <div class="premium-payment-box">
       <div class="premium-payment-price">
-        <span>${plan.name}</span>
-        <strong>${plan.price}</strong>
-        <small>${plan.period}</small>
+        <span>${label}</span>
+        <strong>${item.price}</strong>
+        <small>${label==='Pacote'?'validade semestral':'pagamento único do extra'}</small>
       </div>
-
-      <p class="premium-payment-description">${plan.description}</p>
-      ${premiumWarning}
-
+      <p class="premium-payment-description">${item.description||item.items?.join(' • ')||''}</p>
       <div class="premium-payment-steps">
         <div><b>1</b><span>Copie a chave Pix abaixo.</span></div>
-        <div><b>2</b><span>Faça o pagamento de ${plan.price}.</span></div>
+        <div><b>2</b><span>Faça o pagamento de ${item.price}.</span></div>
         <div><b>3</b><span>Envie o comprovante pelo WhatsApp para solicitar a liberação.</span></div>
       </div>
-
       <div class="premium-pix-card">
         <span>Chave Pix • E-mail</span>
-        <strong id="premium-pix-key">${PREMIUM_PIX_KEY}</strong>
+        <strong id="premium-pix-key">${MPT_PIX_KEY}</strong>
         <button type="button" class="btn-secondary" id="copy-premium-pix">Copiar chave Pix</button>
       </div>
-
       <p class="premium-payment-note">A liberação é feita manualmente pela administração após a conferência do pagamento.</p>
-
       <a class="btn-primary premium-whatsapp-proof" id="premium-whatsapp-proof" href="#" target="_blank" rel="noopener noreferrer">Enviar comprovante pelo WhatsApp</a>
-    </div>
-  `;
+    </div>`;
 
-  plannerModal(`Desbloquear ${plan.name}`,body,'Fechar',async()=>true);
-
+  plannerModal(`${label}: ${item.name}`,body,'Fechar',async()=>true);
   const modal=document.querySelector('.modal-backdrop:last-of-type')||document.querySelector('.modal-backdrop');
   const copyBtn=modal?.querySelector('#copy-premium-pix');
   if(copyBtn)copyBtn.onclick=async()=>{
     try{
-      await navigator.clipboard.writeText(PREMIUM_PIX_KEY);
+      await navigator.clipboard.writeText(MPT_PIX_KEY);
       copyBtn.textContent='Chave copiada ✓';
       toast('Chave Pix copiada.');
-    }catch{
-      prompt('Copie a chave Pix:',PREMIUM_PIX_KEY);
-    }
+    }catch{prompt('Copie a chave Pix:',MPT_PIX_KEY);}
   };
-
   const whatsapp=modal?.querySelector('#premium-whatsapp-proof');
   if(whatsapp){
     const couple=state.wedding?.couple_name||state.profile?.full_name||'Cliente';
     const email=state.user?.email||state.profile?.email||'';
-    const message=`Olá! Fiz o pagamento de ${plan.price} referente ao pacote ${plan.name} do Magia Para Todos e quero solicitar a liberação. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
-    whatsapp.href=`https://wa.me/${PREMIUM_WHATSAPP}?text=${encodeURIComponent(message)}`;
+    const message=`Olá! Fiz o pagamento de ${item.price} referente a ${label.toLowerCase()} ${item.name} do Magia Para Todos e quero solicitar a liberação. Cliente: ${couple}${email?' | E-mail: '+email:''}. Vou enviar o comprovante nesta conversa.`;
+    whatsapp.href=`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   }
 }
 
+function openUpgradeWhatsApp(packageKey){
+  const plan=MPT_PACKAGES[packageKey];
+  if(!plan)return;
+  const message=`Quero fazer upgrade do meu plano para o pacote ${plan.name}`;
+  window.open(`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,'_blank','noopener');
+}
+
+function openGoldUpgradeWhatsApp(){
+  const message='Quero fazer upgrade para o pacote Gold e liberar a planilha geral de todos os gastos';
+  window.open(`https://wa.me/${MPT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,'_blank','noopener');
+}
+
+function handleUnlockFeature(feature){
+  const basicActive=hasFeature('meu-casamento');
+  if(!basicActive){goto('premium');return;}
+  if(MPT_EXTRAS[feature]){openCommercePayment(MPT_EXTRAS[feature],'Extra');return;}
+  if(feature==='meus-dados'){openGoldUpgradeWhatsApp();return;}
+  goto('premium');
+}
 function premiumPreviewView(slug){
   const item=PREMIUM_PREVIEWS[slug];
   if(!item)return premiumHubView();
   const unlocked=hasFeature(slug);
+  const basicActive=hasFeature('meu-casamento');
+  const extra=MPT_EXTRAS[slug];
+  const planLabel=slug==='cerimonial'?'ESSENCIAL / GOLD':'GOLD';
+  const lockedCopy=basicActive
+    ? `Este recurso pode ser contratado separadamente por ${extra?.price||'upgrade de plano'} ou acessado através de um plano que já o inclua.`
+    : 'Ative primeiro um dos planos semestrais para liberar os módulos e os extras avulsos.';
 
   return `<div class="page">
-    <div class="page-head"><div><div class="eyebrow">RECURSO PREMIUM</div><h1>${esc(item.title)}</h1><p>${esc(item.description)}</p></div></div>
-
+    <div class="page-head"><div><div class="eyebrow">${planLabel}</div><h1>${esc(item.title)}</h1><p>${esc(item.description)}</p></div></div>
     <section class="card card-pad premium-detail-hero">
       <div class="premium-detail-copy">
-        <span class="premium-tag">PREMIUM</span>
+        <span class="premium-tag">${planLabel}</span>
         <h2>${esc(item.count)}</h2>
-        <p>${unlocked?'Este recurso está liberado no seu plano.':'Você pode visualizar tudo que existe dentro desta área, mas o cadastro fica disponível somente no Premium.'}</p>
+        <p>${unlocked?'Este recurso está liberado na sua conta.':lockedCopy}</p>
       </div>
       <div class="premium-detail-action">
         ${unlocked
-          ? '<span class="badge success">Liberado no seu plano</span>'
-          : `<span class="premium-lock-large">${icons.lock}</span><button class="btn-primary" data-unlock="${slug}">Desbloquear Premium</button>`
+          ? '<span class="badge success">Liberado</span>'
+          : `<span class="premium-lock-large">${icons.lock}</span><button class="btn-primary" data-unlock="${slug}">${basicActive&&extra?'Adicionar por '+extra.price:'Ver planos'}</button>`
         }
       </div>
     </section>
-
     <div class="premium-item-grid">
       ${item.items.map((name,index)=>`<article class="card premium-item-preview">
         <div class="premium-item-number">${String(index+1).padStart(2,'0')}</div>
@@ -2188,14 +2252,12 @@ function premiumPreviewView(slug){
         ${unlocked?'<span class="premium-mini-status open">✓</span>':`<span class="premium-mini-status">${icons.lock}</span>`}
       </article>`).join('')}
     </div>
-
     ${!unlocked?`<div class="card card-pad premium-upgrade-box">
-      <div><strong>Quer usar todas essas ferramentas?</strong><p>Faça o upgrade para o Premium e libere Cerimonial, Organização da Casa e Lua de Mel.</p></div>
-      <button class="btn-primary" data-unlock="${slug}">Quero desbloquear</button>
+      <div><strong>${basicActive?'Quer adicionar este recurso?':'Escolha seu plano para começar'}</strong><p>${basicActive?'Os extras são liberados manualmente após o envio do comprovante.':'Básico, Essencial e Gold têm validade semestral.'}</p></div>
+      <button class="btn-primary" data-unlock="${slug}">${basicActive&&extra?'Desbloquear '+extra.name:'Ver planos e preços'}</button>
     </div>`:''}
   </div>`;
 }
-
 const plannerBaseViewFor=viewFor;
 viewFor=function(r){
   if(r==='festa-casamento'&&state.role==='client')return hasFeature('meu-casamento')?festaHubView():lockedView('meu-casamento');
@@ -2223,7 +2285,10 @@ const plannerBaseBind=bind;
 bind=function(){
   plannerBaseBind();
 
-  document.querySelectorAll('[data-unlock]').forEach(btn=>btn.onclick=()=>openPlanPaymentModal(btn.dataset.unlock));
+  document.querySelectorAll('[data-unlock]').forEach(btn=>btn.onclick=()=>handleUnlockFeature(btn.dataset.unlock));
+  document.querySelectorAll('[data-buy-package]').forEach(btn=>btn.onclick=()=>openCommercePayment(MPT_PACKAGES[btn.dataset.buyPackage],'Pacote'));
+  document.querySelectorAll('[data-buy-extra]').forEach(btn=>btn.onclick=()=>openCommercePayment(MPT_EXTRAS[btn.dataset.buyExtra],'Extra'));
+  document.querySelectorAll('[data-upgrade-package]').forEach(btn=>btn.onclick=()=>openUpgradeWhatsApp(btn.dataset.upgradePackage));
 
   const editWedding=document.getElementById('edit-wedding-client');
   if(editWedding)editWedding.onclick=openPlannerWeddingEditor;
