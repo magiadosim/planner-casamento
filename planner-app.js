@@ -594,8 +594,8 @@ function adminView(){
   return `<div class="page"><div class="page-head"><div><h1>Painel administrativo</h1><p>Gerencie clientes, planos, validade e liberações do Planner.</p></div></div>
     <div class="grid grid-4 planner-admin-kpis">
       <div class="card card-pad"><div class="small muted">CLIENTES</div><h2 class="planner-admin-number">${clients.length}</h2></div>
-      <div class="card card-pad"><div class="small muted">ATIVOS</div><h2 class="planner-admin-number">${clients.filter(c=>c.access_status==='active').length}</h2></div>
-      <div class="card card-pad"><div class="small muted">PAUSADOS</div><h2 class="planner-admin-number">${clients.filter(c=>c.access_status==='paused').length}</h2></div>
+      <div class="card card-pad"><div class="small muted">COM ACESSO</div><h2 class="planner-admin-number">${clients.filter(c=>c.plan_id&&c.access_status==='active').length}</h2></div>
+      <div class="card card-pad"><div class="small muted">SEM PLANO</div><h2 class="planner-admin-number">${clients.filter(c=>!c.plan_id).length}</h2></div>
       <div class="card card-pad"><div class="small muted">EXPIRADOS</div><h2 class="planner-admin-number">${clients.filter(c=>c.access_status==='expired').length}</h2></div>
     </div>
     <div class="planner-admin-list">${clients.length?clients.map(adminClientCard).join(''):emptyState('Nenhum cliente cadastrado','Os novos clientes aparecerão aqui.')}</div>
@@ -604,7 +604,7 @@ function adminView(){
 function adminClientCard(c){
   const whatsapp=normalizeWhatsApp(c.whatsapp||'');
   return `<div class="card card-pad planner-admin-client" data-client-card="${c.id}">
-    <div class="card-title"><div><h2>${esc(c.couple_name||c.full_name||'Cliente')}</h2><span class="sub">${esc(c.email||'')} ${c.wedding_date?'• '+dateBR(c.wedding_date):''}</span></div><span class="badge ${c.access_status==='active'?'success':'danger'}">${c.access_status==='active'?'Ativo':c.access_status==='paused'?'Pausado':'Expirado'}</span></div>
+    <div class="card-title"><div><h2>${esc(c.couple_name||c.full_name||'Cliente')}</h2><span class="sub">${esc(c.email||'')} ${c.wedding_date?'• '+dateBR(c.wedding_date):''}</span></div><span class="badge ${!c.plan_id?'warning':c.access_status==='active'?'success':'danger'}">${!c.plan_id?'Sem plano':c.access_status==='active'?'Ativo':c.access_status==='paused'?'Pausado':'Expirado'}</span></div>
     <div class="planner-admin-client-meta">
       <div><span>WhatsApp</span><strong>${whatsapp?`<a href="https://wa.me/${whatsapp}" target="_blank" rel="noopener noreferrer">${esc(formatWhatsApp(whatsapp))}</a>`:'Não informado'}</strong></div>
       <div><span>Tempo de uso</span><strong>${esc(usageTimeLabel(c.created_at))}</strong></div>
