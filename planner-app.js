@@ -498,7 +498,7 @@ function dashboardView(){
       </div>
       <h2 class="approved-quick-title">Acesso rápido</h2>
       <div class="approved-quick-grid">
-        ${[['checklist','Tarefas','check'],['convidados','Convidados','users'],['financeiro','Orçamento','money'],['fornecedores','Fornecedores','users'],['festa-casamento','Meu casamento','heart'],['festa-casamento','Mais','menu']].map(([key,label,icon])=>`<a href="#/${key}" class="approved-quick-link"><span>${icons[icon]}</span><strong>${label}</strong></a>`).join('')}
+        ${[['checklist','Tarefas','check'],['convidados','Convidados','users'],['financeiro','Orçamento','money'],['fornecedores','Fornecedores','users'],['festa-casamento','Meu casamento','heart'],['more','Mais','menu']].map(([key,label,icon])=>key==='more'?`<button type="button" class="approved-quick-link" id="mobile-more-quick"><span>${icons[icon]}</span><strong>${label}</strong></button>`:`<a href="#/${key}" class="approved-quick-link"><span>${icons[icon]}</span><strong>${label}</strong></a>`).join('')}
       </div>
     </section>
 
@@ -857,6 +857,8 @@ function bind(){
       document.body.classList.add('mobile-menu-open');
     };
   }
+  const mobileMoreQuick=document.getElementById("mobile-more-quick");
+  if(mobileMoreQuick&&mobileMoreBackdrop)mobileMoreQuick.onclick=()=>{mobileMoreBackdrop.hidden=false;document.body.classList.add("mobile-menu-open");};
   if(mobileMoreClose)mobileMoreClose.onclick=closeMobileMore;
   if(mobileMoreBackdrop)mobileMoreBackdrop.onclick=e=>{
     if(e.target===mobileMoreBackdrop)closeMobileMore();
