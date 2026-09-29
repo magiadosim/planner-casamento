@@ -19,4 +19,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node tests/local-static-smoke.mjs
+      - name: Validate application JavaScript syntax
+        run: |
+          node --check config.js
+          node --check planner-app.js
+          node --check planner-client-features.js
+          node --check planner-honeymoon-v2.js
+          node --check planner-experience-v2.js
+          node --check planner-customization-admin-chat.js
+          node --check planner-commercial-v5.js
+          node --check sw.js
+      - name: 100 concurrent local HTTP requests
+        run: node tests/local-static-smoke.mjs
