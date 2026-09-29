@@ -117,3 +117,37 @@
  .client-app-shell .mobile-more-item[href="#/fornecedores"] .mobile-more-icon{color:#513620}
  .client-app-shell .mobile-more-logout{flex:none}
 }
+
+/* Video review fixes: stronger mobile overrides for styles injected by feature modules. */
+@media(max-width:820px){
+ body:has(.client-app-shell){background:#fffcf7!important}
+ .client-app-shell .planner-home-page .home-welcome-strip,
+ .client-app-shell .planner-home-page .home-welcome-strip.card,
+ .client-app-shell .planner-home-page section.home-welcome-strip{
+   background:#fffcf7!important;background-image:none!important;color:#513620!important;
+   border:0!important;box-shadow:none!important;min-height:0!important;padding:9px 2px 12px!important;
+   border-radius:0!important;position:relative
+ }
+ .client-app-shell .planner-home-page .home-welcome-strip::before,
+ .client-app-shell .planner-home-page .home-welcome-strip::after{display:none!important}
+ .client-app-shell .planner-home-page .home-welcome-strip h1{color:#513620!important;text-shadow:none!important;font:500 31px/1.15 "Playfair Display",serif!important}
+ .client-app-shell .planner-home-page .home-welcome-strip p{color:#513620!important;text-shadow:none!important}
+ .client-app-shell .planner-home-page .home-welcome-strip .reference-welcome-text{display:block!important;font:16px/1.4 "Playfair Display",serif!important}
+ .client-app-shell .planner-home-page .approved-progress-card{background:#fff!important;color:#30231a!important}
+ .client-app-shell .planner-home-page .approved-quick-link{background:#fff!important;border:1px solid #efe7df!important}
+ .client-app-shell .reference-tasks-page .task-row{background:transparent!important;box-shadow:none!important;border:0!important;border-bottom:1px solid #eee6dd!important;border-radius:0!important}
+ .client-app-shell .reference-tasks-page .list-card{background:transparent!important;box-shadow:none!important;border:0!important}
+ .client-app-shell .reference-tasks-page .task-row .task-title{display:block!important}
+ .client-app-shell .reference-guests-page .guest-row{background:transparent!important;box-shadow:none!important;border:0!important;border-bottom:1px solid #eee6dd!important;border-radius:0!important}
+ .client-app-shell .reference-guests-page .guest-list-card{background:transparent!important;box-shadow:none!important;border:0!important}
+ .client-app-shell .mobile-more-backdrop:not([hidden]){position:fixed!important;inset:0!important;display:flex!important;background:#fffcf7!important;z-index:1300!important}
+ .client-app-shell .mobile-more-sheet{transform:none!important;max-width:none!important}
+ .client-app-shell .mobile-more-grid{grid-template-columns:1fr!important}
+ .client-app-shell .mobile-more-item{width:100%!important;max-width:none!important;display:flex!important;flex-direction:row!important;min-height:61px!important;border-radius:0!important}
+ .client-app-shell .mobile-more-icon{flex:0 0 32px!important}
+ /* Forms stay functional and readable on small devices. */
+ .login-page .login-form-wrap{overflow:visible!important}
+ .login-page .login-form .field{min-width:0}
+ .login-page .login-form input{font-size:16px!important}
+ .login-page .auth-tabs{position:relative;z-index:2}
+}
