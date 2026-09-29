@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const files = new Map([['/planner-casamento/','index.html'],['/planner-casamento/manifest.webmanifest','manifest.webmanifest'],['/planner-casamento/sw.js','sw.js'],['/planner-casamento/app-icon.svg','app-icon.svg']]);
 const htmlSource=await readFile('index.html','utf8');
-const assetPaths=[...new Set([...htmlSource.matchAll(/(?:src|href)="((?:\\.\\/)?[^"?#]+\\.(?:js|css|svg|webmanifest))(?:\\?[^"]*)?"/g)].map(match=>match[1].replace(/^\\.\\//,'')))];
+const assetPaths=[...new Set([...htmlSource.matchAll(/(?:src|href)="([^"]+)"/g)].map(m=>m[1].split('?')[0]).filter(p=>!p.startsWith('http') && /\.(js|css|svg|webmanifest)$/.test(p)).map(p=>p.replace(/^\.\//,'')))];
 assert.ok(assetPaths.length>=18,'expected local styles, scripts and PWA assets to be discovered');
 for(const asset of assetPaths)files.set('/planner-casamento/'+asset,asset);
 const mime = {'index.html':'text/html','manifest.webmanifest':'application/manifest+json','sw.js':'text/javascript','app-icon.svg':'image/svg+xml'};
