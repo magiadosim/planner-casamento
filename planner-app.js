@@ -490,6 +490,17 @@ function dashboardView(){
       </div>
     </section>
 
+    <section class="approved-mobile-overview" aria-label="Resumo do planejamento">
+      <div class="approved-progress-card">
+        <div class="approved-progress-ring" style="--progress:${completion()}"><strong>${completion()}%</strong></div>
+        <div><span class="approved-overview-kicker">MEU PROGRESSO</span><h2>Seu planejamento</h2><p>Você concluiu ${state.tasks.filter(t=>t.done).length} de ${state.tasks.length} tarefas.</p><a href="#/checklist">Ver todas as tarefas →</a></div>
+      </div>
+      <h2 class="approved-quick-title">Acesso rápido</h2>
+      <div class="approved-quick-grid">
+        ${[['checklist','Tarefas','check'],['convidados','Convidados','users'],['financeiro','Orçamento','money'],['fornecedores','Fornecedores','users'],['festa-casamento','Meu casamento','heart'],['premium','Planos e extras','check']].map(([key,label,icon])=>`<a href="#/${key}" class="approved-quick-link"><span>${icons[icon]}</span><strong>${label}</strong></a>`).join('')}
+      </div>
+    </section>
+
     <section class="home-module-grid">
       ${moduleCard(
         'festa-casamento',
