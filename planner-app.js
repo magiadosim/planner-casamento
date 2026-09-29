@@ -383,7 +383,7 @@ function shellView(r,content){
           <div class="mobile-more-section">
             <div class="mobile-more-section-title">Planejamento</div>
             <div class="mobile-more-grid">
-              ${[['festa-casamento','Meu casamento','heart'],['fornecedores','Fornecedores','users'],['cronograma','Cronograma','calendar'],['documentos','Documentos','file'],['cerimonial','Cerimonial','calendar'],['organizacao-casa','Casa','home'],['lua-de-mel','Lua de Mel','heart'],['reunioes','Reuniões','meeting'],['outros-gastos','Outros gastos','money'],['meus-dados','Planilha de gastos','file']].map(([key,label,icon])=>`<a class="mobile-more-item ${active===key?'active':''}" href="#/${key}"><span class="mobile-more-icon">${icons[icon]}</span><span>${label}</span></a>`).join('')}
+              ${[['festa-casamento','Meu casamento','heart'],['fornecedores','Fornecedores','users'],['cronograma','Cronograma','calendar'],['documentos','Documentos','file'],['checklist','Checklist','check'],['perfil','Configurações','user'],['suporte','Ajuda','meeting'],['cerimonial','Cerimonial','calendar'],['organizacao-casa','Casa','home'],['lua-de-mel','Lua de Mel','heart'],['reunioes','Reuniões','meeting'],['outros-gastos','Outros gastos','money'],['meus-dados','Planilha de gastos','file']].map(([key,label,icon])=>`<a class="mobile-more-item ${active===key?'active':''}" href="#/${key}"><span class="mobile-more-icon">${icons[icon]}</span><span>${label}</span></a>`).join('')}
             </div>
           </div>
           <div class="mobile-more-section">
@@ -846,23 +846,37 @@ function bind(){
   const mobileMoreOpen=document.getElementById('mobile-more-open');
   const mobileMoreBackdrop=document.getElementById('mobile-more-backdrop');
   const mobileMoreClose=document.getElementById('mobile-more-close');
+  const mobileMoreQuick=document.getElementById('mobile-more-quick');
+  let mobileMenuReturnFocus=null;
   const closeMobileMore=()=>{
-    if(!mobileMoreBackdrop)return;
+    if(!mobileMoreBackdrop||mobileMoreBackdrop.hidden)return;
     mobileMoreBackdrop.hidden=true;
     document.body.classList.remove('mobile-menu-open');
+    if(mobileMenuReturnFocus?.isConnected)mobileMenuReturnFocus.focus();
   };
-  if(mobileMoreOpen&&mobileMoreBackdrop){
-    mobileMoreOpen.onclick=()=>{
-      mobileMoreBackdrop.hidden=false;
-      document.body.classList.add('mobile-menu-open');
+  const openMobileMore=(trigger)=>{
+    if(!mobileMoreBackdrop)return;
+    mobileMenuReturnFocus=trigger;
+    mobileMoreBackdrop.hidden=false;
+    document.body.classList.add('mobile-menu-open');
+    mobileMoreClose?.focus();
+  };
+  if(mobileMoreOpen)mobileMoreOpen.onclick=()=>openMobileMore(mobileMoreOpen);
+  if(mobileMoreQuick)mobileMoreQuick.onclick=()=>openMobileMore(mobileMoreQuick);
+  if(mobileMoreClose)mobileMoreClose.onclick=closeMobileMore;
+  if(mobileMoreBackdrop){
+    mobileMoreBackdrop.onclick=e=>{if(e.target===mobileMoreBackdrop)closeMobileMore();};
+    mobileMoreBackdrop.onkeydown=e=>{
+      if(e.key==='Escape'){e.preventDefault();closeMobileMore();}
+      if(e.key==='Tab'){
+        const focusables=[...mobileMoreBackdrop.querySelectorAll('a[href],button:not([disabled])')].filter(el=>el.getClientRects().length);
+        if(!focusables.length)return;
+        const first=focusables[0],last=focusables[focusables.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+      }
     };
   }
-  const mobileMoreQuick=document.getElementById("mobile-more-quick");
-  if(mobileMoreQuick&&mobileMoreBackdrop)mobileMoreQuick.onclick=()=>{mobileMoreBackdrop.hidden=false;document.body.classList.add("mobile-menu-open");};
-  if(mobileMoreClose)mobileMoreClose.onclick=closeMobileMore;
-  if(mobileMoreBackdrop)mobileMoreBackdrop.onclick=e=>{
-    if(e.target===mobileMoreBackdrop)closeMobileMore();
-  };
 
   const login=document.getElementById('login-form');
   if(login)login.onsubmit=async e=>{
