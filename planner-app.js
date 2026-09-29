@@ -359,18 +359,17 @@ function shellView(r,content){
   }
 
   const festaMobileActive=['festa-casamento',...weddingPartyNav.map(x=>x[0])].includes(active);
-  const moreMobileActive=['lua-de-mel','premium','suporte','perfil'].includes(active);
-
+  const moreMobileActive=!['dashboard','checklist','convidados','financeiro'].includes(active);
   const mobileNavHtml=state.role==='admin'
     ? [['admin','Clientes','admin'],['planos','Planos','check'],['perfil','Perfil','user']]
-        .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
+      .map(([k,l,i])=>`<a href="#/${k}" class="${active===k?'active':''}">${icons[i]}<span>${l}</span></a>`).join('')
     : `
-        <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
-        <a href="#/festa-casamento" class="${festaMobileActive?'active':''}">${icons.heart}<span>Casamento</span></a>
-        <a href="#/cerimonial" class="${active==='cerimonial'?'active':''}">${icons.calendar}<span>Cerimonial</span></a>
-        <a href="#/organizacao-casa" class="${active==='organizacao-casa'?'active':''}">${icons.home}<span>Casa</span></a>
-        <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open">${icons.menu}<span>Mais</span></button>
-      `;
+      <a href="#/dashboard" class="${active==='dashboard'?'active':''}">${icons.home}<span>Início</span></a>
+      <a href="#/checklist" class="${active==='checklist'?'active':''}">${icons.check}<span>Tarefas</span></a>
+      <a href="#/convidados" class="${active==='convidados'?'active':''}">${icons.users}<span>Convidados</span></a>
+      <a href="#/financeiro" class="${active==='financeiro'?'active':''}">${icons.money}<span>Orçamento</span></a>
+      <button type="button" class="mobile-more-trigger ${moreMobileActive?'active':''}" id="mobile-more-open" aria-label="Abrir mais opções">${icons.menu}<span>Mais</span></button>
+    `;
 
   const mobileMoreSheet=state.role==='client'?`
     <div class="mobile-more-backdrop" id="mobile-more-backdrop" hidden>
@@ -382,25 +381,17 @@ function shellView(r,content){
         </div>
         <div class="mobile-more-scroll">
           <div class="mobile-more-section">
-            <div class="mobile-more-section-title">Planos e extras</div>
+            <div class="mobile-more-section-title">Planejamento</div>
             <div class="mobile-more-grid">
-              <a class="mobile-more-item ${active==='premium'?'active':''}" href="#/premium">
-                <span class="mobile-more-icon">${icons.check}</span><span>Planos e extras</span>
-              </a>
-              <a class="mobile-more-item ${active==='lua-de-mel'?'active':''}" href="#/lua-de-mel">
-                <span class="mobile-more-icon">${icons.heart}</span><span>Lua de Mel</span>
-              </a>
+              ${[['festa-casamento','Meu casamento','heart'],['fornecedores','Fornecedores','users'],['cronograma','Cronograma','calendar'],['documentos','Documentos','file'],['cerimonial','Cerimonial','calendar'],['organizacao-casa','Casa','home'],['lua-de-mel','Lua de Mel','heart'],['reunioes','Reuniões','meeting'],['outros-gastos','Outros gastos','money'],['meus-dados','Planilha de gastos','file']].map(([key,label,icon])=>`<a class="mobile-more-item ${active===key?'active':''}" href="#/${key}"><span class="mobile-more-icon">${icons[icon]}</span><span>${label}</span></a>`).join('')}
             </div>
           </div>
           <div class="mobile-more-section">
             <div class="mobile-more-section-title">Conta e ajuda</div>
             <div class="mobile-more-grid">
-              <a class="mobile-more-item ${active==='suporte'?'active':''}" href="#/suporte">
-                <span class="mobile-more-icon">${icons.meeting}</span><span>Suporte / Chamados</span>
-              </a>
-              <a class="mobile-more-item ${active==='perfil'?'active':''}" href="#/perfil">
-                <span class="mobile-more-icon">${icons.user}</span><span>Perfil</span>
-              </a>
+              <a class="mobile-more-item" href="#/premium"><span class="mobile-more-icon">${icons.check}</span><span>Acesso e serviços</span></a>
+              <a class="mobile-more-item" href="#/suporte"><span class="mobile-more-icon">${icons.meeting}</span><span>Suporte</span></a>
+              <a class="mobile-more-item" href="#/perfil"><span class="mobile-more-icon">${icons.user}</span><span>Perfil</span></a>
             </div>
           </div>
           <button class="mobile-more-logout" id="mobile-more-logout">${icons.logout}<span>Sair</span></button>
