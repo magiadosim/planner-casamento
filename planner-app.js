@@ -376,7 +376,7 @@ function shellView(r,content){
       <section class="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="Mais opções">
         <div class="mobile-more-handle"></div>
         <div class="mobile-more-head">
-          <div><strong>Mais opções</strong><span>Acesse outras áreas do Planner</span></div>
+          <div><strong>Mais</strong><span>Acesse outras áreas do Planner</span></div>
           <button type="button" class="icon-btn" id="mobile-more-close" aria-label="Fechar">${icons.close||'×'}</button>
         </div>
         <div class="mobile-more-scroll">
@@ -479,8 +479,9 @@ function dashboardView(){
     <section class="home-welcome-strip">
       <div>
         <div class="eyebrow">SEU PLANNER</div>
-        <h1>Olá, ${esc(partnerNames())}! ♡</h1>
-        <p>${esc(dateLong(state.wedding?.wedding_date))}</p>
+        <h1>Olá, ${esc((state.profile?.full_name||partnerNames()).split(" ")[0])}! ♡</h1>
+        <p class="reference-welcome-text">Que bom te ver por aqui!<br>Vamos planejar mais um passo<br>para o seu grande dia?</p>
+        <p class="reference-wedding-date">${esc(dateLong(state.wedding?.wedding_date))}</p>
       </div>
       <div class="home-countdown-compact">
         ${c.text
@@ -493,11 +494,11 @@ function dashboardView(){
     <section class="approved-mobile-overview" aria-label="Resumo do planejamento">
       <div class="approved-progress-card">
         <div class="approved-progress-ring" style="--progress:${completion()}"><strong>${completion()}%</strong></div>
-        <div><span class="approved-overview-kicker">MEU PROGRESSO</span><h2>Seu planejamento</h2><p>Você concluiu ${state.tasks.filter(t=>t.done).length} de ${state.tasks.length} tarefas.</p><a href="#/checklist">Ver todas as tarefas →</a></div>
+        <div><span class="approved-overview-kicker">MEU PROGRESSO</span><h2>Meu progresso</h2><p>Você já concluiu ${state.tasks.filter(t=>t.done).length} de ${state.tasks.length} tarefas.</p><a href="#/checklist">Ver todas as tarefas →</a></div>
       </div>
       <h2 class="approved-quick-title">Acesso rápido</h2>
       <div class="approved-quick-grid">
-        ${[['checklist','Tarefas','check'],['convidados','Convidados','users'],['financeiro','Orçamento','money'],['fornecedores','Fornecedores','users'],['festa-casamento','Meu casamento','heart'],['premium','Planos e extras','check']].map(([key,label,icon])=>`<a href="#/${key}" class="approved-quick-link"><span>${icons[icon]}</span><strong>${label}</strong></a>`).join('')}
+        ${[['checklist','Tarefas','check'],['convidados','Convidados','users'],['financeiro','Orçamento','money'],['fornecedores','Fornecedores','users'],['festa-casamento','Meu casamento','heart'],['festa-casamento','Mais','menu']].map(([key,label,icon])=>`<a href="#/${key}" class="approved-quick-link"><span>${icons[icon]}</span><strong>${label}</strong></a>`).join('')}
       </div>
     </section>
 
@@ -565,9 +566,9 @@ function vendorsView(){
 }
 function checklistView(){
   const items=state.tasks.filter(t=>state.taskFilter==='Todos'||(state.taskFilter==='Concluídos'?t.done:(state.taskFilter==='Pendentes'?(!t.done&&t.status==='Pendente'):t.status===state.taskFilter)));
-  return `<div class="page"><div class="page-head"><div><h1>Checklist</h1><p>Confira o que já foi feito e o que ainda precisa ser realizado.</p></div></div>
-  <div class="filters">${['Todos','Pendentes','Em andamento','Concluídos'].map(f=>`<button class="filter-btn ${state.taskFilter===f?'active':''}" data-task-filter="${f}">${f}</button>`).join('')}</div>
-  <div class="card list-card">${items.length?items.map(t=>`<div class="list-row task-row ${t.done?'task-done':''}"><div class="checkbox ${t.done?'checked':''}">${t.done?'✓':''}</div><div class="task-title"><strong>${esc(t.title)}</strong><span>Responsável: ${esc(t.assignee)}</span></div><div class="deadline small">${esc(t.due)}</div><div class="assignee small muted">${esc(t.assignee)}</div><span class="badge ${statusClass(t.done?'Concluído':t.status)}">${esc(t.done?'Concluído':t.status)}</span><span></span></div>`).join(''):emptyState('Nenhuma tarefa encontrada.','Seu checklist aparecerá aqui.')}</div></div>`;
+  return `<div class="page reference-tasks-page"><div class="page-head"><div><h1>Tarefas</h1><p>Confira o que já foi feito e o que ainda precisa ser realizado.</p></div></div>
+  <div class="filters reference-task-filters">${['Todos','Pendentes','Em andamento','Concluídos'].map(f=>`<button class="filter-btn ${state.taskFilter===f?'active':''}" data-task-filter="${f}">${f}</button>`).join('')}</div>
+  <div class="card list-card">${items.length?items.map(t=>`<div class="list-row task-row ${t.done?'task-done':''}"><div class="checkbox ${t.done?'checked':''}">${t.done?'✓':''}</div><div class="task-title"><strong>${esc(t.title)}</strong><span class="reference-task-priority">${esc(t.status||"Pendente")}</span></div><div class="deadline small">${esc(t.due)}</div><div class="assignee small muted">${esc(t.assignee)}</div><span class="badge ${statusClass(t.done?'Concluído':t.status)}">${esc(t.done?'Concluído':t.status)}</span><span></span></div>`).join(''):emptyState('Nenhuma tarefa encontrada.','Seu checklist aparecerá aqui.')}</div></div>`;
 }
 function timelineView(){
   const events=[...state.tasks.filter(t=>t.dueISO).map(t=>({date:t.dueISO,title:t.title,meta:'Prazo',status:t.done?'Concluído':t.status})),...state.meetings.filter(m=>m.date).map(m=>({date:m.date,title:m.title,meta:timeBR(m.time),status:'Em andamento'}))].sort((a,b)=>a.date.localeCompare(b.date));
@@ -597,9 +598,9 @@ function guestsView(){
   const total=state.guests.length;
   const confirmed=state.guests.filter(g=>g.status==='confirmed').length;
   const pending=state.guests.filter(g=>g.status==='pending').length;
-  return `<div class="page guest-page"><div class="page-head"><div><h1>Lista de convidados</h1><p>Acompanhe confirmações, recusas, pendências e check-in do casamento.</p></div></div>
+  return `<div class="page guest-page reference-guests-page"><div class="page-head"><div><h1>Lista de convidados</h1><p>Acompanhe confirmações, recusas, pendências e check-in do casamento.</p></div></div>
     <div class="guest-kpis"><div class="card guest-kpi"><span>Total</span><strong>${total}</strong><small>convidados</small></div><div class="card guest-kpi confirmed"><span>Confirmados</span><strong>${confirmed}</strong><small>confirmados</small></div><div class="card guest-kpi pending"><span>Aguardando</span><strong>${pending}</strong><small>ainda não responderam</small></div></div>
-    <div class="card guest-list-card">${state.guests.length?state.guests.map(g=>`<div class="guest-row"><div class="guest-avatar">${esc((g.full_name||'C')[0]?.toUpperCase()||'C')}</div><div class="guest-name"><strong>${esc(g.full_name)}</strong><span>${esc(g.group_name||'Sem grupo/família')}</span></div><span class="badge ${g.status==='confirmed'?'success':g.status==='declined'?'danger':'warning'}">${g.status==='confirmed'?'Confirmado':g.status==='declined'?'Recusou':'Não respondeu'}</span></div>`).join(''):emptyState('Nenhum convidado encontrado','Adicione convidados para montar sua lista.')}</div>
+    <div class="card guest-list-card">${state.guests.length?state.guests.map(g=>`<div class="guest-row"><div class="guest-avatar">${esc((g.full_name||"C").trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||"").join(""))}</div><div class="guest-name"><strong>${esc(g.full_name)}</strong><span>${esc(g.group_name||'Sem grupo/família')}</span></div><span class="badge ${g.status==='confirmed'?'success':g.status==='declined'?'danger':'warning'}">${g.status==='confirmed'?'Confirmado':g.status==='declined'?'Recusou' :'Pendente'}</span></div>`).join(''):emptyState('Nenhum convidado encontrado','Adicione convidados para montar sua lista.')}</div>
   </div>`;
 }
 function purchasesView(group){
