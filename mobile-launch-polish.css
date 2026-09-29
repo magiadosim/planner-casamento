@@ -14,3 +14,25 @@
  .grid{min-width:0}
 }
 @media(max-width:390px){.page-head h1{overflow-wrap:anywhere}.mobile-nav-v2 a{font-size:9px}}
+
+
+/* Auth landing — approved Cadastro / Entrar layout */
+.login-page .login-art{background:#efe5d5}
+.login-page .login-brand-story{position:absolute;z-index:2;top:30%;left:16%;color:#614936;text-align:left}
+.login-page .login-brand-story h2{font-family:"Playfair Display",serif;font-size:clamp(42px,5vw,76px);font-weight:600;line-height:1.04;margin:0 0 20px}
+.login-page .login-brand-story p{font-size:clamp(15px,1.7vw,24px);line-height:1.4;margin:0}
+.login-page .login-brand-card{position:absolute;left:10%;bottom:0;width:min(380px,80%);padding:16px;border-radius:26px 26px 0 0;background:#fffaf2}
+.login-page .login-brand-card img{width:100%;max-height:100px;object-fit:contain;box-shadow:none}
+.login-page .login-brand-card .rings{display:none}
+.login-page .login-form-wrap{align-items:flex-start;padding:28px clamp(24px,7vw,110px) 55px}
+.login-page .auth-panel{width:min(510px,100%);margin:auto}
+.login-page .auth-tabs{display:grid;grid-template-columns:1fr 1fr;margin-bottom:36px;padding:2px;border:1px solid #e6d9c8;border-radius:999px;background:#fffaf4;box-shadow:0 3px 14px rgba(70,53,33,.04)}
+.login-page .auth-tab{border:0;border-radius:999px;background:transparent;color:#604630;font:700 16px "DM Sans",sans-serif;min-height:56px;cursor:pointer}
+.login-page .auth-tab.active{background:#4c5030;color:#fffaf2}
+.login-page .auth-tab:focus-visible{outline:3px solid #b69a62;outline-offset:3px}
+.login-page .login-form{width:100%}
+@media(max-width:820px){
+ .login-page .login-form-wrap{padding:22px 18px 44px}
+ .login-page .auth-tabs{margin-bottom:28px}
+ .login-page .auth-tab{min-height:52px}
+}
