@@ -1,0 +1,22 @@
+name: Planner local smoke test
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - 'app-icon.svg'
+      - 'tests/local-static-smoke.mjs'
+      - '.github/workflows/planner-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/local-static-smoke.mjs
