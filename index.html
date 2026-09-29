@@ -43,5 +43,6 @@
   <script src="planner-experience-v2.js?v=20260924-9"></script>
   <script src="planner-customization-admin-chat.js?v=20260924-5"></script>
   <script src="planner-commercial-v5.js?v=20260924-6"></script>
+  <script>if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(console.warn)); }</script>
 </body>
 </html>
