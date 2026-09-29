@@ -9,6 +9,13 @@ const url='http://127.0.0.1:'+server.address().port;
 try{
  const manifest=await (await fetch(url+'/planner-casamento/manifest.webmanifest')).json();
  assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/planner-casamento/');
+ assert.equal(manifest.start_url,'/planner-casamento/');
+ assert.ok(manifest.icons.some(i=>i.src==='./app-icon.svg'));
+ const html=await (await fetch(url+'/planner-casamento/')).text();
+ assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/);
+ assert.match(html, /navigator\.serviceWorker\.register\("\.\/sw\.js"/);
+ const sw=await (await fetch(url+'/planner-casamento/sw.js')).text();
+ assert.ok(!/caches\.open|cache\.put|respondWith/.test(sw),'service worker must not cache personal data');
  const results=await Promise.all(Array.from({length:100},async()=>{const start=performance.now();const r=await fetch(url+'/planner-casamento/');const html=await r.text();return {ok:r.ok&&html.includes('id="app"'),ms:performance.now()-start};}));
  const failures=results.filter(r=>!r.ok).length;const durations=results.map(r=>r.ms).sort((a,b)=>a-b);const p95=durations[Math.ceil(.95*durations.length)-1];
  console.log(JSON.stringify({scope:'local static smoke test, NOT Supabase',requests:100,concurrent:100,failures,p95_ms:Math.round(p95)},null,2));
