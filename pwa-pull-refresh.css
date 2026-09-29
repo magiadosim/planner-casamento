@@ -1,0 +1,9 @@
+/* Installed-app pull to refresh indicator */
+#planner-pull-refresh{position:fixed;z-index:2000;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-130%);opacity:0;pointer-events:none;display:flex;align-items:center;gap:9px;min-height:42px;padding:9px 16px;border:1px solid #e3d8c9;border-radius:999px;background:#fffaf4;box-shadow:0 6px 24px rgba(52,39,24,.16);color:#414b2e;font:600 12px "DM Sans",sans-serif;transition:transform .16s ease,opacity .16s ease}
+#planner-pull-refresh.pull-visible{transform:translate(-50%,calc(var(--pull-distance,45px) - 14px));opacity:1}
+#planner-pull-refresh .pull-refresh-spinner{display:inline-block;font-size:23px;line-height:1;transition:transform .2s ease}
+#planner-pull-refresh.pull-armed .pull-refresh-spinner{transform:rotate(120deg)}
+#planner-pull-refresh.pull-loading .pull-refresh-spinner{animation:planner-refresh-spin .75s linear infinite}
+@keyframes planner-refresh-spin{to{transform:rotate(360deg)}}
+@media(min-width:821px){#planner-pull-refresh{display:none}}
+@media(prefers-reduced-motion:reduce){#planner-pull-refresh,#planner-pull-refresh .pull-refresh-spinner{transition:none}}
