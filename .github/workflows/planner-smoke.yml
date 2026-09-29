@@ -29,5 +29,5 @@ jobs:
           node --check planner-customization-admin-chat.js
           node --check planner-commercial-v5.js
           node --check sw.js
-      - name: 100 concurrent local HTTP requests
+      - name: 150 concurrent local HTTP requests
         run: node tests/local-static-smoke.mjs
