@@ -20,7 +20,9 @@ try{
  assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/);
  assert.match(html, /navigator\.serviceWorker\.register\("\.\/sw\.js"/);
  const sw=await (await fetch(url+'/planner-casamento/sw.js')).text();
- assert.ok(!/caches\.open|cache\.put|respondWith/.test(sw),'service worker must not cache personal data');
+ assert.ok(!/caches\\.open|cache\\.put/.test(sw),'service worker must not persist personal data');
+ assert.match(sw,/url\\.origin!==self\\.location\\.origin/,'worker only intercepts same-origin assets');
+ assert.match(sw,/cache:'no-store'/,'worker bypasses browser cache for app assets');
  const assetChecks=await Promise.all(assetPaths.map(async asset=>({asset,status:(await fetch(url+'/planner-casamento/'+asset)).status})));
  assert.deepEqual(assetChecks.filter(x=>x.status!==200),[],'every local linked asset must load');
  console.log(JSON.stringify({checked_local_assets:assetChecks.length,failed_assets:0}));
