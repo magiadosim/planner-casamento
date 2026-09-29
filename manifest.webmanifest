@@ -1,0 +1,20 @@
+{
+  "name": "Magia Para Todos — Planner de Casamento",
+  "short_name": "Magia Para Todos",
+  "description": "Seu casamento organizado em um só lugar.",
+  "id": "/planner-casamento/",
+  "start_url": "/planner-casamento/",
+  "scope": "/planner-casamento/",
+  "display": "standalone",
+  "background_color": "#f8f5ee",
+  "theme_color": "#41452a",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

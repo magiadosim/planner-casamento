@@ -1,0 +1,35 @@
+name: Planner local smoke test
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'planner-app.js'
+      - 'mobile-launch-polish.css'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - 'app-icon.svg'
+      - 'tests/local-static-smoke.mjs'
+      - '.github/workflows/planner-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate application JavaScript syntax
+        run: |
+          node --check config.js
+          node --check planner-app.js
+          node --check planner-client-features.js
+          node --check planner-honeymoon-v2.js
+          node --check planner-experience-v2.js
+          node --check planner-customization-admin-chat.js
+          node --check planner-commercial-v5.js
+          node --check sw.js
+      - name: 150 concurrent local HTTP requests
+        run: node tests/local-static-smoke.mjs

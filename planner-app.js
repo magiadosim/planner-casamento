@@ -196,10 +196,10 @@ function authView(){
     <section class="login-art" aria-hidden="true">
       <div class="botanical left"><div class="branch"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div></div>
       <div class="botanical right"><div class="branch"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div></div>
-      <div class="login-brand-card"><img src="${LOGO_URL}" alt="Logo Magia Para Todos"><div class="rings"><div class="ring one"></div><div class="ring two"></div></div></div>
+      <div class="login-brand-story"><h2>Magia<br>Para Todos</h2><p>Seu casamento organizado,<br>do início ao grande dia.</p></div><div class="login-brand-card"><img src="${LOGO_URL}" alt="Logo Magia Para Todos"><div class="rings"><div class="ring one"></div><div class="ring two"></div></div></div>
     </section>
     <section class="login-form-wrap">
-      <form class="login-form" id="${signup?'signup-form':'login-form'}">
+      <div class="auth-panel"><nav class="auth-tabs" aria-label="Acesso ao Planner"><button type="button" class="auth-tab ${signup?'active':''}" data-auth-mode="signup" aria-current="${signup?'page':'false'}">Cadastro</button><button type="button" class="auth-tab ${signup?'':'active'}" data-auth-mode="login" aria-current="${signup?'false':'page'}">Entrar</button></nav><form class="login-form" id="${signup?'signup-form':'login-form'}">
         <div class="eyebrow">${signup?'CRIE SEU PLANNER':'ÁREA DOS NOIVOS'}</div>
         <h1>${signup?'Comece sua jornada.':'Bem-vinda de volta.'}</h1>
         <p>${signup?'Faça seu próprio cadastro e comece a organizar o casamento em um só lugar.':'Entre para continuar o planejamento do seu casamento.'}</p>
@@ -213,7 +213,7 @@ function authView(){
         </div>
         <div class="demo-box">${signup?'Seu cadastro cria uma área individual. O acesso completo custa R$ 99,90 por semestre e é ativado após o fluxo de pagamento.':'Acesso protegido. Cada cliente visualiza apenas o próprio casamento.'}</div>
         <div class="brand-signoff">Magia Para Todos<br><span class="small">Onde os sonhos se tornam alianças.</span></div>
-      </form>
+      </form></div>
     </section>
   </main>`;
 }

@@ -1,0 +1,31 @@
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const files = new Map([['/planner-casamento/','index.html'],['/planner-casamento/manifest.webmanifest','manifest.webmanifest'],['/planner-casamento/sw.js','sw.js'],['/planner-casamento/app-icon.svg','app-icon.svg']]);
+const htmlSource=await readFile('index.html','utf8');
+const assetPaths=[...new Set([...htmlSource.matchAll(/(?:src|href)="([^"]+)"/g)].map(m=>m[1].split('?')[0]).filter(p=>!p.startsWith('http') && /\.(js|css|svg|webmanifest)$/.test(p)).map(p=>p.replace(/^\.\//,'')))];
+assert.ok(assetPaths.length>=18,'expected local styles, scripts and PWA assets to be discovered');
+for(const asset of assetPaths)files.set('/planner-casamento/'+asset,asset);
+const mime = {'index.html':'text/html','manifest.webmanifest':'application/manifest+json','sw.js':'text/javascript','app-icon.svg':'image/svg+xml'};
+const contentType = file => mime[file] || (file.endsWith('.css')?'text/css':file.endsWith('.js')?'text/javascript':'application/octet-stream');
+const server = createServer(async (req,res)=>{const f=files.get(new URL(req.url,'http://localhost').pathname);if(!f){res.writeHead(404).end();return;}try{res.writeHead(200,{'content-type':contentType(f)});res.end(await readFile(f));}catch{res.writeHead(500).end();}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const url='http://127.0.0.1:'+server.address().port;
+try{
+ const manifest=await (await fetch(url+'/planner-casamento/manifest.webmanifest')).json();
+ assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/planner-casamento/');
+ assert.equal(manifest.start_url,'/planner-casamento/');
+ assert.ok(manifest.icons.some(i=>i.src==='./app-icon.svg'));
+ const html=await (await fetch(url+'/planner-casamento/')).text();
+ assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/);
+ assert.match(html, /navigator\.serviceWorker\.register\("\.\/sw\.js"/);
+ const sw=await (await fetch(url+'/planner-casamento/sw.js')).text();
+ assert.ok(!/caches\.open|cache\.put|respondWith/.test(sw),'service worker must not cache personal data');
+ const assetChecks=await Promise.all(assetPaths.map(async asset=>({asset,status:(await fetch(url+'/planner-casamento/'+asset)).status})));
+ assert.deepEqual(assetChecks.filter(x=>x.status!==200),[],'every local linked asset must load');
+ console.log(JSON.stringify({checked_local_assets:assetChecks.length,failed_assets:0}));
+ const results=await Promise.all(Array.from({length:150},async()=>{const start=performance.now();const r=await fetch(url+'/planner-casamento/');const html=await r.text();return {ok:r.ok&&html.includes('id="app"'),ms:performance.now()-start};}));
+ const failures=results.filter(r=>!r.ok).length;const durations=results.map(r=>r.ms).sort((a,b)=>a-b);const p95=durations[Math.ceil(.95*durations.length)-1];
+ console.log(JSON.stringify({scope:'local static smoke test, NOT Supabase',requests:150,concurrent:150,failures,p95_ms:Math.round(p95)},null,2));
+ assert.equal(failures,0);assert.ok(p95<2500,'local static p95 must be under 2.5s');
+}finally{server.close();}
