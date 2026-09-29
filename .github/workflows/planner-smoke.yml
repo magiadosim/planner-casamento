@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'planner-app.js'
+      - 'mobile-launch-polish.css'
       - 'manifest.webmanifest'
       - 'sw.js'
       - 'app-icon.svg'
