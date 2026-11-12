@@ -7,6 +7,7 @@ const app=document.getElementById('rsvp-app');
 const toastRoot=document.getElementById('rsvp-toast');
 const params=new URLSearchParams(location.search);
 const inviteCode=params.get('invite')||'';
+const isPreview=params.get('preview')==='1';
 
 let wedding=null;
 let invite=null;
@@ -44,6 +45,7 @@ function renderInvite(){
   if(!wedding||!guests.length){renderInvalid();return;}
   app.innerHTML=`<div class="rsvp-shell">
     ${brand()}
+    ${isPreview?'<p class="rsvp-privacy" role="status"><strong>Prévia da página dos convidados</strong><br>Convidados de exemplo. As respostas aqui não serão salvas.</p>':''}
     <section class="rsvp-card">
       ${hero()}
       <div class="rsvp-content">
@@ -69,6 +71,14 @@ function renderInvite(){
   document.getElementById('rsvp-submit').onclick=submitResponses;
 }
 async function loadInvite(){
+  if(isPreview){
+    const details=new URLSearchParams(location.hash.slice(1));
+    wedding={couple_name:details.get('couple')||'Nome do casal',wedding_date:details.get('date')||'',venue:details.get('venue')||''};
+    invite={label:'Família de exemplo'};
+    guests=[{id:'preview-adult',full_name:'Convidado de exemplo',age_group:'adult',status:'pending'},{id:'preview-child',full_name:'Criança de exemplo',age_group:'child',status:'pending'}];
+    renderInvite();
+    return;
+  }
   if(!validUuid(inviteCode)){renderInvalid();return;}
   const {data,error}=await sb.rpc('rsvp_invite_snapshot',{invite_code:inviteCode});
   if(error){console.error(error);renderInvalid();return;}
@@ -79,6 +89,7 @@ async function loadInvite(){
   renderInvite();
 }
 async function submitResponses(){
+  if(isPreview){toast('Esta é uma prévia. Nenhuma resposta foi salva.');return;}
   const responses=[];
   for(const guest of guests){
     const selected=document.querySelector(`input[name="status-${guest.id}"]:checked`);
@@ -115,6 +126,7 @@ async function submitResponses(){
 function renderSuccess(){
   app.innerHTML=`<div class="rsvp-shell">
     ${brand()}
+    ${isPreview?'<p class="rsvp-privacy" role="status"><strong>Prévia da página dos convidados</strong><br>Convidados de exemplo. As respostas aqui não serão salvas.</p>':''}
     <section class="rsvp-card">
       ${hero()}
       <div class="rsvp-content">

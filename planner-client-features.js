@@ -2615,7 +2615,7 @@ guestsView=function(){
   let html=secureRsvpBaseGuestsView();
   html=html.replace(
     '<button class="btn-secondary" id="copy-rsvp-client">Copiar link RSVP</button>',
-    '<button class="btn-secondary" id="manage-rsvp-invites">Links RSVP</button>'
+    '<button class="btn-secondary" id="preview-rsvp-client">Ver página dos convidados</button><button class="btn-secondary" id="manage-rsvp-invites">Links RSVP</button>'
   );
   html=html.replace(
     '<button class="btn-secondary" id="open-rsvp-client">Abrir RSVP</button>',
@@ -2629,4 +2629,12 @@ bind=function(){
   secureRsvpBaseBind();
   const manage=document.getElementById('manage-rsvp-invites');
   if(manage)manage.onclick=openSecureRsvpLinks;
+  const preview=document.getElementById('preview-rsvp-client');
+  if(preview)preview.onclick=()=>{
+    const w=state.wedding||{};
+    const url=new URL('rsvp.html',location.href);
+    url.searchParams.set('preview','1');
+    url.hash=new URLSearchParams({couple:w.couple_name||'',date:w.wedding_date||'',venue:w.venue||''}).toString();
+    window.open(url.href,'_blank','noopener');
+  };
 };
