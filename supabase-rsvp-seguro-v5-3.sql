@@ -163,7 +163,7 @@ as $$
   )
   from public.rsvp_invites ri
   join public.weddings w on w.id=ri.wedding_id
-  where ri.invite_code=invite_code
+  where ri.invite_code=$1
     and ri.active=true
     and public.wedding_has_feature(w.id,'rsvp')
   limit 1;
@@ -197,7 +197,7 @@ begin
   into target_invite_id,target_wedding_id
   from public.rsvp_invites ri
   join public.weddings w on w.id=ri.wedding_id
-  where ri.invite_code=invite_code
+  where ri.invite_code=$1
     and ri.active=true
     and public.wedding_has_feature(w.id,'rsvp')
   limit 1;

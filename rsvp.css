@@ -318,3 +318,52 @@ button{cursor:pointer}
   .rsvp-choice{display:grid;grid-template-columns:1fr 1fr}
   .rsvp-choice span{min-width:0}
 }
+
+/* Champagne invitation and wedding-specific interiors. */
+:root{--brown:#654832;--muted:#806f60;--line:#e8dbcc;--accent:#af8553;--paper:#fffaf4}
+html,body{font-family:'Montserrat',sans-serif;font-weight:400;background:radial-gradient(ellipse at top,#fffdf9,#f3eade);color:var(--brown)}
+.rsvp-page{padding:32px 18px 48px;align-content:start}
+.rsvp-shell{width:min(540px,100%)}
+.rsvp-card{background:var(--paper);border-radius:8px;box-shadow:0 22px 70px #77593b17}
+.rsvp-hero{padding:36px 26px 28px;background:transparent;color:var(--brown)}
+.rsvp-hero h1,.rsvp-content h2,.rsvp-welcome h2,.rsvp-brand strong,.rsvp-success .heart{font-family:'Cormorant Garamond',serif;font-weight:400}
+.rsvp-hero h1{font-size:clamp(38px,8vw,54px);line-height:1.1;overflow-wrap:anywhere}
+.rsvp-hero p{color:var(--muted);font-size:13px;line-height:1.8}
+.rsvp-eyebrow{font-size:9px;color:var(--accent);font-weight:500;letter-spacing:.2em;margin-bottom:18px}
+.rsvp-ornament{display:block;color:var(--accent);margin:18px 0;font-size:22px;font-weight:300}
+.rsvp-content{padding:26px}
+.rsvp-content h2{font-size:30px}
+.rsvp-content>p,.rsvp-success p{font-size:13px;line-height:1.8}
+.rsvp-btn{font-size:13px;font-weight:500;min-height:50px;border:1px solid #c8a574;border-radius:28px;background:linear-gradient(120deg,#ecd6b6,#d2ac77);color:#513820;padding:12px 24px}
+.rsvp-secondary{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:25px;font-size:12px;font-weight:400;line-height:1.5}
+.rsvp-hint{font-size:11px!important;line-height:1.7}
+.rsvp-input{font-size:14px;border-radius:9px}
+.rsvp-person-name strong{font-size:14px}.rsvp-person-name span,.rsvp-group-head span{font-size:11px}
+.rsvp-choice span{font-size:12px;font-weight:500}.rsvp-choice input:focus-visible+span{outline:2px solid var(--accent);outline-offset:3px}
+.rsvp-group-head strong,.rsvp-message{font-size:13px}.rsvp-privacy{font-size:10px;line-height:1.8}
+.rsvp-signature{text-align:center;font-size:11px;line-height:1.8;color:var(--muted);margin:24px 0 0}
+.rsvp-couple-photo{display:block;width:100%;height:clamp(260px,65vw,420px);object-fit:cover;mask-image:linear-gradient(#000 80%,transparent)}
+.rsvp-welcome .rsvp-hero{padding-top:18px;padding-bottom:12px}
+.rsvp-welcome-body{text-align:center;padding:0 34px 36px}
+.rsvp-welcome-body h2{font-size:30px;margin:14px 0}
+.rsvp-welcome-body>p{font-size:14px;line-height:1.9;white-space:pre-line;margin:16px auto 26px;max-width:370px}
+.rsvp-welcome-body>.rsvp-btn{width:100%}
+.rsvp-event{margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+.rsvp-event p{font-size:13px;line-height:1.8;white-space:pre-line}.rsvp-event a{margin-top:12px}
+.rsvp-monogram{font:300 70px 'Cormorant Garamond',serif;color:var(--accent);padding:54px 20px 14px;text-align:center}
+.rsvp-envelope{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;flex-direction:column;width:100%;min-height:690px;min-height:min(740px,85svh);padding:55px 25px 32px;border:1px solid #d9bfa0;border-radius:8px;color:#654832;background:radial-gradient(ellipse at 25% 10%,#fff5e6aa,transparent 65%),repeating-linear-gradient(35deg,#ffffff0c 0 1px,transparent 1px 4px),linear-gradient(120deg,#e4cdb0,#f3e3cc 48%,#ddc09c);box-shadow:0 26px 65px #76563826;transition:opacity .4s .2s,transform .6s}
+.envelope-heading{font-size:9px;letter-spacing:.2em;line-height:1.8}
+.envelope-names{font:400 clamp(38px,8vw,54px)/1.15 'Cormorant Garamond',serif;margin:44px 0 26px;z-index:2;overflow-wrap:anywhere}
+.envelope-message{font-size:15px;font-weight:300;line-height:1.8;z-index:2}
+.envelope-flap{position:absolute;z-index:-1;inset:0 0 32%;background:linear-gradient(145deg,#f9ebd9,#e7cfb0);clip-path:polygon(0 0,100% 0,100% 65%,50% 100%,0 65%);filter:drop-shadow(0 4px 2px #7c5c3840);transform-origin:top;transition:transform .65s}
+.rsvp-envelope:after{content:'';position:absolute;inset:45% 0 0;z-index:-2;background:linear-gradient(32deg,#c5a17a22 49.8%,#fff5e677 50%,transparent 50.3%),linear-gradient(-32deg,#c5a17a22 49.8%,#fff5e677 50%,transparent 50.3%)}
+.envelope-seal{width:100px;height:100px;display:grid;place-items:center;position:absolute;top:61%;left:50%;transform:translate(-50%,-50%);border-radius:48% 52% 45% 53%;border:5px double #c49b66;background:radial-gradient(circle at 30% 25%,#f6dfb5,#c6965e);box-shadow:0 5px 8px #70502c40,inset 0 0 0 4px #f2d3a3;font:400 30px 'Cormorant Garamond',serif;transition:opacity .2s}
+.envelope-prompt{margin-top:auto;padding-top:200px;font-size:13px;font-weight:400;letter-spacing:.06em}.envelope-prompt span{display:block;font-size:26px;margin-top:12px}
+.opening{opacity:0;transform:translateY(-15px)}.opening .envelope-flap{transform:rotateX(150deg)}.opening .envelope-seal{opacity:0}
+.rsvp-page[data-theme=romantic]{--paper:#fff7f5;--accent:#ad7881;--line:#edd7da;--brown:#6f4751}
+.rsvp-page[data-theme=botanical]{--paper:#f9faf4;--accent:#74815d;--line:#dce1d1;--brown:#42513b}
+.rsvp-page[data-theme=modern]{--paper:#fff;--accent:#85796b;--line:#e2ded9;--brown:#363330}
+.rsvp-page[data-theme=coastal]{--paper:#f5fafc;--accent:#6a929d;--line:#d5e4e8;--brown:#3c5d68}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+@media(max-width:560px){.rsvp-page{padding:16px 12px 36px}.rsvp-hero{padding:28px 18px 20px}.rsvp-content{padding:24px 18px}.rsvp-welcome-body{padding:0 24px 30px}.rsvp-envelope{min-height:650px;min-height:85svh;padding-top:42px}.envelope-names{margin-top:38px}.envelope-prompt{padding-top:160px}.rsvp-card{border-radius:8px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

@@ -2673,3 +2673,18 @@ body{
   font-weight:700;
   line-height:1.45 !important;
 }
+
+/* Cronograma por prazos e categorias. */
+.planner-timeline-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.timeline-category{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid transparent;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.timeline-category.urgent{color:#9f2929;background:#ffeded;border-color:#efb9b9}
+.timeline-category.attention{color:#775500;background:#fff7d6;border-color:#e7d17a}
+.timeline-category.pending{color:#30633a;background:#eaf5eb;border-color:#bad6bf}
+.timeline-category.completed{color:#625e58;background:#f0eeea;border-color:#dedad3}
+.planner-deadline-group{margin-top:18px}.planner-deadline-group h2{margin:0 0 12px}.planner-deadline-group h2 small{font:inherit;color:#8d8071}
+.planner-deadline-row{display:grid;grid-template-columns:100px minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #eee5d9}
+.planner-deadline-row .timeline-text{min-width:0}.planner-deadline-row .timeline-text strong{overflow-wrap:anywhere}
+.planner-deadline-date{font-size:12px;color:#806f60}.planner-deadline-row.task-done .timeline-text strong{text-decoration:line-through}
+@media(max-width:700px){.planner-deadline-row{grid-template-columns:minmax(0,1fr) auto;gap:10px}.planner-deadline-row .timeline-text{grid-row:1;grid-column:1}.planner-deadline-date{grid-row:2;grid-column:1}.planner-deadline-row>.timeline-category{grid-row:1;grid-column:2}.planner-deadline-row>.planner-compact-actions{grid-column:1/-1;justify-content:flex-start}}
+
+.planner-editable-profile{align-items:start}.planner-profile-stack{display:grid;gap:18px}.planner-editable-profile [data-form-status]{line-height:1.6;overflow-wrap:anywhere}

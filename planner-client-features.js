@@ -207,6 +207,7 @@ function openPlannerTaskEditor(task){
   const body=
     plannerField('Título','title',task?.title||'','text','required')+
     plannerField('Prazo','due_date',task?.dueISO||'','date')+
+    plannerSelect('Categoria','urgency',['Urgente','Atenção','Pendente'],task?.urgency||'Pendente')+
     plannerField('Responsável','responsible',task?.assignee||'')+
     plannerSelect('Status','status',['Pendente','Em andamento','Concluído'],task?.done?'Concluído':task?.status||'Pendente');
   plannerModal(task?'Editar tarefa':'Nova tarefa',body,task?'Salvar':'Adicionar',async back=>{
@@ -217,6 +218,7 @@ function openPlannerTaskEditor(task){
       wedding_id:state.wedding.id,
       title,
       due_date:f.due_date||null,
+      urgency:f.urgency||'Pendente',
       responsible:String(f.responsible||'').trim()||null,
       status:f.status||'Pendente',
       completed:f.status==='Concluído',
@@ -263,6 +265,7 @@ function openPlannerMeetingEditor(meeting){
   const body=
     plannerField('Título','title',meeting?.title||'','text','required')+
     plannerField('Data','meeting_date',meeting?.date||'','date')+
+    plannerSelect('Categoria','urgency',['Urgente','Atenção','Pendente'],meeting?.urgency||'Pendente')+
     plannerField('Hora','meeting_time',meeting?.time?String(meeting.time).slice(0,5):'','time')+
     plannerField('Participantes','participants',meeting?.people||'')+
     plannerField('Link da reunião','meeting_link',meeting?.link||'','url')+
@@ -275,6 +278,7 @@ function openPlannerMeetingEditor(meeting){
       wedding_id:state.wedding.id,
       title,
       meeting_date:f.meeting_date||null,
+      urgency:f.urgency||'Pendente',
       meeting_time:f.meeting_time||null,
       participants:String(f.participants||'').trim()||null,
       meeting_link:String(f.meeting_link||'').trim()||null,
@@ -744,6 +748,7 @@ loadClientModules=async function(){
       title:t.title,
       due:t.due_date?dateBR(t.due_date):'Sem prazo',
       dueISO:t.due_date||'',
+      urgency:t.urgency||'Pendente',
       assignee:t.responsible||'Casal',
       status:t.status||'Pendente',
       done:!!t.completed
@@ -756,6 +761,7 @@ loadClientModules=async function(){
       id:m.id,
       title:m.title,
       date:m.meeting_date||'',
+      urgency:m.urgency||'Pendente',
       time:m.meeting_time||'',
       people:m.participants||'—',
       notes:m.notes||'',
@@ -2615,7 +2621,7 @@ guestsView=function(){
   let html=secureRsvpBaseGuestsView();
   html=html.replace(
     '<button class="btn-secondary" id="copy-rsvp-client">Copiar link RSVP</button>',
-    '<button class="btn-secondary" id="preview-rsvp-client">Ver página dos convidados</button><button class="btn-secondary" id="manage-rsvp-invites">Links RSVP</button>'
+    '<button class="btn-secondary" id="configure-rsvp-client">Configurar página dos convidados</button><button class="btn-secondary" id="preview-rsvp-client">Ver página dos convidados</button><button class="btn-secondary" id="manage-rsvp-invites">Links RSVP</button>'
   );
   html=html.replace(
     '<button class="btn-secondary" id="open-rsvp-client">Abrir RSVP</button>',
@@ -2630,11 +2636,83 @@ bind=function(){
   const manage=document.getElementById('manage-rsvp-invites');
   if(manage)manage.onclick=openSecureRsvpLinks;
   const preview=document.getElementById('preview-rsvp-client');
-  if(preview)preview.onclick=()=>{
-    const w=state.wedding||{};
-    const url=new URL('rsvp.html',location.href);
-    url.searchParams.set('preview','1');
-    url.hash=new URLSearchParams({couple:w.couple_name||'',date:w.wedding_date||'',venue:w.venue||''}).toString();
-    window.open(url.href,'_blank','noopener');
-  };
+  if(preview)preview.onclick=()=>openPlannerRsvpPreview();
+  const settings=document.getElementById('configure-rsvp-client');
+  if(settings)settings.onclick=openPlannerRsvpSettings;
+};
+
+
+// Presentation settings shared with the assessoria RSVP experience.
+function openPlannerRsvpPreview(design=state.wedding?.rsvp_presentation||{}){
+  const w=state.wedding||{},url=new URL('rsvp.html',location.href);
+  url.search='?preview=1';
+  url.hash=new URLSearchParams({couple:w.couple_name||'',date:w.wedding_date||'',venue:w.venue||'',design:JSON.stringify(design)}).toString();
+  window.open(url.href,'_blank','noopener');
+}
+function readPlannerRsvpSettings(back){
+  const f=Object.fromEntries(new FormData(back.querySelector('form')));
+  for(const key of ['photo_url','directions_url']){
+    f[key]=String(f[key]||'').trim();
+    if(f[key]){try{const u=new URL(f[key]);if(u.protocol!=='https:')throw Error();}catch{throw Error('Use um link que comece com https:// para a foto e a localização.');}}
+  }
+  return {rsvp_theme:f.rsvp_theme,photo_url:f.photo_url,photo_position:Math.max(0,Math.min(100,Number(f.photo_position)||0)),initials:f.initials.trim(),rsvp_message:f.rsvp_message.trim(),address:f.address.trim(),directions_url:f.directions_url};
+}
+function openPlannerRsvpSettings(){
+  const weddingId=state.wedding?.id;if(!weddingId)return;
+  const c=state.wedding.rsvp_presentation||{};
+  const body='<p>Envelope champagne com abertura, foto do casal e tema escolhido por você. As alterações serão aplicadas aos links RSVP deste casamento.</p>'+
+    plannerSelect('Tema do interior','rsvp_theme',[{value:'classic',label:'Clássico · champagne'},{value:'romantic',label:'Romântico · rosé'},{value:'botanical',label:'Botânico · verde'},{value:'modern',label:'Moderno · marfim'},{value:'coastal',label:'Praiano · azul'}],c.rsvp_theme||'classic')+
+    plannerField('Link da foto do casal (https://)','photo_url',c.photo_url||'','url')+
+    plannerField('Enquadramento da foto (0 a 100)','photo_position',c.photo_position??50,'number','min="0" max="100"')+
+    plannerField('Iniciais no lacre','initials',c.initials||'','text','maxlength="16"')+
+    plannerTextarea('Mensagem de boas-vindas','rsvp_message',c.rsvp_message||'Com alegria, convidamos você para celebrar o nosso casamento.','maxlength="1000"')+
+    plannerTextarea('Endereço da celebração','address',c.address||'','maxlength="1000"')+
+    plannerField('Link da localização (https://)','directions_url',c.directions_url||'','url')+
+    '<p class="small muted">A foto e a mensagem serão visíveis para quem receber um link RSVP. O nome, a data e o local vêm do cadastro do casamento.</p><button type="button" class="btn-secondary" id="preview-rsvp-settings">Prévia das alterações</button>';
+  const back=plannerModal('Página dos convidados',body,'Salvar configurações',async()=>{
+    const design=readPlannerRsvpSettings(back);
+    const {data,error}=await sb.rpc('save_rsvp_presentation',{p_wedding_id:weddingId,p_presentation:design});
+    if(error){console.error(error);toast('Não foi possível salvar as configurações. Tente novamente.');return false;}
+    if(state.wedding?.id===weddingId)state.wedding.rsvp_presentation=data;
+    toast('Página dos convidados atualizada.');return true;
+  });
+  back.querySelector('#preview-rsvp-settings').onclick=()=>{try{openPlannerRsvpPreview(readPlannerRsvpSettings(back));}catch(error){toast(error.message);}};
+}
+
+
+function plannerTimelineBucket(item,today){
+  if(item.done)return 'Concluídos';
+  if(!item.date)return 'Sem prazo';
+  const days=Math.round((Date.parse(item.date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/86400000);
+  if(days<0)return 'Prazo vencido';
+  if(days===0)return 'Hoje';
+  if(days<=7)return 'Próximos 7 dias';
+  if(days<=30)return 'De 8 a 30 dias';
+  return 'Mais de 30 dias';
+}
+function plannerTimelineItems(){
+  return [...state.tasks.map(t=>({...t,date:t.dueISO,kind:'task',meta:'Tarefa • '+(t.assignee||'Casal')})),...state.meetings.map(m=>({...m,kind:'meeting',meta:'Reunião'+(m.time?' • '+timeBR(m.time):''),done:false}))].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||(a.time||'').localeCompare(b.time||''));
+}
+timelineView=function(){
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const all=plannerTimelineItems(),filter=state.timelineUrgencyFilter||'Todos';
+  const items=all.filter(x=>filter==='Todos'||(filter==='Concluídos'?x.done:!x.done&&(x.urgency||'Pendente')===filter));
+  const buckets=['Prazo vencido','Hoje','Próximos 7 dias','De 8 a 30 dias','Mais de 30 dias','Sem prazo','Concluídos'];
+  const tone=u=>u==='Urgente'?'urgent':u==='Atenção'?'attention':'pending';
+  return `<div class="page planner-timeline-page"><div class="page-head"><div><h1>Cronograma</h1><p>Organize tarefas e reuniões por prazo e categoria.</p></div><button class="btn-primary" id="insert-timeline-client">+ Inserir</button></div>
+    <div class="planner-timeline-legend"><span class="timeline-category urgent">🔴 Urgente</span><span class="timeline-category attention">🟡 Atenção</span><span class="timeline-category pending">🟢 Pendente</span></div>
+    <div class="filters">${['Todos','Urgente','Atenção','Pendente','Concluídos'].map(f=>`<button class="filter-btn ${filter===f?'active':''}" data-timeline-filter="${f}">${f}</button>`).join('')}</div>
+    ${items.length?buckets.map(label=>{const rows=items.filter(x=>plannerTimelineBucket(x,today)===label);return rows.length?`<section class="card card-pad planner-deadline-group"><h2 class="timeline-month">${label} <small>(${rows.length})</small></h2><div class="planner-deadline-list">${rows.map(x=>`<div class="planner-deadline-row ${x.done?'task-done':''}"><div class="planner-deadline-date">${x.date?esc(dateBR(x.date)):'Sem prazo'}</div><div class="timeline-text"><strong>${esc(x.title)}</strong><span>${esc(x.meta)}</span></div><span class="timeline-category ${x.done?'completed':tone(x.urgency||'Pendente')}">${x.done?'✓ Concluído':esc(x.urgency||'Pendente')}</span><div class="planner-compact-actions"><button class="btn-secondary" data-edit-${x.kind==='task'?'task':'meeting'}-client="${esc(x.id)}">Editar</button>${x.kind==='task'?`<button class="btn-secondary" data-toggle-task-client="${esc(x.id)}">${x.done?'Reabrir':'Concluir'}</button>`:''}</div></div>`).join('')}</div></section>`:'';}).join(''):`<div class="card card-pad">${emptyState(all.length?'Nenhum item nesta categoria':'Cronograma vazio','Use “+ Inserir” para adicionar uma tarefa ou reunião com prazo.')}</div>`}
+  </div>`;
+};
+function openPlannerTimelineInsert(){
+  const back=plannerModal('Inserir no cronograma','<p>Escolha o que deseja adicionar. Você poderá definir o prazo e a categoria.</p><div class="action-row"><button type="button" class="btn-primary" id="timeline-add-task">Tarefa / prazo</button><button type="button" class="btn-secondary" id="timeline-add-meeting">Reunião</button></div>','Fechar',async()=>true);
+  back.querySelector('#timeline-add-task').onclick=()=>{back.remove();openPlannerTaskEditor(null);};
+  back.querySelector('#timeline-add-meeting').onclick=()=>{back.remove();openPlannerMeetingEditor(null);};
+}
+const timelineDeadlineBaseBind=bind;
+bind=function(){
+  timelineDeadlineBaseBind();
+  const insert=document.getElementById('insert-timeline-client');if(insert)insert.onclick=openPlannerTimelineInsert;
+  document.querySelectorAll('[data-timeline-filter]').forEach(b=>b.onclick=()=>{state.timelineUrgencyFilter=b.dataset.timelineFilter;render();});
 };
