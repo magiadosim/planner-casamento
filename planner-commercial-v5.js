@@ -159,7 +159,7 @@ function mptV5AdminClaimsPanel(){
 const mptV5BaseAdminView=adminView;
 adminView=function(){
   const html=mptV5BaseAdminView();
-  return html.replace('<div class="grid grid-4 planner-admin-kpis">',plannerAdminCreateForm()+mptV5AdminClaimsPanel()+'<div class="grid grid-4 planner-admin-kpis">');
+  return html.replace('<div class="grid grid-4 planner-admin-kpis">',plannerAdminCreateForm()+plannerClientSearchView()+mptV5AdminClaimsPanel()+'<div class="grid grid-4 planner-admin-kpis">');
 };
 
 const mptV5BaseLoadData=loadData;
@@ -341,6 +341,7 @@ async function deletePlannerClient(button){
 const mptV5BaseBind=bind;
 bind=function(){
   mptV5BaseBind();
+  bindPlannerClientSearch();
   document.querySelectorAll('[data-planner-admin-client-form]').forEach(form=>{
     form.onsubmit=savePlannerAdminClient;
   });
@@ -581,4 +582,42 @@ async function savePlannerAdminClient(event){
   }finally{
     button.disabled=false;
   }
+}
+
+let plannerClientSearchTerm='';
+
+function plannerClientSearchView(){
+  return `<div class="field">
+    <label for="planner-client-search">Pesquisar cliente ou casamento</label>
+    <input id="planner-client-search" class="input" type="search"
+      placeholder="Nome do casal, cliente ou e-mail" value="${esc(plannerClientSearchTerm)}">
+    <p id="planner-client-search-empty" class="muted" role="status" hidden>Nenhum resultado encontrado.</p>
+  </div>`;
+}
+
+function normalizePlannerClientSearch(value){
+  return (value||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase('pt-BR');
+}
+
+function bindPlannerClientSearch(){
+  const input=document.getElementById('planner-client-search');
+  if(!input)return;
+  const empty=document.getElementById('planner-client-search-empty');
+  const clients=new Map(state.adminClients.map(client=>[client.id,client]));
+  const cards=[...document.querySelectorAll('.planner-admin-list [data-client-card]')];
+  const filter=()=>{
+    plannerClientSearchTerm=input.value;
+    const words=normalizePlannerClientSearch(input.value).trim().split(/\s+/).filter(Boolean);
+    let matches=0;
+    for(const card of cards){
+      const client=clients.get(card.dataset.clientCard);
+      const search=normalizePlannerClientSearch([client?.couple_name,client?.full_name,client?.email].join(' '));
+      const visible=words.every(word=>search.includes(word));
+      card.style.display=visible?'':'none';
+      if(visible)matches++;
+    }
+    empty.hidden=words.length===0||matches>0;
+  };
+  input.addEventListener('input',filter);
+  filter();
 }
