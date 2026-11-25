@@ -133,6 +133,7 @@ adminClientCard=function(c){
       '<div class="field"><label>Validade</label><input class="input planner-plain-input" name="access_expires_at" type="date" value="'+esc(c.access_expires_at||'')+'"></div>'+
     '</div>'+
     '<div class="field"><label>Observações internas</label><textarea class="input planner-plain-input planner-admin-notes" name="notes">'+esc(c.admin_notes||'')+'</textarea></div>'+
+    plannerAdminEditForm(c)+
     '<div class="action-row"><span class="small muted save-status"></span><button type="button" class="btn-danger" data-delete-planner-client="'+c.id+'">Excluir cliente</button><button class="btn-primary admin-save-client" data-client-id="'+c.id+'">Salvar alterações</button></div>'+
   '</div>';
 };
@@ -158,7 +159,7 @@ function mptV5AdminClaimsPanel(){
 const mptV5BaseAdminView=adminView;
 adminView=function(){
   const html=mptV5BaseAdminView();
-  return html.replace('<div class="grid grid-4 planner-admin-kpis">',mptV5AdminClaimsPanel()+'<div class="grid grid-4 planner-admin-kpis">');
+  return html.replace('<div class="grid grid-4 planner-admin-kpis">',plannerAdminCreateForm()+mptV5AdminClaimsPanel()+'<div class="grid grid-4 planner-admin-kpis">');
 };
 
 const mptV5BaseLoadData=loadData;
@@ -340,6 +341,9 @@ async function deletePlannerClient(button){
 const mptV5BaseBind=bind;
 bind=function(){
   mptV5BaseBind();
+  document.querySelectorAll('[data-planner-admin-client-form]').forEach(form=>{
+    form.onsubmit=savePlannerAdminClient;
+  });
   document.querySelectorAll('[data-delete-planner-client]').forEach(button=>{
     button.onclick=()=>deletePlannerClient(button);
   });
@@ -505,3 +509,76 @@ bind=function(){
     });
   }
 };
+
+function plannerAdminCreateForm(){
+  return `<details class="card card-pad">
+    <summary>Adicionar cliente</summary>
+    <form data-planner-admin-client-form>
+      <div class="planner-admin-grid">
+        <label class="field">Nome<input class="input" name="client_name" required maxlength="120"></label>
+        <label class="field">E-mail<input class="input" type="email" name="client_email" required maxlength="254"></label>
+        <label class="field">Senha inicial<input class="input" type="password" name="client_password" required minlength="12" maxlength="72" autocomplete="new-password"></label>
+      </div>
+      <p class="small muted">Use uma senha exclusiva com pelo menos 12 caracteres. O cadastro manual não envia e-mail.</p>
+      <button class="btn-primary" type="submit">Criar cliente</button>
+      <span class="small" role="status"></span>
+    </form>
+  </details>`;
+}
+
+function plannerAdminEditForm(client){
+  return `<details>
+    <summary>Editar dados do cliente</summary>
+    <form data-planner-admin-client-form data-edit-client-id="${esc(client.id)}">
+      <div class="planner-admin-grid">
+        <label class="field">Nome<input class="input" name="client_name" required maxlength="120" value="${esc(client.full_name||'')}"></label>
+        <label class="field">WhatsApp<input class="input" type="tel" name="client_whatsapp" maxlength="30" value="${esc(client.whatsapp||'')}"></label>
+        <label class="field">Nome do casal<input class="input" name="couple_name" maxlength="120" value="${esc(client.couple_name||'')}"></label>
+        <label class="field">Data do casamento<input class="input" type="date" name="wedding_date" value="${esc(client.wedding_date||'')}"></label>
+        <label class="field">Local<input class="input" name="venue" maxlength="200" value="${esc(client.venue||'')}"></label>
+      </div>
+      <button class="btn-primary" type="submit">Salvar dados do cliente</button>
+      <span class="small" role="status"></span>
+    </form>
+  </details>`;
+}
+
+async function savePlannerAdminClient(event){
+  event.preventDefault();
+  const form=event.currentTarget;
+  const button=form.querySelector('button[type="submit"]');
+  if(state.role!=='admin'||button.disabled)return;
+  const status=form.querySelector('[role="status"]');
+  const values=new FormData(form);
+  const name=values.get('client_name').trim();
+  const id=form.dataset.editClientId;
+  button.disabled=true;
+  status.textContent='Salvando…';
+  try{
+    if(id){
+      const {error}=await sb.rpc('planner_admin_update_client',{
+        p_id:id,p_name:name,p_whatsapp:values.get('client_whatsapp'),
+        p_couple:values.get('couple_name'),p_date:values.get('wedding_date')||null,p_venue:values.get('venue')
+      });
+      if(error)throw error;
+    }else{
+      const {error}=await sb.functions.invoke('planner-admin-create-client',{
+        body:{name,email:values.get('client_email'),password:values.get('client_password')}
+      });
+      if(error){
+        const body=await error.context?.json?.().catch(()=>null);
+        status.textContent=body?.error||'Não foi possível criar a conta.';
+        return;
+      }
+      form.reset();
+    }
+    await loadData();
+    render();
+    toast(id?'Dados do cliente atualizados.':'Cliente criado.');
+  }catch(error){
+    console.error('Erro ao salvar cliente do Planner',error);
+    status.textContent='Não foi possível salvar os dados.';
+  }finally{
+    button.disabled=false;
+  }
+}
