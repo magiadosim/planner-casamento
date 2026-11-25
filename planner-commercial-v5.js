@@ -133,7 +133,7 @@ adminClientCard=function(c){
       '<div class="field"><label>Validade</label><input class="input planner-plain-input" name="access_expires_at" type="date" value="'+esc(c.access_expires_at||'')+'"></div>'+
     '</div>'+
     '<div class="field"><label>Observações internas</label><textarea class="input planner-plain-input planner-admin-notes" name="notes">'+esc(c.admin_notes||'')+'</textarea></div>'+
-    '<div class="action-row"><span class="small muted save-status"></span><button class="btn-primary admin-save-client" data-client-id="'+c.id+'">Salvar alterações</button></div>'+
+    '<div class="action-row"><span class="small muted save-status"></span><button type="button" class="btn-danger" data-delete-planner-client="'+c.id+'">Excluir cliente</button><button class="btn-primary admin-save-client" data-client-id="'+c.id+'">Salvar alterações</button></div>'+
   '</div>';
 };
 
@@ -294,9 +294,55 @@ dashboardView=function(){
   return base.replace('<div class="page',notice+'<div class="page');
 };
 
+async function deletePlannerClient(button){
+  const id=button.dataset.deletePlannerClient;
+  const client=state.adminClients.find(item=>item.id===id);
+  if(state.role!=='admin'||!client||button.disabled)return;
+  const saveButton=button.closest('[data-client-card]').querySelector('.admin-save-client');
+  if(saveButton.disabled)return;
+  const name=client.couple_name||client.full_name||client.email||'Cliente';
+  if(!confirm(`Excluir definitivamente “${name}”? A conta, os dados do casamento e os arquivos do Planner serão apagados.`))return;
+
+  button.disabled=true;
+  saveButton.disabled=true;
+  try{
+    const {data:files,error:listError}=await sb.rpc('planner_delete_client',{p_client_id:id,p_delete:false});
+    if(listError)throw listError;
+
+    const filesByBucket=new Map();
+    for(const {bucket,path} of files){
+      if(!filesByBucket.has(bucket))filesByBucket.set(bucket,[]);
+      filesByBucket.get(bucket).push(path);
+    }
+    for(const [bucket,paths] of filesByBucket){
+      for(let offset=0;offset<paths.length;offset+=100){
+        const {error}=await sb.storage.from(bucket).remove(paths.slice(offset,offset+100));
+        if(error)throw error;
+      }
+    }
+
+    const {error}=await sb.rpc('planner_delete_client',{p_client_id:id,p_delete:true});
+    if(error)throw error;
+  }catch(error){
+    console.error('Erro ao excluir cliente do Planner',error);
+    toast('Não foi possível concluir a exclusão. Atualize a lista e tente novamente.');
+    return;
+  }finally{
+    button.disabled=false;
+    saveButton.disabled=false;
+  }
+
+  state.adminClients=state.adminClients.filter(item=>item.id!==id);
+  render();
+  toast('Cliente excluído.');
+}
+
 const mptV5BaseBind=bind;
 bind=function(){
   mptV5BaseBind();
+  document.querySelectorAll('[data-delete-planner-client]').forEach(button=>{
+    button.onclick=()=>deletePlannerClient(button);
+  });
 
   const paid=document.getElementById('mpt-v5-paid');if(paid)paid.onclick=mptV5StartPurchase;
   const proof=document.getElementById('mpt-v5-proof-sent');if(proof)proof.onclick=mptV5ConfirmProof;
